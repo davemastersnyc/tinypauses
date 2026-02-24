@@ -9,7 +9,7 @@ type DayEntry = {
   practiced: boolean;
 };
 
-function buildFakeWeek(): DayEntry[] {
+function buildWeekSkeleton(): DayEntry[] {
   const today = new Date();
   const days: DayEntry[] = [];
 
@@ -19,9 +19,7 @@ function buildFakeWeek(): DayEntry[] {
     const label = d.toLocaleDateString(undefined, {
       weekday: "short",
     });
-    // For now we fake a gentle pattern: some yes, some no.
-    const practiced = i === 0 || i === 2 || i === 4;
-    days.push({ dateLabel: label, practiced });
+    days.push({ dateLabel: label, practiced: false });
   }
 
   return days;
@@ -30,7 +28,7 @@ function buildFakeWeek(): DayEntry[] {
 export default function DashboardPage() {
   const router = useRouter();
   const [nickname, setNickname] = useState("Friend");
-  const [week, setWeek] = useState<DayEntry[]>(() => buildFakeWeek());
+  const [week, setWeek] = useState<DayEntry[]>(() => buildWeekSkeleton());
 
   useEffect(() => {
     async function load() {
@@ -46,12 +44,15 @@ export default function DashboardPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("nickname")
+        .select("nickname, age_band")
         .eq("id", user.id)
         .maybeSingle();
 
       if (profile?.nickname) {
         setNickname(profile.nickname);
+      } else {
+        router.replace("/onboarding");
+        return;
       }
 
       const today = new Date();
@@ -61,10 +62,11 @@ export default function DashboardPage() {
       const { data: sessions } = await supabase
         .from("sessions")
         .select("completed_at")
+        .eq("user_id", user.id)
         .gte("completed_at", sevenDaysAgo.toISOString());
 
       if (sessions) {
-        const updated = buildFakeWeek().map((day) => {
+        const updated = buildWeekSkeleton().map((day) => {
           const practiced = sessions.some((s) => {
             const d = new Date(s.completed_at as string);
             const label = d.toLocaleDateString(undefined, {
@@ -72,7 +74,7 @@ export default function DashboardPage() {
             });
             return label === day.dateLabel;
           });
-          return { ...day, practiced: practiced || day.practiced };
+          return { ...day, practiced };
         });
         setWeek(updated);
       }
