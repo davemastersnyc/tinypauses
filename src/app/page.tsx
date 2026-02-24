@@ -1,27 +1,102 @@
 import { BrandButton, BrandCard, BrandPill, PageShell } from "./ui";
 
+function KidsIcon() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      className="h-8 w-8 text-[#25e0c5]"
+      fill="none"
+    >
+      <circle cx="13" cy="10" r="4.5" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M6.5 24c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M24.5 5.5l.9 2.3 2.4.9-2.4.9-.9 2.3-.9-2.3-2.4-.9 2.4-.9z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function StepIcon() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      className="h-8 w-8 text-[#ffd84a]"
+      fill="none"
+    >
+      <path
+        d="M7 22c1.4-4.9 4.6-8.7 10-10.4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M17 11l6.2.6-3.7 5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <ellipse cx="10.5" cy="24" rx="3.7" ry="2.3" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function GentleTrackIcon() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      className="h-8 w-8 text-[#7edfaa]"
+      fill="none"
+    >
+      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M10.8 16.5l3.2 3.2 7-7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function Home() {
   return (
     <PageShell maxWidth="lg">
-      <header className="space-y-4 text-center">
-        <BrandPill>Tiny Pause · Tiny mindful moments</BrandPill>
-        <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
-          2–3 minutes.{" "}
-          <span className="text-[color:var(--color-accent)]">
-            Just for you.
-          </span>
-        </h1>
-        <p className="mx-auto max-w-xl text-balance text-base text-[color:var(--color-foreground)]/80 sm:text-lg">
-          No writing. No talking. Just a tiny pause to help your brain and body
-          reset, one gentle moment at a time.
-        </p>
-        <p className="mx-auto max-w-xl text-balance text-sm text-[color:var(--color-foreground)]/62">
-          Designed for kids 9-12, with their grown-ups in mind.
-        </p>
+      <header className="relative overflow-hidden py-12 text-center sm:py-16">
+        <div
+          aria-hidden="true"
+          className="hero-orb pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(37,224,197,0.15)_0%,rgba(249,115,22,0.08)_48%,rgba(249,115,22,0)_74%)] blur-2xl"
+        />
+        <div className="relative space-y-4">
+          <BrandPill>Tiny Pause · Tiny mindful moments</BrandPill>
+          <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
+            2–3 minutes.{" "}
+            <span className="text-[color:var(--color-accent)]">
+              Just for you.
+            </span>
+          </h1>
+          <p className="mx-auto max-w-xl text-balance text-base text-[color:var(--color-foreground)]/80 sm:text-lg">
+            No writing. No talking. Just a tiny pause to help your brain and
+            body reset, one gentle moment at a time.
+          </p>
+          <p className="mx-auto max-w-xl text-balance text-sm text-[color:var(--color-foreground)]/62">
+            Designed for kids 9-12, with their grown-ups in mind.
+          </p>
+        </div>
       </header>
 
       <BrandCard>
-        <div className="flex flex-col gap-4 items-stretch sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex flex-col items-stretch gap-4 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-7 sm:py-2">
           <div className="space-y-2 text-sm text-[color:var(--color-foreground)]/85 sm:text-base">
             <p className="font-medium text-[color:var(--color-primary)]">
               Try today&apos;s practice.
@@ -32,7 +107,7 @@ export default function Home() {
               breather.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <BrandButton href="/session" variant="primary">
               Start a mindful moment
             </BrandButton>
@@ -43,9 +118,11 @@ export default function Home() {
         </div>
       </BrandCard>
 
-      <section className="grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
+      <section className="mt-16 grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
         <BrandCard tone="muted">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+          <div className="-mx-6 -mt-6 mb-4 h-1 rounded-t-[var(--radius-card)] bg-[#25e0c5]/45" />
+          <KidsIcon />
+          <p className="mt-3 text-sm font-semibold text-[color:var(--color-primary)]/80">
             For kids 9–12 (and their grown‑ups)
           </p>
           <p className="mt-1">
@@ -54,7 +131,9 @@ export default function Home() {
           </p>
         </BrandCard>
         <BrandCard tone="muted">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+          <div className="-mx-6 -mt-6 mb-4 h-1 rounded-t-[var(--radius-card)] bg-[#ffd84a]/50" />
+          <StepIcon />
+          <p className="mt-3 text-sm font-semibold text-[color:var(--color-primary)]/80">
             One tiny step at a time
           </p>
           <p className="mt-1">
@@ -63,7 +142,9 @@ export default function Home() {
           </p>
         </BrandCard>
         <BrandCard tone="muted">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+          <div className="-mx-6 -mt-6 mb-4 h-1 rounded-t-[var(--radius-card)] bg-[#7edfaa]/50" />
+          <GentleTrackIcon />
+          <p className="mt-3 text-sm font-semibold text-[color:var(--color-primary)]/80">
             Gentle, no-streak tracking
           </p>
           <p className="mt-1">

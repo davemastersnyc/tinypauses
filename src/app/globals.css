@@ -87,3 +87,25 @@ h2,
 h3 {
   letter-spacing: -0.015em;
 }
+
+@keyframes heroOrbBreath {
+  0%,
+  100% {
+    transform: translate(-50%, 2px) scale(0.95);
+    opacity: 0.12;
+  }
+  50% {
+    transform: translate(-50%, -4px) scale(1.05);
+    opacity: 0.2;
+  }
+}
+
+.hero-orb {
+  animation: heroOrbBreath 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb {
+    animation: none;
+  }
+}
