@@ -8,7 +8,7 @@ import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [isParent, setIsParent] = useState(true);
+  const [isParent, setIsParent] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
@@ -136,7 +136,7 @@ export default function LoginPage() {
         Just exploring?{" "}
         <a
           href="/session"
-          className="font-medium text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+          className="font-medium text-[#ffd08a] underline-offset-2 hover:text-[#ffe3b8] hover:underline"
         >
           Try a mindful moment without logging in
         </a>

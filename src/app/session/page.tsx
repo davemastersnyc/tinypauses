@@ -41,11 +41,11 @@ const fallbackPrompts: Record<PromptKind, Prompt> = {
 };
 
 const moodOptions = [
-  { value: 1, label: "Not great", emoji: "😕" },
-  { value: 2, label: "A little off", emoji: "🙁" },
-  { value: 3, label: "Okay", emoji: "😐" },
-  { value: 4, label: "Pretty good", emoji: "🙂" },
-  { value: 5, label: "Really good", emoji: "😄" },
+  { value: 1, label: "Not great" },
+  { value: 2, label: "A little off" },
+  { value: 3, label: "Okay" },
+  { value: 4, label: "Pretty good" },
+  { value: 5, label: "Really good" },
 ];
 
 const stepOrder = ["choose", "prompt", "mood", "done"] as const;
@@ -58,7 +58,7 @@ const stepLabels: Record<(typeof stepOrder)[number], string> = {
 
 const kindLabels: Record<PromptKind, string> = {
   pause: "Just a pause",
-  "letting-go": "Letting go of stuff",
+  "letting-go": "Letting go",
   reflect: "Reflecting on today",
   kindness: "Kindness",
 };
@@ -71,6 +71,71 @@ type FavoritePrompt = {
   step: string;
   savedAt: string;
 };
+
+function MoodFace({ level }: { level: number }) {
+  const stroke = "currentColor";
+  const face = (() => {
+    switch (level) {
+      case 1:
+        return (
+          <>
+            <line x1="10" y1="14" x2="13" y2="13" />
+            <line x1="22" y1="13" x2="25" y2="14" />
+            <path d="M11 25 Q18 20 25 25" />
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <circle cx="12" cy="13.5" r="1.2" />
+            <circle cx="24" cy="13.5" r="1.2" />
+            <path d="M12 24 Q18 22.5 24 24" />
+          </>
+        );
+      case 3:
+        return (
+          <>
+            <circle cx="12" cy="13.5" r="1.2" />
+            <circle cx="24" cy="13.5" r="1.2" />
+            <line x1="12" y1="23.5" x2="24" y2="23.5" />
+          </>
+        );
+      case 4:
+        return (
+          <>
+            <circle cx="12" cy="13.5" r="1.2" />
+            <circle cx="24" cy="13.5" r="1.2" />
+            <path d="M12 22.5 Q18 27 24 22.5" />
+          </>
+        );
+      default:
+        return (
+          <>
+            <path d="M9 13 Q12 11 15 13" />
+            <path d="M21 13 Q24 11 27 13" />
+            <path d="M11 22 Q18 29 25 22" />
+          </>
+        );
+    }
+  })();
+
+  return (
+    <svg
+      width="30"
+      height="30"
+      viewBox="0 0 36 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      className="text-current"
+    >
+      <circle cx="18" cy="18" r="14.5" stroke={stroke} strokeWidth="1.6" />
+      <g stroke={stroke} strokeWidth="1.8" strokeLinecap="round">
+        {face}
+      </g>
+    </svg>
+  );
+}
 
 export default function SessionPage() {
   const [step, setStep] = useState<"choose" | "prompt" | "mood" | "done">(
@@ -282,7 +347,7 @@ export default function SessionPage() {
               }}
               className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
-              Letting go of stuff
+              Letting go
             </button>
             <button
               type="button"
@@ -309,11 +374,12 @@ export default function SessionPage() {
               Kindness
             </button>
           </div>
-          <div className="mt-3">
-            <BrandButton href="/" variant="secondary" fullWidth>
-              Maybe later
-            </BrandButton>
-          </div>
+          <a
+            href="/"
+            className="mt-3 inline-block text-xs text-[color:var(--color-foreground)]/62 transition hover:text-[color:var(--color-foreground)]/86"
+          >
+            Maybe later
+          </a>
           </BrandCard>
         )}
 
@@ -372,8 +438,8 @@ export default function SessionPage() {
             There&apos;s no right answer. This just helps you notice how your
             body and brain feel after taking a tiny pause.
           </p>
-          <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
-            {moodOptions.map((option) => (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {moodOptions.slice(0, 4).map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -382,17 +448,34 @@ export default function SessionPage() {
                   recordSession(option.value);
                   setStep("done");
                 }}
-                className={`flex flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium transition ${
+                className={`flex flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition ${
                   mood === option.value
                     ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
                     : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
                 }`}
               >
-                <span className="text-lg">{option.emoji}</span>
+                <MoodFace level={option.value} />
                 <span className="mt-1">{option.label}</span>
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              const option = moodOptions[4];
+              setMood(option.value);
+              recordSession(option.value);
+              setStep("done");
+            }}
+            className={`mt-3 flex w-full flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition ${
+              mood === moodOptions[4].value
+                ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
+                : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+            }`}
+          >
+            <MoodFace level={moodOptions[4].value} />
+            <span className="mt-1">{moodOptions[4].label}</span>
+          </button>
           <BrandButton
             type="button"
             variant="secondary"
