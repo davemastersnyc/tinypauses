@@ -2,24 +2,25 @@
 
 html {
   font-size: 112.5%; /* bump all rem-based text ~+1 size step */
+  color-scheme: light dark;
 }
 
 :root {
   /* Brand neutrals */
-  --background: #070b1b;
-  --foreground: #e5e7eb;
+  --background: #faf8f5;
+  --foreground: #1b2438;
 
   /* Brand colors */
-  --primary: #f9fafb;
-  --primary-soft: #1f2937;
+  --primary: #111827;
+  --primary-soft: #e5e7eb;
   --accent: #f97316;
   --accent-soft: #ffe4c4;
   --ink-on-accent-soft: #111827;
 
   /* Surfaces & borders */
-  --surface: #0d1428;
-  --surface-soft: #121b34;
-  --border-subtle: rgba(148, 163, 184, 0.24);
+  --surface: #ffffff;
+  --surface-soft: #f1ede8;
+  --border-subtle: rgba(17, 24, 39, 0.14);
 
   /* Radii & shadows */
   --radius-card: 1.25rem;
@@ -50,14 +51,14 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #040714;
-    --foreground: #e5e7eb;
-    --primary: #f9fafb;
-    --primary-soft: #020617;
+    --background: #050814;
+    --foreground: #edf2ff;
+    --primary: #f8fafc;
+    --primary-soft: #0a1022;
     --accent: #fb923c;
-    --surface: #0b1124;
-    --surface-soft: #101933;
-    --border-subtle: rgba(148, 163, 184, 0.28);
+    --surface: #111b35;
+    --surface-soft: #182542;
+    --border-subtle: rgba(148, 163, 184, 0.36);
   }
 }
 
@@ -65,11 +66,20 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 600px at 50% -120px, rgba(37, 224, 197, 0.08), transparent 60%),
-    radial-gradient(900px 500px at 95% 10%, rgba(255, 47, 146, 0.06), transparent 55%),
-    linear-gradient(180deg, #060a1a 0%, var(--background) 45%, #030611 100%);
+    radial-gradient(1200px 620px at 50% -140px, rgba(37, 224, 197, 0.06), transparent 62%),
+    radial-gradient(900px 520px at 95% 10%, rgba(255, 47, 146, 0.04), transparent 58%),
+    linear-gradient(180deg, #fdfbf8 0%, var(--background) 44%, #f4eee7 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background:
+      radial-gradient(1200px 620px at 50% -140px, rgba(37, 224, 197, 0.12), transparent 60%),
+      radial-gradient(900px 520px at 95% 10%, rgba(255, 47, 146, 0.09), transparent 56%),
+      linear-gradient(180deg, #060a1a 0%, var(--background) 45%, #030611 100%);
+  }
 }
 
 h1,
