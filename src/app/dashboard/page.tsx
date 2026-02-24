@@ -85,13 +85,21 @@ export default function DashboardPage() {
   }, []);
 
   const totalPractices = week.filter((d) => d.practiced).length;
+  const hasAnyPracticeThisWeek = week.some((d) => d.practiced);
+  const formattedNickname = nickname
+    .trim()
+    .split(/\s+/)
+    .map((part) =>
+      part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part,
+    )
+    .join(" ");
 
   return (
     <PageShell maxWidth="lg">
       <header className="space-y-2">
         <BrandPill>Your calm corner</BrandPill>
         <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
-          Hi, {nickname}.
+          Hi, {formattedNickname}.
         </h1>
         <p className="text-sm text-[color:var(--color-foreground)]/80">
           You can take a tiny mindful moment any time you like. We&apos;ll keep
@@ -140,14 +148,22 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          {!hasAnyPracticeThisWeek && (
+            <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">
+              Your first tiny pause will show up here.
+            </p>
+          )}
         </BrandCard>
 
         <BrandCard tone="muted">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
-            Tiny wins
+          <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
+            Your tiny wins so far
           </p>
-          <p className="mt-2 text-3xl font-semibold text-[color:var(--color-primary)]">
+          <p className="mt-2 text-4xl font-semibold text-[color:var(--color-accent)]">
             {totalPractices}
+            <span className="ml-2 text-base font-medium text-[color:var(--color-primary)]/80">
+              {totalPractices === 1 ? "moment" : "moments"}
+            </span>
           </p>
           <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
             {totalPractices === 0

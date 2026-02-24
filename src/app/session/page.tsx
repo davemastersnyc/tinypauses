@@ -476,14 +476,13 @@ export default function SessionPage() {
             <MoodFace level={moodOptions[4].value} />
             <span className="mt-1">{moodOptions[4].label}</span>
           </button>
-          <BrandButton
+          <button
             type="button"
-            variant="secondary"
-            fullWidth
             onClick={() => goToStep("prompt")}
+            className="mt-2 self-start px-1 py-1 text-xs text-[color:var(--color-foreground)]/65 hover:text-[color:var(--color-primary)]"
           >
             Back
-          </BrandButton>
+          </button>
           <BrandButton
             type="button"
             variant="secondary"

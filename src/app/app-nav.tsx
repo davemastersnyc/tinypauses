@@ -69,6 +69,18 @@ export function AppNav() {
     };
   }, []);
 
+  function formatDisplayName(value: string | null) {
+    if (!value) return null;
+    if (value.includes("@")) return value;
+    return value
+      .trim()
+      .split(/\s+/)
+      .map((part) =>
+        part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part,
+      )
+      .join(" ");
+  }
+
   async function handleSignOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -111,7 +123,9 @@ export function AppNav() {
                 title={authState.label ?? undefined}
                 className="max-w-[16rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)]"
               >
-                {authState.label ? `Signed in: ${authState.label}` : "Signed in"}
+                {authState.label
+                  ? `Signed in: ${formatDisplayName(authState.label)}`
+                  : "Signed in"}
               </span>
               <button
                 type="button"

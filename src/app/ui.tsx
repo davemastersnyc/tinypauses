@@ -21,6 +21,10 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
         {children}
       </main>
       <footer className="border-t border-[color:var(--color-border-subtle)] py-3 text-center text-xs text-[color:var(--color-foreground)]/55">
+        <p className="mb-1 text-[11px] text-[color:var(--color-foreground)]/50">
+          Tiny Pause is not medical advice. It&apos;s a small, kind tool to help
+          kids and adults pause and notice how they feel.
+        </p>
         <a
           href="https://quietbranches.com"
           target="_blank"

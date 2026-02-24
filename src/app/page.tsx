@@ -15,6 +15,9 @@ export default function Home() {
           No writing. No talking. Just a tiny pause to help your brain and body
           reset, one gentle moment at a time.
         </p>
+        <p className="mx-auto max-w-xl text-balance text-sm text-[color:var(--color-foreground)]/62">
+          Designed for kids 9-12, with their grown-ups in mind.
+        </p>
       </header>
 
       <BrandCard>
@@ -70,10 +73,6 @@ export default function Home() {
         </BrandCard>
       </section>
 
-      <footer className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
-        Tiny Pause is not medical advice. It&apos;s a small, kind tool to help
-        kids and adults pause and notice how they feel.
-      </footer>
     </PageShell>
   );
 }
