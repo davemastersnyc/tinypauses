@@ -131,11 +131,11 @@ export default function SessionPage() {
             "--color-accent": accentByStep[step],
           } as CSSProperties
         }
-        className="space-y-6"
+        className="space-y-5"
       >
-        <header className="text-center space-y-2">
+        <header className="text-center space-y-1.5">
           <BrandPill>Mindful moment</BrandPill>
-          <h1 className="mt-1 text-2xl font-semibold text-[color:var(--color-primary)]">
+          <h1 className="mt-1 text-2xl font-semibold leading-tight text-[color:var(--color-primary)]">
             {step === "choose" && "What do you want help with today?"}
             {step === "prompt" && "Try this tiny pause"}
             {step === "mood" && "How do you feel now?"}
@@ -149,7 +149,7 @@ export default function SessionPage() {
           <p className="text-sm text-[color:var(--color-foreground)]/85">
             Pick the kind of moment that would feel most helpful right now.
           </p>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={async () => {
@@ -158,7 +158,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] px-3 py-2 text-xs font-medium text-[color:var(--color-ink-on-accent-soft)] transition"
+              className="rounded-2xl border border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] px-3 py-2.5 text-sm font-semibold text-[color:var(--color-ink-on-accent-soft)] transition"
             >
               Just a pause
             </button>
@@ -170,7 +170,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Letting go of stuff
             </button>
@@ -182,7 +182,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Reflecting on today
             </button>
@@ -194,7 +194,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Kindness
             </button>

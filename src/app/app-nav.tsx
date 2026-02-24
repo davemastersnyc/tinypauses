@@ -58,13 +58,15 @@ export function AppNav() {
   }
 
   return (
-    <nav className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3">
-      <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-primary)]">
-        <span className="h-2 w-2 rounded-full bg-[color:var(--color-accent)]" />
-        Practice
+    <nav className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)]/90 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-primary)]/95">
+        <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--color-accent)]" />
+        <Link href="/" className="hover:text-[color:var(--color-accent)]">
+          Practice
+        </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2 text-xs sm:justify-end">
         <Link
           href="/"
           className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
@@ -85,8 +87,11 @@ export function AppNav() {
         </Link>
         {authState.signedIn ? (
           <>
-            <span className="rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)]">
-              Signed in{authState.email ? `: ${authState.email}` : ""}
+            <span
+              title={authState.email ?? undefined}
+              className="max-w-[18rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)]"
+            >
+              {authState.email ? `Signed in: ${authState.email}` : "Signed in"}
             </span>
             <button
               type="button"
