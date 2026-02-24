@@ -18,8 +18,8 @@ export function AppNav() {
   useEffect(() => {
     let isMounted = true;
 
+    if (!supabase) return;
     const client = supabase;
-    if (!client) return;
 
     async function loadUser() {
       const {
