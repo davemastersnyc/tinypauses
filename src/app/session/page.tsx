@@ -147,6 +147,9 @@ export default function SessionPage() {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [loadingPrompt, setLoadingPrompt] = useState(false);
   const [isPromptSaved, setIsPromptSaved] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const accentByStep: Record<
     "choose" | "prompt" | "mood" | "done",
@@ -156,6 +159,12 @@ export default function SessionPage() {
     prompt: "#ff2f92", // pink
     mood: "#ffd84a", // yellow
     done: "#9f7fff", // purple
+  };
+  const accentByKind: Record<PromptKind, string> = {
+    pause: "#25e0c5",
+    "letting-go": "#ff2f92",
+    reflect: "#ffd84a",
+    kindness: "#9f7fff",
   };
 
   useEffect(() => {
@@ -271,6 +280,156 @@ export default function SessionPage() {
     } catch (error) {
       console.error("Could not save favorite prompt", error);
     }
+  }
+
+  function drawRoundedRect(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+  ) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
+  }
+
+  function drawSprout(
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    color: string,
+  ) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 14;
+    ctx.lineCap = "round";
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY + 40);
+    ctx.bezierCurveTo(centerX - 4, centerY - 18, centerX + 4, centerY - 62, centerX, centerY - 120);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(centerX - 46, centerY - 118, 56, 30, -0.45, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(centerX + 46, centerY - 118, 56, 30, 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  async function generateShareCardBlob() {
+    const size = 1080;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not create share canvas.");
+
+    const badgeColor = kind ? accentByKind[kind] : "#9f7fff";
+    const badgeLabel = (kind ? kindLabels[kind] : "Mindful moment").toUpperCase();
+    const promptTitle = prompt?.title ?? "Tiny pause";
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, size);
+    gradient.addColorStop(0, "#ffedd8");
+    gradient.addColorStop(1, "#ffe3c1");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+
+    ctx.fillStyle = "rgba(255,255,255,0.34)";
+    drawRoundedRect(ctx, 86, 86, 908, 908, 48);
+    ctx.fill();
+
+    ctx.font = "700 44px Inter, Avenir Next, Segoe UI, sans-serif";
+    const badgeWidth = Math.max(260, ctx.measureText(badgeLabel).width + 90);
+    const badgeX = (size - badgeWidth) / 2;
+    const badgeY = 170;
+    ctx.fillStyle = badgeColor;
+    drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 78, 39);
+    ctx.fill();
+
+    ctx.fillStyle = "#121826";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(badgeLabel, size / 2, badgeY + 40);
+
+    drawSprout(ctx, size / 2, 520, "#2f7e58");
+
+    ctx.fillStyle = "#1b2438";
+    ctx.font = "600 58px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText("I took a tiny pause today.", size / 2, 700);
+
+    ctx.fillStyle = "rgba(27, 36, 56, 0.82)";
+    ctx.font = "500 38px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText(promptTitle, size / 2, 768);
+
+    ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
+    ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText("tinypause.app", size / 2, 952);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/png"),
+    );
+    if (!blob) throw new Error("Could not encode share image.");
+    return blob;
+  }
+
+  function closeShareModal() {
+    if (shareImageUrl) URL.revokeObjectURL(shareImageUrl);
+    setShareImageUrl(null);
+    setShowShareModal(false);
+  }
+
+  async function handleShareMoment() {
+    if (shareLoading) return;
+    setShareLoading(true);
+    try {
+      const blob = await generateShareCardBlob();
+      const file = new File([blob], "tiny-pause-moment.png", { type: "image/png" });
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+      };
+
+      const canShareFiles =
+        typeof nav.share === "function" &&
+        typeof nav.canShare === "function" &&
+        nav.canShare({ files: [file] });
+
+      if (canShareFiles) {
+        await nav.share({
+          title: "Tiny Pause",
+          text: "I took a tiny pause today.",
+          files: [file],
+        });
+        return;
+      }
+
+      if (shareImageUrl) URL.revokeObjectURL(shareImageUrl);
+      const objectUrl = URL.createObjectURL(blob);
+      setShareImageUrl(objectUrl);
+      setShowShareModal(true);
+    } catch (error) {
+      console.error("Unable to share moment", error);
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  function downloadShareImage() {
+    if (!shareImageUrl) return;
+    const link = document.createElement("a");
+    link.href = shareImageUrl;
+    link.download = "tiny-pause-moment.png";
+    link.click();
   }
 
   return (
@@ -501,6 +660,25 @@ export default function SessionPage() {
           <BrandCard tone="accent">
           <div className="space-y-4 text-center">
             <p className="text-4xl">🌱</p>
+            <button
+              type="button"
+              onClick={handleShareMoment}
+              disabled={shareLoading}
+              className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[#8f67ff] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(143,103,255,0.35)] transition hover:bg-[#7f57ef] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <svg
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+              >
+                <path
+                  d="M10 2.5l1.3 3.2 3.2 1.3-3.2 1.3-1.3 3.2-1.3-3.2-3.2-1.3 3.2-1.3L10 2.5zM15.5 10.2l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"
+                  fill="currentColor"
+                />
+              </svg>
+              {shareLoading ? "Preparing image..." : "Share this moment"}
+            </button>
             <p className="text-base font-medium text-[color:var(--color-ink-on-accent-soft)]">
               Taking even one tiny pause like this is a big deal.
             </p>
@@ -523,12 +701,33 @@ export default function SessionPage() {
               <BrandButton href="/dashboard" fullWidth>
                 Go to my dashboard
               </BrandButton>
-              <BrandButton href="/" variant="secondary" fullWidth>
-                Back to home
-              </BrandButton>
             </div>
           </div>
           </BrandCard>
+        )}
+        {showShareModal && shareImageUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-[color:var(--color-surface)] p-4 shadow-[0_22px_55px_rgba(2,6,23,0.45)]">
+              <img
+                src={shareImageUrl}
+                alt="Share card preview"
+                className="w-full rounded-xl border border-[color:var(--color-border-subtle)]"
+              />
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <BrandButton type="button" onClick={downloadShareImage} fullWidth>
+                  Download image
+                </BrandButton>
+                <BrandButton
+                  type="button"
+                  variant="secondary"
+                  onClick={closeShareModal}
+                  fullWidth
+                >
+                  Close
+                </BrandButton>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </PageShell>

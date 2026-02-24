@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
@@ -8,6 +8,29 @@ import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 type DayEntry = {
   dateLabel: string;
   practiced: boolean;
+};
+
+type SessionHistoryRow = {
+  completed_at: string | null;
+  mood_after?: number | null;
+  kind?: string | null;
+  category?: string | null;
+  prompt_title?: string | null;
+  prompt_name?: string | null;
+  title?: string | null;
+};
+
+type HistoryDot = {
+  dayKey: string;
+  date: Date;
+  weekIndex: number;
+  dayIndex: number;
+  session: SessionHistoryRow | null;
+};
+
+type DotStyle = {
+  fill: string;
+  radius: number;
 };
 
 function buildWeekSkeleton(): DayEntry[] {
@@ -26,11 +49,68 @@ function buildWeekSkeleton(): DayEntry[] {
   return days;
 }
 
+function startOfDay(value: Date) {
+  const d = new Date(value);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function dateKey(value: Date) {
+  const y = value.getFullYear();
+  const m = String(value.getMonth() + 1).padStart(2, "0");
+  const d = String(value.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function toTitleCase(value: string) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .map((part) =>
+      part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part,
+    )
+    .join(" ");
+}
+
+function toCategoryLabel(session: SessionHistoryRow | null) {
+  const raw = session?.kind ?? session?.category ?? "mindful moment";
+  return toTitleCase(raw.replace(/[-_]/g, " "));
+}
+
+function toPromptLabel(session: SessionHistoryRow | null) {
+  return (
+    session?.prompt_title ??
+    session?.prompt_name ??
+    session?.title ??
+    "Tiny pause"
+  );
+}
+
+function moodDotStyle(mood: number | null | undefined): DotStyle {
+  if (mood == null) {
+    return { fill: "rgba(120, 116, 109, 0.45)", radius: 4.5 };
+  }
+  if (mood <= 1) return { fill: "rgba(125, 145, 168, 0.82)", radius: 3.9 };
+  if (mood === 2) return { fill: "rgba(197, 151, 120, 0.86)", radius: 4.2 };
+  if (mood === 3) return { fill: "rgba(204, 167, 109, 0.9)", radius: 4.7 };
+  if (mood === 4) return { fill: "rgba(71, 178, 158, 0.92)", radius: 5.1 };
+  return { fill: "rgba(37, 224, 197, 0.95)", radius: 5.6 };
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [nickname, setNickname] = useState("Friend");
-  const [week, setWeek] = useState<DayEntry[]>(() => buildWeekSkeleton());
-  const [totalMoments, setTotalMoments] = useState(0);
+  const [sessions, setSessions] = useState<SessionHistoryRow[]>([]);
+  const [showFullHistory, setShowFullHistory] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState<{
+    x: number;
+    y: number;
+    dot: HistoryDot;
+  } | null>(null);
+  const [storyShareLoading, setStoryShareLoading] = useState(false);
+  const [storyImageUrl, setStoryImageUrl] = useState<string | null>(null);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const storyWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -57,49 +137,236 @@ export default function DashboardPage() {
         return;
       }
 
-      const { count } = await supabase
+      const { data: allSessions } = await supabase
         .from("sessions")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
-      setTotalMoments(count ?? 0);
-
-      const today = new Date();
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(today.getDate() - 6);
-
-      const { data: sessions } = await supabase
-        .from("sessions")
-        .select("completed_at")
+        .select("*")
         .eq("user_id", user.id)
-        .gte("completed_at", sevenDaysAgo.toISOString());
+        .order("completed_at", { ascending: true });
 
-      if (sessions) {
-        const updated = buildWeekSkeleton().map((day) => {
-          const practiced = sessions.some((s) => {
-            const d = new Date(s.completed_at as string);
-            const label = d.toLocaleDateString(undefined, {
-              weekday: "short",
-            });
-            return label === day.dateLabel;
-          });
-          return { ...day, practiced };
-        });
-        setWeek(updated);
-      }
+      setSessions((allSessions ?? []) as SessionHistoryRow[]);
     }
 
     load();
   }, []);
 
+  const sessionsWithDates = useMemo(
+    () => sessions.filter((s) => Boolean(s.completed_at)),
+    [sessions],
+  );
+
+  const totalMoments = sessionsWithDates.length;
+
+  const week = useMemo(() => {
+    const recentByDay = new Set<string>();
+    const today = startOfDay(new Date());
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+
+    for (const session of sessionsWithDates) {
+      const d = startOfDay(new Date(session.completed_at as string));
+      if (d >= sevenDaysAgo && d <= today) {
+        recentByDay.add(dateKey(d));
+      }
+    }
+
+    return buildWeekSkeleton().map((day, idx) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (6 - idx));
+      return { ...day, practiced: recentByDay.has(dateKey(d)) };
+    });
+  }, [sessionsWithDates]);
+
+  const historyModel = useMemo(() => {
+    const sorted = [...sessionsWithDates].sort(
+      (a, b) =>
+        new Date(a.completed_at as string).getTime() -
+        new Date(b.completed_at as string).getTime(),
+    );
+    const today = startOfDay(new Date());
+    if (sorted.length === 0) {
+      return {
+        dots: [] as HistoryDot[],
+        weekCount: 1,
+        hasOlderHistory: false,
+      };
+    }
+
+    const byDay = new Map<string, SessionHistoryRow>();
+    for (const session of sorted) {
+      const d = startOfDay(new Date(session.completed_at as string));
+      byDay.set(dateKey(d), session);
+    }
+
+    const firstSessionDay = startOfDay(new Date(sorted[0].completed_at as string));
+    const sixMonthsAgo = startOfDay(new Date());
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const start = showFullHistory
+      ? firstSessionDay
+      : new Date(Math.max(firstSessionDay.getTime(), sixMonthsAgo.getTime()));
+    const hasOlderHistory = firstSessionDay.getTime() < sixMonthsAgo.getTime();
+
+    const totalDays =
+      Math.floor((today.getTime() - start.getTime()) / 86_400_000) + 1;
+    const dots: HistoryDot[] = [];
+
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = dateKey(d);
+      dots.push({
+        dayKey: key,
+        date: d,
+        weekIndex: Math.floor(i / 7),
+        dayIndex: i % 7,
+        session: byDay.get(key) ?? null,
+      });
+    }
+
+    return {
+      dots,
+      weekCount: Math.max(1, Math.ceil(totalDays / 7)),
+      hasOlderHistory,
+    };
+  }, [sessionsWithDates, showFullHistory]);
+
+  const storyLine =
+    totalMoments < 5
+      ? "Every dot is a moment you chose yourself."
+      : totalMoments < 20
+        ? "Look at all these tiny pauses."
+        : "You've been showing up for yourself for a while now.";
+
   const hasAnyPracticeThisWeek = week.some((d) => d.practiced);
-  const formattedNickname = nickname
-    .trim()
-    .split(/\s+/)
-    .map((part) =>
-      part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part,
-    )
-    .join(" ");
+  const formattedNickname = toTitleCase(nickname);
+
+  const cell = 14;
+  const pad = 8;
+  const svgWidth = pad * 2 + historyModel.weekCount * cell;
+  const svgHeight = pad * 2 + 7 * cell;
+
+  async function generateStoryCardBlob() {
+    const cardSize = 1080;
+    const canvas = document.createElement("canvas");
+    canvas.width = cardSize;
+    canvas.height = cardSize;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not create canvas context.");
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, cardSize);
+    gradient.addColorStop(0, "#ffedd8");
+    gradient.addColorStop(1, "#ffe2bf");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, cardSize, cardSize);
+
+    ctx.fillStyle = "rgba(255,255,255,0.32)";
+    ctx.fillRect(78, 78, 924, 924);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#1b2438";
+    ctx.font = "600 66px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText("My tiny pauses", cardSize / 2, 156);
+
+    ctx.fillStyle = "#f97316";
+    ctx.font = "700 82px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText(
+      `${totalMoments} ${totalMoments === 1 ? "moment" : "moments"}`,
+      cardSize / 2,
+      248,
+    );
+
+    const sourceDots = historyModel.dots;
+    const maxWeeks = 16;
+    const maxColumns = Math.max(
+      1,
+      Math.min(maxWeeks, historyModel.weekCount),
+    );
+    const startWeek = Math.max(0, historyModel.weekCount - maxColumns);
+    const shareDots = sourceDots
+      .filter((dot) => dot.weekIndex >= startWeek)
+      .map((dot) => ({
+        ...dot,
+        weekIndex: dot.weekIndex - startWeek,
+      }));
+
+    const shareCell = 42;
+    const gridWidth = maxColumns * shareCell;
+    const gridHeight = 7 * shareCell;
+    const x0 = (cardSize - gridWidth) / 2;
+    const y0 = 340;
+
+    for (const dot of shareDots) {
+      const cx = x0 + dot.weekIndex * shareCell + shareCell / 2;
+      const cy = y0 + dot.dayIndex * shareCell + shareCell / 2;
+      const style = dot.session
+        ? moodDotStyle(dot.session.mood_after)
+        : { fill: "rgba(163, 171, 179, 0.2)", radius: 12 };
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, dot.session ? style.radius * 2.1 : style.radius, 0, Math.PI * 2);
+      ctx.fillStyle = style.fill;
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "rgba(27, 36, 56, 0.62)";
+    ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText("tinypause.app", cardSize / 2, 988);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/png"),
+    );
+    if (!blob) throw new Error("Could not encode story image.");
+    return blob;
+  }
+
+  async function handleShareStory() {
+    if (storyShareLoading) return;
+    setStoryShareLoading(true);
+    try {
+      const blob = await generateStoryCardBlob();
+      const file = new File([blob], "tiny-pause-story.png", { type: "image/png" });
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+      };
+
+      const canShareFiles =
+        typeof nav.share === "function" &&
+        typeof nav.canShare === "function" &&
+        nav.canShare({ files: [file] });
+
+      if (canShareFiles) {
+        await nav.share({
+          title: "My tiny pauses",
+          text: "My Tiny Pause story so far.",
+          files: [file],
+        });
+        return;
+      }
+
+      if (storyImageUrl) URL.revokeObjectURL(storyImageUrl);
+      const url = URL.createObjectURL(blob);
+      setStoryImageUrl(url);
+      setShowStoryModal(true);
+    } catch (error) {
+      console.error("Unable to share story", error);
+    } finally {
+      setStoryShareLoading(false);
+    }
+  }
+
+  function closeStoryModal() {
+    if (storyImageUrl) URL.revokeObjectURL(storyImageUrl);
+    setStoryImageUrl(null);
+    setShowStoryModal(false);
+  }
+
+  function downloadStoryImage() {
+    if (!storyImageUrl) return;
+    const link = document.createElement("a");
+    link.href = storyImageUrl;
+    link.download = "tiny-pause-story.png";
+    link.click();
+  }
 
   return (
     <PageShell maxWidth="lg">
@@ -132,35 +399,156 @@ export default function DashboardPage() {
       </BrandCard>
 
       <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
-        <BrandCard>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
-            This week
-          </p>
-          <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
-            Every dot is a day. Filled in means you took a tiny pause.
-          </p>
-          <div className="mt-4 flex items-center justify-between gap-2">
-            {week.map((day) => (
-              <div key={day.dateLabel} className="flex flex-col items-center">
-                <span
-                  className={`mb-1 h-3 w-3 rounded-full ${
-                    day.practiced
-                      ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.2)]"
-                      : "bg-[color:var(--color-surface-soft)]"
-                  }`}
-                />
-                <span className="text-[11px] font-medium text-[color:var(--color-foreground)]/70">
-                  {day.dateLabel}
-                </span>
-              </div>
-            ))}
-          </div>
-          {!hasAnyPracticeThisWeek && (
-            <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">
-              Your first tiny pause will show up here.
+        <div className="space-y-4">
+          <BrandCard>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+              This week
             </p>
-          )}
-        </BrandCard>
+            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+              Every dot is a day. Filled in means you took a tiny pause.
+            </p>
+            <div className="mt-4 flex items-center justify-between gap-2">
+              {week.map((day) => (
+                <div key={day.dateLabel} className="flex flex-col items-center">
+                  <span
+                    className={`mb-1 h-3 w-3 rounded-full ${
+                      day.practiced
+                        ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.2)]"
+                        : "bg-[color:var(--color-surface-soft)]"
+                    }`}
+                  />
+                  <span className="text-[11px] font-medium text-[color:var(--color-foreground)]/70">
+                    {day.dateLabel}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {!hasAnyPracticeThisWeek && (
+              <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">
+                Your first tiny pause will show up here.
+              </p>
+            )}
+          </BrandCard>
+
+          <BrandCard>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+              Your story so far
+            </p>
+            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+              {storyLine}
+            </p>
+
+            <div
+              ref={storyWrapRef}
+              className="relative mt-4 overflow-x-auto rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 p-2"
+            >
+              {historyModel.dots.length === 0 ? (
+                <p className="px-1 py-6 text-sm text-[color:var(--color-foreground)]/72">
+                  Your first tiny pause will begin your story.
+                </p>
+              ) : (
+                <svg
+                  width={svgWidth}
+                  height={svgHeight}
+                  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                  role="img"
+                  aria-label="Session history dots"
+                >
+                  {historyModel.dots.map((dot) => {
+                    const cx = pad + dot.weekIndex * cell + cell / 2;
+                    const cy = pad + dot.dayIndex * cell + cell / 2;
+                    const style = dot.session
+                      ? moodDotStyle(dot.session.mood_after)
+                      : { fill: "rgba(137, 146, 157, 0.16)", radius: 4.2 };
+
+                    return (
+                      <circle
+                        key={dot.dayKey}
+                        cx={cx}
+                        cy={cy}
+                        r={style.radius}
+                        fill={style.fill}
+                        className={dot.session ? "cursor-pointer" : ""}
+                        onMouseEnter={(event) => {
+                          if (!dot.session || !storyWrapRef.current) return;
+                          const rect = storyWrapRef.current.getBoundingClientRect();
+                          setActiveTooltip({
+                            x: event.clientX - rect.left + 10,
+                            y: event.clientY - rect.top - 10,
+                            dot,
+                          });
+                        }}
+                        onMouseMove={(event) => {
+                          if (!dot.session || !storyWrapRef.current) return;
+                          const rect = storyWrapRef.current.getBoundingClientRect();
+                          setActiveTooltip({
+                            x: event.clientX - rect.left + 10,
+                            y: event.clientY - rect.top - 10,
+                            dot,
+                          });
+                        }}
+                        onMouseLeave={() => setActiveTooltip(null)}
+                        onClick={(event) => {
+                          if (!dot.session || !storyWrapRef.current) return;
+                          const rect = storyWrapRef.current.getBoundingClientRect();
+                          setActiveTooltip({
+                            x: event.clientX - rect.left + 10,
+                            y: event.clientY - rect.top - 10,
+                            dot,
+                          });
+                        }}
+                      />
+                    );
+                  })}
+                </svg>
+              )}
+
+              {activeTooltip?.dot.session && (
+                <div
+                  className="pointer-events-none absolute z-10 w-52 rounded-xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs text-[color:var(--color-foreground)] shadow-[var(--shadow-soft)]"
+                  style={{
+                    left: Math.min(
+                      Math.max(activeTooltip.x, 8),
+                      (storyWrapRef.current?.clientWidth ?? 240) - 220,
+                    ),
+                    top: Math.max(activeTooltip.y - 54, 8),
+                  }}
+                >
+                  <p className="font-medium">
+                    {activeTooltip.dot.date.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <p className="mt-0.5 text-[color:var(--color-foreground)]/78">
+                    {toCategoryLabel(activeTooltip.dot.session)} ·{" "}
+                    {toPromptLabel(activeTooltip.dot.session)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {historyModel.hasOlderHistory && !showFullHistory && (
+              <button
+                type="button"
+                onClick={() => setShowFullHistory(true)}
+                className="mt-3 text-xs text-[color:var(--color-primary)]/78 underline decoration-[color:var(--color-primary)]/35 underline-offset-2 hover:text-[color:var(--color-primary)]"
+              >
+                Show more
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleShareStory}
+              disabled={storyShareLoading || totalMoments === 0}
+              className="mt-3 text-xs text-[color:var(--color-primary)]/82 underline decoration-[color:var(--color-primary)]/45 underline-offset-2 hover:text-[color:var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              {storyShareLoading ? "Preparing story..." : "Share your story"}
+            </button>
+          </BrandCard>
+        </div>
 
         <BrandCard tone="muted">
           <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
@@ -194,6 +582,30 @@ export default function DashboardPage() {
           Sign in as a different grown‑up
         </a>
       </footer>
+      {showStoryModal && storyImageUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-[color:var(--color-surface)] p-4 shadow-[0_22px_55px_rgba(2,6,23,0.45)]">
+            <img
+              src={storyImageUrl}
+              alt="Story share card preview"
+              className="w-full rounded-xl border border-[color:var(--color-border-subtle)]"
+            />
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <BrandButton type="button" onClick={downloadStoryImage} fullWidth>
+                Download image
+              </BrandButton>
+              <BrandButton
+                type="button"
+                variant="secondary"
+                onClick={closeStoryModal}
+                fullWidth
+              >
+                Close
+              </BrandButton>
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
