@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 
 const ageOptions = [
   { value: "9-10", label: "9–10 years" },
@@ -97,91 +98,86 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 via-indigo-50 to-violet-50 px-4">
-        <p className="text-sm text-slate-700">Getting things ready…</p>
-      </div>
+      <PageShell maxWidth="sm">
+        <BrandCard tone="muted">
+          <p className="text-sm text-[color:var(--color-foreground)]/80">
+            Getting things ready…
+          </p>
+        </BrandCard>
+      </PageShell>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 via-indigo-50 to-violet-50 px-4">
-      <main className="mx-auto flex w-full max-w-md flex-col gap-6 py-12">
-        <header className="space-y-2 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
-            PracticeApp
-          </p>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Let&apos;s set up your calm corner
-          </h1>
-          <p className="text-sm text-slate-700">
-            Just a couple of quick questions so we can talk to you in the right
-            way.
-          </p>
-        </header>
+    <PageShell maxWidth="sm">
+      <header className="space-y-2 text-center">
+        <BrandPill>Set up your calm corner</BrandPill>
+        <h1 className="text-2xl font-semibold text-[color:var(--color-primary)]">
+          A couple quick questions.
+        </h1>
+        <p className="text-sm text-[color:var(--color-foreground)]/80">
+          This helps us talk to you in the right way and greet you by name.
+        </p>
+      </header>
 
-        <section className="rounded-3xl bg-white/90 p-6 shadow-lg shadow-sky-100">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2 text-left">
-              <label
-                htmlFor="nickname"
-                className="block text-sm font-medium text-slate-900"
-              >
-                What should we call you?
-              </label>
-              <p className="text-xs text-slate-600">
-                This can be a first name or a nickname. It&apos;s how we&apos;ll
-                greet you on your dashboard.
-              </p>
-              <input
-                id="nickname"
-                type="text"
-                required
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none ring-sky-100 placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
-                placeholder="Sunny, Jordan, Sky..."
-              />
-            </div>
-
-            <div className="space-y-2 text-left">
-              <p className="block text-sm font-medium text-slate-900">
-                How old is the person using PracticeApp?
-              </p>
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {ageOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setAgeBand(option.value)}
-                    className={`rounded-2xl border px-3 py-2 text-xs font-medium transition ${
-                      ageBand === option.value
-                        ? "border-sky-500 bg-sky-50 text-sky-900"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={!nickname || saving}
-              className="flex w-full items-center justify-center rounded-full bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-sky-200 transition hover:bg-sky-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-sky-300"
+      <BrandCard>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2 text-left">
+            <label
+              htmlFor="nickname"
+              className="block text-sm font-medium text-[color:var(--color-primary)]"
             >
-              {saving ? "Saving..." : "Save and go to my dashboard"}
-            </button>
+              What should we call you?
+            </label>
+            <p className="text-xs text-[color:var(--color-foreground)]/75">
+              This can be a first name or a nickname. It&apos;s how we&apos;ll
+              greet you on your dashboard.
+            </p>
+            <input
+              id="nickname"
+              type="text"
+              required
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="mt-2 w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[color:var(--color-accent)] focus:ring-2 focus:ring-[color:var(--color-accent-soft)]"
+              placeholder="Sunny, Jordan, Sky..."
+            />
+          </div>
 
-            {error && (
-              <p className="text-xs text-rose-600" role="alert">
-                {error}
-              </p>
-            )}
-          </form>
-        </section>
-      </main>
-    </div>
+          <div className="space-y-2 text-left">
+            <p className="block text-sm font-medium text-[color:var(--color-primary)]">
+              How old is the person using Practice?
+            </p>
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {ageOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setAgeBand(option.value)}
+                  className={`rounded-2xl border px-3 py-2 text-xs font-medium transition ${
+                    ageBand === option.value
+                      ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-primary)]"
+                      : "border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <BrandButton type="submit" fullWidth disabled={!nickname || saving}>
+            {saving ? "Saving..." : "Save and go to my dashboard"}
+          </BrandButton>
+
+          {error && (
+            <p className="text-xs text-rose-600" role="alert">
+              {error}
+            </p>
+          )}
+        </form>
+      </BrandCard>
+    </PageShell>
   );
 }
 

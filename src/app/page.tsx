@@ -1,82 +1,79 @@
+import { BrandButton, BrandCard, BrandPill, PageShell } from "./ui";
+
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 via-indigo-50 to-violet-50 px-4">
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 py-16">
-        <header className="space-y-4 text-center">
-          <p className="inline-flex items-center rounded-full bg-white/70 px-4 py-1 text-xs font-medium uppercase tracking-wide text-sky-700 shadow-sm">
-            PracticeApp · Tiny mindful moments
-          </p>
-          <h1 className="text-balance text-4xl font-semibold leading-tight text-slate-900 sm:text-5xl">
-            Take a tiny pause,{" "}
-            <span className="text-sky-600">feel a little calmer.</span>
-          </h1>
-          <p className="mx-auto max-w-xl text-balance text-base text-slate-700 sm:text-lg">
-            Simple, kid-friendly prompts that help 9–12 year olds (and their
-            grown‑ups) breathe, notice, and reset in just a minute or two.
-          </p>
-        </header>
+    <PageShell maxWidth="lg">
+      <header className="space-y-4 text-center">
+        <BrandPill>Practice · Tiny mindful moments</BrandPill>
+        <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
+          2–3 minutes.{" "}
+          <span className="text-[color:var(--color-accent)]">
+            Just for you.
+          </span>
+        </h1>
+        <p className="mx-auto max-w-xl text-balance text-base text-[color:var(--color-foreground)]/80 sm:text-lg">
+          No writing. No talking. Just a tiny pause to help your brain and body
+          reset, one gentle moment at a time.
+        </p>
+      </header>
 
-        <section className="flex flex-col gap-4 rounded-3xl bg-white/80 p-6 shadow-lg shadow-sky-100 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-8">
-          <div className="space-y-2 text-sm text-slate-700 sm:text-base">
-            <p className="font-medium text-slate-900">
-              Ready for a mindful moment?
+      <BrandCard>
+        <div className="flex flex-col gap-4 items-stretch sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="space-y-2 text-sm text-[color:var(--color-foreground)]/85 sm:text-base">
+            <p className="font-medium text-[color:var(--color-primary)]">
+              Try today&apos;s practice.
             </p>
             <p>
-              Try a one‑off prompt, or log in to keep a gentle record of your
-              child&apos;s practice over time.
+              Pick a quick prompt, take a tiny pause, and notice how you feel.
+              You can keep track over time, or just visit when you need a
+              breather.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <a
-              href="/session"
-              className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-sky-200 transition hover:bg-sky-700 hover:shadow-lg"
-            >
+            <BrandButton href="/session" variant="primary">
               Start a mindful moment
-            </a>
-            <a
-              href="/login"
-              className="inline-flex items-center justify-center rounded-full border border-sky-200 bg-white px-6 py-3 text-sm font-semibold text-sky-800 shadow-sm transition hover:border-sky-300 hover:bg-sky-50"
-            >
+            </BrandButton>
+            <BrandButton href="/login" variant="secondary">
               Log in to keep track
-            </a>
+            </BrandButton>
           </div>
-        </section>
+        </div>
+      </BrandCard>
 
-        <section className="grid gap-4 text-sm text-slate-700 sm:grid-cols-3">
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
-              For kids 9–12
-            </p>
-            <p className="mt-1">
-              Short, concrete prompts written for upper‑elementary and middle
-              schoolers. No jargon, no lectures.
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">
-              One tiny step
-            </p>
-            <p className="mt-1">
-              Each moment has just one simple action—like noticing colors or
-              sounds—so it feels doable even on busy days.
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              Gentle tracking
-            </p>
-            <p className="mt-1">
-              When you create a profile, PracticeApp quietly tracks moments over
-              time—no streak shaming, just encouragement.
-            </p>
-          </div>
-        </section>
+      <section className="grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
+        <BrandCard tone="muted">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+            For kids 9–12 (and their grown‑ups)
+          </p>
+          <p className="mt-1">
+            Short, concrete prompts written in plain, kind language. No
+            lectures, no pressure—just small steps that feel doable.
+          </p>
+        </BrandCard>
+        <BrandCard tone="muted">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+            One tiny step at a time
+          </p>
+          <p className="mt-1">
+            Each practice has a single simple action—like noticing colors or
+            taking three slow breaths—so it works even on busy days.
+          </p>
+        </BrandCard>
+        <BrandCard tone="muted">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+            Gentle, no-streak tracking
+          </p>
+          <p className="mt-1">
+            When you log in, Practice keeps a soft record of your moments. No
+            streaks, no shaming—just a quiet way to see your tiny wins.
+          </p>
+        </BrandCard>
+      </section>
 
-        <footer className="mt-4 text-center text-xs text-slate-500">
-          PracticeApp is not medical advice. It&apos;s a small, kind tool to
-          help kids and adults pause and notice how they feel.
-        </footer>
-      </main>
-    </div>
+      <footer className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
+        Practice is not medical advice. It&apos;s a small, kind tool to help
+        kids and adults pause and notice how they feel.
+      </footer>
+    </PageShell>
   );
 }

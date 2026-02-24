@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -50,82 +51,82 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 via-indigo-50 to-violet-50 px-4">
-      <main className="mx-auto flex w-full max-w-md flex-col gap-6 py-12">
-        <header className="space-y-2 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
-            PracticeApp
-          </p>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Log in to keep track
-          </h1>
-          <p className="text-sm text-slate-700">
-            We use a simple sign‑in link. No passwords to remember, ever.
-          </p>
-        </header>
+    <PageShell maxWidth="sm">
+      <header className="space-y-2 text-center">
+        <BrandPill>Log in to keep track</BrandPill>
+        <h1 className="text-2xl font-semibold text-[color:var(--color-primary)]">
+          We&apos;ll email you a link.
+        </h1>
+        <p className="text-sm text-[color:var(--color-foreground)]/80">
+          No passwords to remember, ever. Just a simple, secure sign‑in link for
+          grown‑ups.
+        </p>
+      </header>
 
-        <section className="rounded-3xl bg-white/90 p-6 shadow-lg shadow-sky-100">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2 text-left">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-slate-900"
-              >
-                Grown‑up&apos;s email
-              </label>
-              <p className="text-xs text-slate-600">
-                We&apos;ll send a secure link to this address so you can manage
-                your child&apos;s practice.
-              </p>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none ring-sky-100 placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <label className="flex items-start gap-2 text-xs text-slate-700">
-              <input
-                type="checkbox"
-                checked={isParent}
-                onChange={(e) => setIsParent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-400"
-              />
-              <span>
-                I&apos;m a parent, caregiver, or teacher and I agree to help my
-                child use PracticeApp kindly and safely.
-              </span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={!email || !isParent || status === "sending"}
-              className="flex w-full items-center justify-center rounded-full bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-sky-200 transition hover:bg-sky-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-sky-300"
+      <BrandCard>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2 text-left">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-[color:var(--color-primary)]"
             >
-              {status === "sending" ? "Sending link..." : "Send me a sign‑in link"}
-            </button>
-          </form>
-
-          {message && (
-            <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-3 text-xs text-sky-900">
-              {message}
+              Grown‑up&apos;s email
+            </label>
+            <p className="text-xs text-[color:var(--color-foreground)]/75">
+              We&apos;ll send a sign‑in link to this address so you can gently
+              keep track of practice.
             </p>
-          )}
-        </section>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-2 w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[color:var(--color-accent)] focus:ring-2 focus:ring-[color:var(--color-accent-soft)]"
+              placeholder="you@example.com"
+            />
+          </div>
 
-        <footer className="mt-2 text-center text-xs text-slate-500">
-          Just exploring?{" "}
-          <a href="/session" className="underline-offset-2 hover:underline">
-            Try a mindful moment without logging in
-          </a>
-          .
-        </footer>
-      </main>
-    </div>
+          <label className="flex items-start gap-2 text-xs text-[color:var(--color-foreground)]/80">
+            <input
+              type="checkbox"
+              checked={isParent}
+              onChange={(e) => setIsParent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[color:var(--color-border-subtle)] text-[color:var(--color-accent)] focus:ring-[color:var(--color-accent)]"
+            />
+            <span>
+              I&apos;m a parent, caregiver, or teacher and I agree to help my
+              child use Practice kindly and safely.
+            </span>
+          </label>
+
+          <BrandButton
+            type="submit"
+            fullWidth
+            disabled={!email || !isParent || status === "sending"}
+          >
+            {status === "sending" ? "Sending link..." : "Send me a sign‑in link"}
+          </BrandButton>
+        </form>
+
+        {message && (
+          <p className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] px-4 py-3 text-xs text-[color:var(--color-primary)]">
+            {message}
+          </p>
+        )}
+      </BrandCard>
+
+      <footer className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/70">
+        Just exploring?{" "}
+        <a
+          href="/session"
+          className="font-medium text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+        >
+          Try a mindful moment without logging in
+        </a>
+        .
+      </footer>
+    </PageShell>
   );
 }
 

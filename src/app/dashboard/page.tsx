@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 
 type DayEntry = {
   dateLabel: string;
@@ -86,90 +87,91 @@ export default function DashboardPage() {
   const totalPractices = week.filter((d) => d.practiced).length;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 via-indigo-50 to-violet-50 px-4">
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 py-12">
-        <header className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
-            PracticeApp
-          </p>
-          <h1 className="text-3xl font-semibold text-slate-900">
-            Hi, {nickname}.
-          </h1>
-          <p className="text-sm text-slate-700">
-            This is your calm corner. You can take a tiny mindful moment any
-            time you like.
-          </p>
-        </header>
+    <PageShell maxWidth="lg">
+      <header className="space-y-2">
+        <BrandPill>Your calm corner</BrandPill>
+        <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
+          Hi, {nickname}.
+        </h1>
+        <p className="text-sm text-[color:var(--color-foreground)]/80">
+          You can take a tiny mindful moment any time you like. We&apos;ll keep
+          gentle track for you.
+        </p>
+      </header>
 
-        <section className="flex flex-col gap-4 rounded-3xl bg-white/90 p-6 shadow-lg shadow-sky-100 sm:flex-row sm:items-center sm:justify-between">
+      <BrandCard tone="accent">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-[color:var(--color-primary)]">
               Ready for today&apos;s moment?
             </p>
-            <p className="mt-1 text-sm text-slate-700">
+            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/85">
               It only takes a minute or two. After, you can see how many tiny
               pauses you&apos;ve taken this week.
             </p>
           </div>
-          <a
-            href="/session"
-            className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-sky-200 transition hover:bg-sky-700 hover:shadow-lg"
-          >
+          <BrandButton href="/session" variant="primary">
             Take a mindful moment
-          </a>
-        </section>
+          </BrandButton>
+        </div>
+      </BrandCard>
 
-        <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
-          <div className="space-y-4 rounded-3xl bg-white/90 p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">
-              This week
-            </p>
-            <p className="text-sm text-slate-700">
-              Every dot is a day. Filled in means you took a tiny pause.
-            </p>
-            <div className="flex items-center justify-between gap-2">
-              {week.map((day) => (
-                <div key={day.dateLabel} className="flex flex-col items-center">
-                  <span
-                    className={`mb-1 h-3 w-3 rounded-full ${
-                      day.practiced
-                        ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.15)]"
-                        : "bg-slate-200"
-                    }`}
-                  />
-                  <span className="text-[11px] font-medium text-slate-600">
-                    {day.dateLabel}
-                  </span>
-                </div>
-              ))}
-            </div>
+      <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
+        <BrandCard>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+            This week
+          </p>
+          <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+            Every dot is a day. Filled in means you took a tiny pause.
+          </p>
+          <div className="mt-4 flex items-center justify-between gap-2">
+            {week.map((day) => (
+              <div key={day.dateLabel} className="flex flex-col items-center">
+                <span
+                  className={`mb-1 h-3 w-3 rounded-full ${
+                    day.practiced
+                      ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.2)]"
+                      : "bg-[color:var(--color-surface-soft)]"
+                  }`}
+                />
+                <span className="text-[11px] font-medium text-[color:var(--color-foreground)]/70">
+                  {day.dateLabel}
+                </span>
+              </div>
+            ))}
           </div>
+        </BrandCard>
 
-          <div className="space-y-4 rounded-3xl bg-white/90 p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              Tiny wins
-            </p>
-            <p className="text-3xl font-semibold text-slate-900">
-              {totalPractices}
-            </p>
-            <p className="text-sm text-slate-700">
-              {totalPractices === 0
-                ? "Everyone starts somewhere. Your first tiny moment is waiting."
-                : "That’s how many mindful moments you’ve taken in the last few days. Each one is a small, real win."}
-            </p>
-          </div>
-        </section>
+        <BrandCard tone="muted">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
+            Tiny wins
+          </p>
+          <p className="mt-2 text-3xl font-semibold text-[color:var(--color-primary)]">
+            {totalPractices}
+          </p>
+          <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+            {totalPractices === 0
+              ? "Everyone starts somewhere. Your first tiny moment is waiting."
+              : "That’s how many mindful moments you’ve taken in the last few days. Each one is a small, real win."}
+          </p>
+        </BrandCard>
+      </section>
 
-        <footer className="mt-2 flex items-center justify-between text-xs text-slate-500">
-          <a href="/" className="underline-offset-2 hover:underline">
-            Back to home
-          </a>
-          <a href="/login" className="underline-offset-2 hover:underline">
-            Sign in as a different grown‑up
-          </a>
-        </footer>
-      </main>
-    </div>
+      <footer className="mt-2 flex items-center justify-between text-xs text-[color:var(--color-foreground)]/70">
+        <a
+          href="/"
+          className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80"
+        >
+          Back to home
+        </a>
+        <a
+          href="/login"
+          className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80"
+        >
+          Sign in as a different grown‑up
+        </a>
+      </footer>
+    </PageShell>
   );
 }
 
