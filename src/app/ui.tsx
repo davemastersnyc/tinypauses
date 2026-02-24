@@ -15,9 +15,9 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
         : "max-w-3xl";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[color:var(--color-background)] px-4">
+    <div className="flex min-h-screen justify-center bg-[color:var(--color-background)] px-4 py-6 sm:py-8">
       <main
-        className={`mx-auto flex w-full flex-col gap-8 py-12 ${maxWidthClass}`}
+        className={`mx-auto flex w-full flex-col gap-6 ${maxWidthClass}`}
       >
         <AppNav />
         {children}
