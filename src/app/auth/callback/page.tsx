@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandCard, BrandPill, PageShell } from "../../ui";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("Finishing sign-in...");
@@ -64,5 +64,26 @@ export default function AuthCallbackPage() {
         <p className="text-sm text-[color:var(--color-primary)]">{status}</p>
       </BrandCard>
     </PageShell>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageShell maxWidth="sm">
+          <header className="text-center">
+            <BrandPill>Signing you in</BrandPill>
+          </header>
+          <BrandCard>
+            <p className="text-sm text-[color:var(--color-primary)]">
+              Finishing sign-in...
+            </p>
+          </BrandCard>
+        </PageShell>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
