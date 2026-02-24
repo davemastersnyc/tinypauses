@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [nickname, setNickname] = useState("Friend");
   const [week, setWeek] = useState<DayEntry[]>(() => buildWeekSkeleton());
+  const [totalMoments, setTotalMoments] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -55,6 +56,13 @@ export default function DashboardPage() {
         router.replace("/onboarding");
         return;
       }
+
+      const { count } = await supabase
+        .from("sessions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      setTotalMoments(count ?? 0);
 
       const today = new Date();
       const sevenDaysAgo = new Date();
@@ -84,7 +92,6 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const totalPractices = week.filter((d) => d.practiced).length;
   const hasAnyPracticeThisWeek = week.some((d) => d.practiced);
   const formattedNickname = nickname
     .trim()
@@ -160,15 +167,15 @@ export default function DashboardPage() {
             Your tiny wins so far
           </p>
           <p className="mt-2 text-4xl font-semibold text-[color:var(--color-accent)]">
-            {totalPractices}
+            {totalMoments}
             <span className="ml-2 text-base font-medium text-[color:var(--color-primary)]/80">
-              {totalPractices === 1 ? "moment" : "moments"}
+              {totalMoments === 1 ? "moment" : "moments"}
             </span>
           </p>
           <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
-            {totalPractices === 0
+            {totalMoments === 0
               ? "Everyone starts somewhere. Your first tiny moment is waiting."
-              : "That’s how many mindful moments you’ve taken in the last few days. Each one is a small, real win."}
+              : "That’s how many mindful moments you’ve taken overall. Each one is a small, real win."}
           </p>
         </BrandCard>
       </section>
