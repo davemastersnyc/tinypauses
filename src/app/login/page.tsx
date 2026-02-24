@@ -22,7 +22,7 @@ export default function LoginPage() {
           ? `${window.location.origin}/dashboard`
           : undefined;
 
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase!.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: redirectTo,
