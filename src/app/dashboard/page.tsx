@@ -99,7 +99,7 @@ export default function DashboardPage() {
         </p>
       </header>
 
-      <BrandCard tone="accent">
+      <BrandCard>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-[color:var(--color-primary)]">

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AppNav } from "./app-nav";
 
 type PageShellProps = {
   children: ReactNode;
@@ -18,6 +19,7 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
       <main
         className={`mx-auto flex w-full flex-col gap-8 py-12 ${maxWidthClass}`}
       >
+        <AppNav />
         {children}
       </main>
     </div>
@@ -44,13 +46,13 @@ export function BrandButton({
   onClick,
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center rounded-[var(--radius-pill)] px-6 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]";
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--radius-pill)] px-6 py-3 text-sm font-semibold leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]";
 
   const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
     primary:
       "bg-[color:var(--color-accent)] text-slate-900 shadow-[var(--shadow-soft)] hover:bg-orange-500 disabled:bg-orange-300",
     secondary:
-      "border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] text-[color:var(--color-primary)] hover:bg-[color:var(--color-accent-soft)] disabled:bg-[color:var(--color-surface-soft)]",
+      "border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] disabled:bg-[color:var(--color-surface-soft)]",
     ghost:
       "bg-transparent text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]",
   };
@@ -87,7 +89,7 @@ type PillProps = {
 
 export function BrandPill({ children }: PillProps) {
   return (
-    <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium uppercase tracking-wide text-[color:var(--color-accent)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
+    <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium uppercase tracking-wide text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
       {children}
     </p>
   );

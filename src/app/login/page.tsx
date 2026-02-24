@@ -1,16 +1,32 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [isParent, setIsParent] = useState(true);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkExistingSession() {
+      if (!supabase) return;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        router.replace("/dashboard");
+      }
+    }
+
+    checkExistingSession();
+  }, [router]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -20,7 +36,7 @@ export default function LoginPage() {
     try {
       const redirectTo =
         typeof window !== "undefined"
-          ? `${window.location.origin}/dashboard`
+          ? `${window.location.origin}/auth/callback`
           : undefined;
 
       const { error } = await supabase!.auth.signInWithOtp({
@@ -110,7 +126,7 @@ export default function LoginPage() {
         </form>
 
         {message && (
-          <p className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] px-4 py-3 text-xs text-[color:var(--color-primary)]">
+          <p className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] px-4 py-3 text-xs text-[color:var(--color-ink-on-accent-soft)]">
             {message}
           </p>
         )}

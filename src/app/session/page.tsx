@@ -170,7 +170,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Letting go of stuff
             </button>
@@ -182,7 +182,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Reflecting on today
             </button>
@@ -194,7 +194,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium text-[color:var(--color-foreground)]/85 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Kindness
             </button>
@@ -261,7 +261,7 @@ export default function SessionPage() {
                 className={`flex flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium transition ${
                   mood === option.value
                     ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
-                    : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]"
+                    : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
                 }`}
               >
                 <span className="text-lg">{option.emoji}</span>
@@ -287,10 +287,10 @@ export default function SessionPage() {
           <BrandCard tone="accent">
           <div className="space-y-4 text-center">
             <p className="text-4xl">🌱</p>
-            <p className="text-base font-medium text-[color:var(--color-primary)]">
+            <p className="text-base font-medium text-[color:var(--color-ink-on-accent-soft)]">
               Taking even one tiny pause like this is a big deal.
             </p>
-            <p className="text-sm text-[color:var(--color-foreground)]/85">
+            <p className="text-sm text-[color:var(--color-ink-on-accent-soft)]/90">
               You can come back for another moment any time you like. For now,
               notice one more thing around you that makes you feel okay or safe.
             </p>
