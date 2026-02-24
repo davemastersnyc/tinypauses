@@ -229,7 +229,7 @@ export default function SessionPage() {
               </div>
             </>
           )}
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <div className="mt-4 flex flex-col gap-3">
             <BrandButton
               type="button"
               onClick={() => setStep("mood")}
