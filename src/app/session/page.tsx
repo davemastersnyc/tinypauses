@@ -321,28 +321,32 @@ export default function SessionPage() {
                 <p className="font-medium">Your tiny step</p>
                 <p className="mt-1">{prompt.step}</p>
               </div>
+              <div className="mt-3">
+                <BrandButton
+                  type="button"
+                  onClick={() => setStep("mood")}
+                  fullWidth
+                >
+                  I&apos;m ready
+                </BrandButton>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  onClick={() => goToStep("choose")}
+                  className="px-1 py-1 text-[color:var(--color-foreground)]/65 hover:text-[color:var(--color-primary)]"
+                >
+                  Back
+                </button>
+                <a
+                  href="/"
+                  className="px-1 py-1 text-[color:var(--color-foreground)]/65 hover:text-[color:var(--color-primary)]"
+                >
+                  Maybe later
+                </a>
+              </div>
             </>
           )}
-          <div className="mt-4 flex flex-col gap-3">
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={() => goToStep("choose")}
-              fullWidth
-            >
-              Back
-            </BrandButton>
-            <BrandButton
-              type="button"
-              onClick={() => setStep("mood")}
-              fullWidth
-            >
-              I&apos;m ready
-            </BrandButton>
-            <BrandButton href="/" variant="secondary" fullWidth>
-              Maybe later
-            </BrandButton>
-          </div>
           </BrandCard>
         )}
 
@@ -406,21 +410,22 @@ export default function SessionPage() {
               You can come back for another moment any time you like. For now,
               notice one more thing around you that makes you feel okay or safe.
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <BrandButton type="button" onClick={startAnotherRound}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <BrandButton type="button" onClick={startAnotherRound} fullWidth>
                 Try another round
               </BrandButton>
               <BrandButton
                 type="button"
                 variant="secondary"
                 onClick={saveCurrentPrompt}
+                fullWidth
               >
                 {isPromptSaved ? "Saved to favorites" : "Save this prompt"}
               </BrandButton>
-              <BrandButton href="/dashboard">
+              <BrandButton href="/dashboard" fullWidth>
                 Go to my dashboard
               </BrandButton>
-              <BrandButton href="/" variant="secondary">
+              <BrandButton href="/" variant="secondary" fullWidth>
                 Back to home
               </BrandButton>
             </div>
