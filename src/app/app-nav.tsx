@@ -18,12 +18,13 @@ export function AppNav() {
   useEffect(() => {
     let isMounted = true;
 
-    if (!supabase) return;
+    const client = supabase;
+    if (!client) return;
 
     async function loadUser() {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await client.auth.getUser();
       if (!isMounted) return;
       setAuthState({
         email: user?.email ?? null,
@@ -33,7 +34,7 @@ export function AppNav() {
 
     loadUser();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
+    const { data: listener } = client.auth.onAuthStateChange(
       (_event, session) => {
         if (!isMounted) return;
         setAuthState({
