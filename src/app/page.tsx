@@ -32,19 +32,19 @@ function StepIcon() {
       fill="none"
     >
       <path
-        d="M7 22c1.4-4.9 4.6-8.7 10-10.4"
+        d="M6.5 16h16"
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
       />
       <path
-        d="M17 11l6.2.6-3.7 5"
+        d="M18.5 10.5 25 16l-6.5 5.5"
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <ellipse cx="10.5" cy="24" rx="3.7" ry="2.3" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="9.5" cy="16" r="3.2" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }
