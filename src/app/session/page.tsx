@@ -3,10 +3,35 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-const examplePrompt = {
-  title: "Color Hunt",
-  body: "Look around the room and quietly name three things you can see that are blue or green.",
-  step: "Take three slow breaths. With each breath, gently focus your eyes on one of the colors you found.",
+type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
+
+type Prompt = {
+  title: string;
+  body: string;
+  step: string;
+};
+
+const fallbackPrompts: Record<PromptKind, Prompt> = {
+  pause: {
+    title: "Color Hunt",
+    body: "Look around the room and quietly name three things you can see that are blue or green.",
+    step: "Take three slow breaths. With each breath, gently focus your eyes on one of the colors you found.",
+  },
+  "letting-go": {
+    title: "Heavy Backpack",
+    body: "Imagine you’re wearing a backpack that’s holding your worries from today.",
+    step: "Take three slow breaths. With each breath out, picture taking one worry out of the backpack and setting it down.",
+  },
+  reflect: {
+    title: "Tiny Good Thing",
+    body: "Think back over today. What is one tiny good thing that happened, even if it was very small?",
+    step: "Close your eyes for a moment and replay that tiny good thing in your mind, like a short video.",
+  },
+  kindness: {
+    title: "Quiet Kindness",
+    body: "Think of someone you know—a friend, classmate, or grown‑up.",
+    step: "Take three slow breaths. With each breath out, quietly wish them something kind, like “I hope you feel calm” or “I hope you laugh today.”",
+  },
 };
 
 const moodOptions = [
@@ -18,9 +43,14 @@ const moodOptions = [
 ];
 
 export default function SessionPage() {
-  const [step, setStep] = useState<"prompt" | "mood" | "done">("prompt");
+  const [step, setStep] = useState<"choose" | "prompt" | "mood" | "done">(
+    "choose",
+  );
   const [mood, setMood] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [kind, setKind] = useState<PromptKind | null>(null);
+  const [prompt, setPrompt] = useState<Prompt | null>(null);
+  const [loadingPrompt, setLoadingPrompt] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -30,6 +60,42 @@ export default function SessionPage() {
     }
     loadUser();
   }, []);
+
+  async function loadPromptForKind(selectedKind: PromptKind) {
+    setLoadingPrompt(true);
+    setPrompt(null);
+
+    try {
+      if (supabase) {
+        const { data, error } = await supabase
+          .from("prompts")
+          .select("title, body, step")
+          .eq("kind", selectedKind)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (!error && data && data.length > 0) {
+          const random =
+            data[Math.floor(Math.random() * Math.min(data.length, 20))];
+          setPrompt({
+            title: random.title,
+            body: random.body,
+            step: random.step,
+          });
+          return;
+        }
+      }
+
+      // Fallback to built‑in prompt if Supabase is not set up or empty.
+      setPrompt(fallbackPrompts[selectedKind]);
+    } catch (err) {
+      console.error("Error loading prompt", err);
+      setPrompt(fallbackPrompts[selectedKind]);
+    } finally {
+      setLoadingPrompt(false);
+    }
+  }
 
   async function recordSession(selectedMood: number | null) {
     if (!supabase) return;
@@ -54,24 +120,95 @@ export default function SessionPage() {
             Mindful moment
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-900">
+            {step === "choose" && "What do you want help with today?"}
             {step === "prompt" && "Try this tiny pause"}
             {step === "mood" && "How do you feel now?"}
             {step === "done" && "Nice work taking a pause"}
           </h1>
         </header>
 
+        {step === "choose" && (
+          <section className="space-y-6 rounded-3xl bg-white/90 p-6 shadow-lg shadow-sky-100">
+            <p className="text-sm text-slate-700">
+              Pick the kind of moment that would feel most helpful right now.
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <button
+                type="button"
+                onClick={async () => {
+                  const selected: PromptKind = "pause";
+                  setKind(selected);
+                  await loadPromptForKind(selected);
+                  setStep("prompt");
+                }}
+                className="rounded-2xl border border-slate-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-900 transition hover:border-sky-400 hover:bg-sky-100"
+              >
+                Just a pause
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const selected: PromptKind = "letting-go";
+                  setKind(selected);
+                  await loadPromptForKind(selected);
+                  setStep("prompt");
+                }}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 transition hover:border-sky-400 hover:bg-sky-50"
+              >
+                Letting go of stuff
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const selected: PromptKind = "reflect";
+                  setKind(selected);
+                  await loadPromptForKind(selected);
+                  setStep("prompt");
+                }}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 transition hover:border-sky-400 hover:bg-sky-50"
+              >
+                Reflecting on today
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const selected: PromptKind = "kindness";
+                  setKind(selected);
+                  await loadPromptForKind(selected);
+                  setStep("prompt");
+                }}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 transition hover:border-sky-400 hover:bg-sky-50"
+              >
+                Kindness
+              </button>
+            </div>
+            <a
+              href="/"
+              className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Maybe later
+            </a>
+          </section>
+        )}
+
         {step === "prompt" && (
           <section className="space-y-6 rounded-3xl bg-white/90 p-6 shadow-lg shadow-sky-100">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-slate-900">
-                {examplePrompt.title}
-              </h2>
-              <p className="text-sm text-slate-700">{examplePrompt.body}</p>
-            </div>
-            <div className="rounded-2xl bg-sky-50 p-4 text-sm text-sky-900">
-              <p className="font-medium">Your tiny step</p>
-              <p className="mt-1">{examplePrompt.step}</p>
-            </div>
+            {loadingPrompt || !prompt || !kind ? (
+              <p className="text-sm text-slate-700">Finding a prompt…</p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {prompt.title}
+                  </h2>
+                  <p className="text-sm text-slate-700">{prompt.body}</p>
+                </div>
+                <div className="rounded-2xl bg-sky-50 p-4 text-sm text-sky-900">
+                  <p className="font-medium">Your tiny step</p>
+                  <p className="mt-1">{prompt.step}</p>
+                </div>
+              </>
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
               <button
                 type="button"
