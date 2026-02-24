@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 type AuthState = {
-  email: string | null;
+  label: string | null;
   signedIn: boolean;
 };
 
 export function AppNav() {
   const [authState, setAuthState] = useState<AuthState>({
-    email: null,
+    label: null,
     signedIn: false,
   });
 
@@ -21,13 +21,26 @@ export function AppNav() {
     if (!supabase) return;
     const client = supabase;
 
+    async function getDisplayLabel(user: { id: string; email?: string | null }) {
+      const { data: profile } = await client
+        .from("profiles")
+        .select("nickname")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.nickname) return profile.nickname as string;
+      return user.email ?? "Signed in";
+    }
+
     async function loadUser() {
       const {
         data: { user },
       } = await client.auth.getUser();
       if (!isMounted) return;
+
+      const label = user ? await getDisplayLabel(user) : null;
       setAuthState({
-        email: user?.email ?? null,
+        label,
         signedIn: Boolean(user),
       });
     }
@@ -36,11 +49,17 @@ export function AppNav() {
 
     const { data: listener } = client.auth.onAuthStateChange(
       (_event, session) => {
-        if (!isMounted) return;
-        setAuthState({
-          email: session?.user?.email ?? null,
-          signedIn: Boolean(session?.user),
-        });
+        async function syncSessionState() {
+          if (!isMounted) return;
+          const user = session?.user ?? null;
+          const label = user ? await getDisplayLabel(user) : null;
+          setAuthState({
+            label,
+            signedIn: Boolean(user),
+          });
+        }
+
+        syncSessionState();
       },
     );
 
@@ -53,62 +72,64 @@ export function AppNav() {
   async function handleSignOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
-    setAuthState({ email: null, signedIn: false });
+    setAuthState({ label: null, signedIn: false });
     window.location.href = "/";
   }
 
   return (
-    <nav className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)]/90 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-primary)]/95">
-        <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--color-accent)]" />
-        <Link href="/" className="hover:text-[color:var(--color-accent)]">
-          Practice
-        </Link>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-xs sm:justify-end">
-        <Link
-          href="/"
-          className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
-        >
-          Home
-        </Link>
-        <Link
-          href="/session"
-          className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
-        >
-          Session
-        </Link>
-        <Link
-          href="/dashboard"
-          className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
-        >
-          Dashboard
-        </Link>
-        {authState.signedIn ? (
-          <>
-            <span
-              title={authState.email ?? undefined}
-              className="max-w-[18rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)]"
-            >
-              {authState.email ? `Signed in: ${authState.email}` : "Signed in"}
-            </span>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
-            >
-              Sign out
-            </button>
-          </>
-        ) : (
-          <Link
-            href="/login"
-            className="rounded-full bg-[color:var(--color-accent)] px-3 py-1.5 font-semibold text-slate-900 hover:bg-orange-500"
-          >
-            Log in
+    <nav className="relative left-1/2 w-screen -translate-x-1/2 border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)]/85">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-primary)]/95">
+          <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--color-accent)]" />
+          <Link href="/" className="hover:text-[color:var(--color-accent)]">
+            Practice
           </Link>
-        )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs sm:justify-end">
+          <Link
+            href="/"
+            className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
+          >
+            Home
+          </Link>
+          <Link
+            href="/session"
+            className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
+          >
+            Session
+          </Link>
+          <Link
+            href="/dashboard"
+            className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
+          >
+            Dashboard
+          </Link>
+          {authState.signedIn ? (
+            <>
+              <span
+                title={authState.label ?? undefined}
+                className="max-w-[16rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)]"
+              >
+                {authState.label ? `Signed in: ${authState.label}` : "Signed in"}
+              </span>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-full bg-[color:var(--color-accent)] px-3 py-1.5 font-semibold text-slate-900 hover:bg-orange-500"
+            >
+              Log in
+            </Link>
+          )}
+        </div>
       </div>
     </nav>
   );

@@ -21,6 +21,9 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
       >
         <AppNav />
         {children}
+        <footer className="pt-2 text-center text-xs text-[color:var(--color-foreground)]/55">
+          Quiet Branches Labs 2026
+        </footer>
       </main>
     </div>
   );

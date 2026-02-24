@@ -199,9 +199,11 @@ export default function SessionPage() {
               Kindness
             </button>
           </div>
-          <BrandButton href="/" variant="secondary" fullWidth>
-            Maybe later
-          </BrandButton>
+          <div className="mt-3">
+            <BrandButton href="/" variant="secondary" fullWidth>
+              Maybe later
+            </BrandButton>
+          </div>
           </BrandCard>
         )}
 
