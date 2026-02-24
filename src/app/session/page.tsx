@@ -7,6 +7,7 @@ import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
 
 type Prompt = {
+  id: string;
   title: string;
   body: string;
   step: string;
@@ -14,21 +15,25 @@ type Prompt = {
 
 const fallbackPrompts: Record<PromptKind, Prompt> = {
   pause: {
+    id: "fallback-pause-color-hunt",
     title: "Color Hunt",
     body: "Look around the room and quietly name three things you can see that are blue or green.",
     step: "Take three slow breaths. With each breath, gently focus your eyes on one of the colors you found.",
   },
   "letting-go": {
+    id: "fallback-letting-go-heavy-backpack",
     title: "Heavy Backpack",
     body: "Imagine you’re wearing a backpack that’s holding your worries from today.",
     step: "Take three slow breaths. With each breath out, picture taking one worry out of the backpack and setting it down.",
   },
   reflect: {
+    id: "fallback-reflect-tiny-good-thing",
     title: "Tiny Good Thing",
     body: "Think back over today. What is one tiny good thing that happened, even if it was very small?",
     step: "Close your eyes for a moment and replay that tiny good thing in your mind, like a short video.",
   },
   kindness: {
+    id: "fallback-kindness-quiet-kindness",
     title: "Quiet Kindness",
     body: "Think of someone you know—a friend, classmate, or grown‑up.",
     step: "Take three slow breaths. With each breath out, quietly wish them something kind, like “I hope you feel calm” or “I hope you laugh today.”",
@@ -43,6 +48,23 @@ const moodOptions = [
   { value: 5, label: "Really good", emoji: "😄" },
 ];
 
+const stepOrder = ["choose", "prompt", "mood", "done"] as const;
+const stepLabels: Record<(typeof stepOrder)[number], string> = {
+  choose: "Choose",
+  prompt: "Prompt",
+  mood: "Mood",
+  done: "Done",
+};
+
+type FavoritePrompt = {
+  id: string;
+  kind: PromptKind | null;
+  title: string;
+  body: string;
+  step: string;
+  savedAt: string;
+};
+
 export default function SessionPage() {
   const [step, setStep] = useState<"choose" | "prompt" | "mood" | "done">(
     "choose",
@@ -52,6 +74,7 @@ export default function SessionPage() {
   const [kind, setKind] = useState<PromptKind | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [loadingPrompt, setLoadingPrompt] = useState(false);
+  const [isPromptSaved, setIsPromptSaved] = useState(false);
 
   const accentByStep: Record<
     "choose" | "prompt" | "mood" | "done",
@@ -80,7 +103,7 @@ export default function SessionPage() {
       if (supabase) {
         const { data, error } = await supabase
           .from("prompts")
-          .select("title, body, step")
+          .select("id, title, body, step")
           .eq("kind", selectedKind)
           .eq("is_active", true)
           .order("created_at", { ascending: false })
@@ -90,19 +113,23 @@ export default function SessionPage() {
           const random =
             data[Math.floor(Math.random() * Math.min(data.length, 20))];
           setPrompt({
+            id: random.id,
             title: random.title,
             body: random.body,
             step: random.step,
           });
+          setIsPromptSaved(false);
           return;
         }
       }
 
       // Fallback to built‑in prompt if Supabase is not set up or empty.
       setPrompt(fallbackPrompts[selectedKind]);
+      setIsPromptSaved(false);
     } catch (err) {
       console.error("Error loading prompt", err);
       setPrompt(fallbackPrompts[selectedKind]);
+      setIsPromptSaved(false);
     } finally {
       setLoadingPrompt(false);
     }
@@ -120,6 +147,52 @@ export default function SessionPage() {
       });
     } catch (error) {
       console.error("Error recording session", error);
+    }
+  }
+
+  function goToStep(target: "choose" | "prompt" | "mood" | "done") {
+    setStep(target);
+  }
+
+  function startAnotherRound() {
+    setMood(null);
+    setKind(null);
+    setPrompt(null);
+    setLoadingPrompt(false);
+    setIsPromptSaved(false);
+    setStep("choose");
+  }
+
+  function saveCurrentPrompt() {
+    if (!prompt) return;
+
+    try {
+      const current: FavoritePrompt[] = JSON.parse(
+        window.localStorage.getItem("practice.favoritePrompts") ?? "[]",
+      ) as FavoritePrompt[];
+
+      const exists = current.some((p) => p.id === prompt.id);
+      if (exists) {
+        setIsPromptSaved(true);
+        return;
+      }
+
+      const next: FavoritePrompt[] = [
+        {
+          id: prompt.id,
+          kind,
+          title: prompt.title,
+          body: prompt.body,
+          step: prompt.step,
+          savedAt: new Date().toISOString(),
+        },
+        ...current,
+      ].slice(0, 100);
+
+      window.localStorage.setItem("practice.favoritePrompts", JSON.stringify(next));
+      setIsPromptSaved(true);
+    } catch (error) {
+      console.error("Could not save favorite prompt", error);
     }
   }
 
@@ -142,6 +215,27 @@ export default function SessionPage() {
             {step === "done" && "Nice work taking a pause"}
           </h1>
           <div className="mx-auto h-1 w-16 rounded-full bg-[color:var(--color-accent)]" />
+          <div className="mx-auto mt-3 flex max-w-sm items-center justify-between gap-2">
+            {stepOrder.map((s, idx) => {
+              const activeIndex = stepOrder.indexOf(step);
+              const isComplete = idx <= activeIndex;
+
+              return (
+                <div key={s} className="flex flex-1 flex-col items-center gap-1">
+                  <span
+                    className={`h-2 w-full rounded-full ${
+                      isComplete
+                        ? "bg-[color:var(--color-accent)]"
+                        : "bg-[color:var(--color-surface-soft)]"
+                    }`}
+                  />
+                  <span className="text-[10px] uppercase tracking-wide text-[color:var(--color-foreground)]/60">
+                    {stepLabels[s]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </header>
 
         {step === "choose" && (
@@ -232,6 +326,14 @@ export default function SessionPage() {
           <div className="mt-4 flex flex-col gap-3">
             <BrandButton
               type="button"
+              variant="secondary"
+              onClick={() => goToStep("choose")}
+              fullWidth
+            >
+              Back
+            </BrandButton>
+            <BrandButton
+              type="button"
               onClick={() => setStep("mood")}
               fullWidth
             >
@@ -275,6 +377,14 @@ export default function SessionPage() {
             type="button"
             variant="secondary"
             fullWidth
+            onClick={() => goToStep("prompt")}
+          >
+            Back
+          </BrandButton>
+          <BrandButton
+            type="button"
+            variant="secondary"
+            fullWidth
             onClick={() => {
               recordSession(null);
               setStep("done");
@@ -297,6 +407,16 @@ export default function SessionPage() {
               notice one more thing around you that makes you feel okay or safe.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <BrandButton type="button" onClick={startAnotherRound}>
+                Try another round
+              </BrandButton>
+              <BrandButton
+                type="button"
+                variant="secondary"
+                onClick={saveCurrentPrompt}
+              >
+                {isPromptSaved ? "Saved to favorites" : "Save this prompt"}
+              </BrandButton>
               <BrandButton href="/dashboard">
                 Go to my dashboard
               </BrandButton>

@@ -101,7 +101,7 @@ export function AppNav() {
           </Link>
           <Link
             href="/dashboard"
-            className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
+            className="hidden rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] sm:inline-flex"
           >
             Dashboard
           </Link>
