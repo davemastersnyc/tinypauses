@@ -231,11 +231,15 @@ export default function DashboardPage() {
   }, [sessionsWithDates, showFullHistory]);
 
   const storyLine =
-    totalMoments < 5
-      ? "Every dot is a moment you chose yourself."
-      : totalMoments < 20
-        ? "Look at all these tiny pauses."
-        : "You've been showing up for yourself for a while now.";
+    totalMoments === 0
+      ? "Your story starts with your first tiny pause."
+      : totalMoments <= 4
+        ? "Your story is just getting started."
+        : totalMoments <= 15
+          ? "You're building something real here."
+          : totalMoments <= 30
+            ? "Look at all these tiny pauses."
+            : "You've been showing up for yourself for a while now.";
 
   const hasAnyPracticeThisWeek = week.some((d) => d.practiced);
   const formattedNickname = toTitleCase(nickname);
@@ -444,7 +448,7 @@ export default function DashboardPage() {
             >
               {historyModel.dots.length === 0 ? (
                 <p className="px-1 py-6 text-sm text-[color:var(--color-foreground)]/72">
-                  Your first tiny pause will begin your story.
+                  Your story is just getting started. Each pause adds a dot.
                 </p>
               ) : (
                 <svg
@@ -501,6 +505,11 @@ export default function DashboardPage() {
                     );
                   })}
                 </svg>
+              )}
+              {totalMoments < 5 && historyModel.dots.length > 0 && (
+                <p className="mt-2 px-1 pb-1 text-sm text-[color:var(--color-foreground)]/72">
+                  Your story is just getting started. Each pause adds a dot.
+                </p>
               )}
 
               {activeTooltip?.dot.session && (

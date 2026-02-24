@@ -2,7 +2,7 @@
 
 import { type CSSProperties, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
+import { BrandButton, BrandCard, PageShell } from "../ui";
 
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
 
@@ -336,7 +336,7 @@ export default function SessionPage() {
     if (!ctx) throw new Error("Could not create share canvas.");
 
     const badgeColor = kind ? accentByKind[kind] : "#9f7fff";
-    const badgeLabel = (kind ? kindLabels[kind] : "Mindful moment").toUpperCase();
+    const badgeLabel = kind ? kindLabels[kind] : "Mindful moment";
     const promptTitle = prompt?.title ?? "Tiny pause";
 
     const gradient = ctx.createLinearGradient(0, 0, 0, size);
@@ -349,7 +349,7 @@ export default function SessionPage() {
     drawRoundedRect(ctx, 86, 86, 908, 908, 48);
     ctx.fill();
 
-    ctx.font = "700 44px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.font = "500 42px Inter, Avenir Next, Segoe UI, sans-serif";
     const badgeWidth = Math.max(260, ctx.measureText(badgeLabel).width + 90);
     const badgeX = (size - badgeWidth) / 2;
     const badgeY = 170;
@@ -444,9 +444,9 @@ export default function SessionPage() {
       >
         <header className="text-center space-y-1.5">
           {step !== "choose" && (
-            <BrandPill>
+            <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium tracking-wide text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
               {kind ? kindLabels[kind] : "Mindful moment"}
-            </BrandPill>
+            </p>
           )}
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-[color:var(--color-primary)]">
             {step === "choose" && "What do you want help with today?"}
@@ -660,6 +660,13 @@ export default function SessionPage() {
           <BrandCard tone="accent">
           <div className="space-y-4 text-center">
             <p className="text-4xl">🌱</p>
+            <p className="text-base font-medium text-[color:var(--color-ink-on-accent-soft)]">
+              Taking even one tiny pause like this is a big deal.
+            </p>
+            <p className="text-sm text-[color:var(--color-ink-on-accent-soft)]/90">
+              You can come back for another moment any time you like. For now,
+              notice one more thing around you that makes you feel okay or safe.
+            </p>
             <button
               type="button"
               onClick={handleShareMoment}
@@ -679,14 +686,7 @@ export default function SessionPage() {
               </svg>
               {shareLoading ? "Preparing image..." : "Share this moment"}
             </button>
-            <p className="text-base font-medium text-[color:var(--color-ink-on-accent-soft)]">
-              Taking even one tiny pause like this is a big deal.
-            </p>
-            <p className="text-sm text-[color:var(--color-ink-on-accent-soft)]/90">
-              You can come back for another moment any time you like. For now,
-              notice one more thing around you that makes you feel okay or safe.
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-3">
               <BrandButton type="button" onClick={startAnotherRound} fullWidth>
                 Try another round
               </BrandButton>
