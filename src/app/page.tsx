@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <PageShell maxWidth="lg">
       <header className="space-y-4 text-center">
-        <BrandPill>Practice · Tiny mindful moments</BrandPill>
+        <BrandPill>Tiny Pause · Tiny mindful moments</BrandPill>
         <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
           2–3 minutes.{" "}
           <span className="text-[color:var(--color-accent)]">
@@ -64,14 +64,14 @@ export default function Home() {
             Gentle, no-streak tracking
           </p>
           <p className="mt-1">
-            When you log in, Practice keeps a soft record of your moments. No
+            When you log in, Tiny Pause keeps a soft record of your moments. No
             streaks, no shaming—just a quiet way to see your tiny wins.
           </p>
         </BrandCard>
       </section>
 
       <footer className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
-        Practice is not medical advice. It&apos;s a small, kind tool to help
+        Tiny Pause is not medical advice. It&apos;s a small, kind tool to help
         kids and adults pause and notice how they feel.
       </footer>
     </PageShell>

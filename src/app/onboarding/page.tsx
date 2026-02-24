@@ -146,7 +146,7 @@ export default function OnboardingPage() {
 
           <div className="space-y-2 text-left">
             <p className="block text-sm font-medium text-[color:var(--color-primary)]">
-              How old is the person using Practice?
+              How old is the person using Tiny Pause?
             </p>
             <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {ageOptions.map((option) => (

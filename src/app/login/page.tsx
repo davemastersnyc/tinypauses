@@ -90,7 +90,7 @@ export default function LoginPage() {
             </label>
             <p className="text-xs text-[color:var(--color-foreground)]/75">
               We&apos;ll send a sign‑in link to this address so you can gently
-              keep track of practice.
+              keep track of Tiny Pause sessions.
             </p>
             <input
               id="email"
@@ -112,7 +112,7 @@ export default function LoginPage() {
             />
             <span>
               I&apos;m a parent, caregiver, or teacher and I agree to help my
-              child use Practice kindly and safely.
+              child use Tiny Pause kindly and safely.
             </span>
           </label>
 

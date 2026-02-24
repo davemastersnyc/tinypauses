@@ -56,6 +56,13 @@ const stepLabels: Record<(typeof stepOrder)[number], string> = {
   done: "Done",
 };
 
+const kindLabels: Record<PromptKind, string> = {
+  pause: "Just a pause",
+  "letting-go": "Letting go of stuff",
+  reflect: "Reflecting on today",
+  kindness: "Kindness",
+};
+
 type FavoritePrompt = {
   id: string;
   kind: PromptKind | null;
@@ -168,7 +175,9 @@ export default function SessionPage() {
 
     try {
       const current: FavoritePrompt[] = JSON.parse(
-        window.localStorage.getItem("practice.favoritePrompts") ?? "[]",
+        window.localStorage.getItem("tinyPause.favoritePrompts") ??
+          window.localStorage.getItem("practice.favoritePrompts") ??
+          "[]",
       ) as FavoritePrompt[];
 
       const exists = current.some((p) => p.id === prompt.id);
@@ -189,7 +198,10 @@ export default function SessionPage() {
         ...current,
       ].slice(0, 100);
 
-      window.localStorage.setItem("practice.favoritePrompts", JSON.stringify(next));
+      window.localStorage.setItem(
+        "tinyPause.favoritePrompts",
+        JSON.stringify(next),
+      );
       setIsPromptSaved(true);
     } catch (error) {
       console.error("Could not save favorite prompt", error);
@@ -207,7 +219,11 @@ export default function SessionPage() {
         className="space-y-5"
       >
         <header className="text-center space-y-1.5">
-          <BrandPill>Mindful moment</BrandPill>
+          {step !== "choose" && (
+            <BrandPill>
+              {kind ? kindLabels[kind] : "Mindful moment"}
+            </BrandPill>
+          )}
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-[color:var(--color-primary)]">
             {step === "choose" && "What do you want help with today?"}
             {step === "prompt" && "Try this tiny pause"}
@@ -252,7 +268,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] px-3 py-2.5 text-sm font-semibold text-[color:var(--color-ink-on-accent-soft)] transition"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Just a pause
             </button>
