@@ -6,7 +6,7 @@ html {
 
 :root {
   /* Brand neutrals */
-  --background: #101320;
+  --background: #070b1b;
   --foreground: #e5e7eb;
 
   /* Brand colors */
@@ -17,9 +17,9 @@ html {
   --ink-on-accent-soft: #111827;
 
   /* Surfaces & borders */
-  --surface: #181b29;
-  --surface-soft: #1f2433;
-  --border-subtle: rgba(148, 163, 184, 0.3);
+  --surface: #0d1428;
+  --surface-soft: #121b34;
+  --border-subtle: rgba(148, 163, 184, 0.24);
 
   /* Radii & shadows */
   --radius-card: 1.25rem;
@@ -39,8 +39,10 @@ html {
   --color-surface-soft: var(--surface-soft);
   --color-border-subtle: var(--border-subtle);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Inter, "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
 
   --radius-card: var(--radius-card);
   --radius-pill: var(--radius-pill);
@@ -48,22 +50,30 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #050814;
+    --background: #040714;
     --foreground: #e5e7eb;
     --primary: #f9fafb;
     --primary-soft: #020617;
     --accent: #fb923c;
-    --surface: #0b1020;
-    --surface-soft: #101320;
-    --border-subtle: rgba(148, 163, 184, 0.4);
+    --surface: #0b1124;
+    --surface-soft: #101933;
+    --border-subtle: rgba(148, 163, 184, 0.28);
   }
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--background);
+  background:
+    radial-gradient(1200px 600px at 50% -120px, rgba(37, 224, 197, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 95% 10%, rgba(255, 47, 146, 0.06), transparent 55%),
+    linear-gradient(180deg, #060a1a 0%, var(--background) 45%, #030611 100%);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
 }

@@ -15,16 +15,21 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
         : "max-w-3xl";
 
   return (
-    <div className="flex min-h-screen justify-center bg-[color:var(--color-background)] px-4 py-6 sm:py-8">
-      <main
-        className={`mx-auto flex w-full flex-col gap-6 ${maxWidthClass}`}
-      >
-        <AppNav />
+    <div className="flex min-h-screen flex-col">
+      <AppNav />
+      <main className={`mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 ${maxWidthClass}`}>
         {children}
-        <footer className="pt-2 text-center text-xs text-[color:var(--color-foreground)]/55">
-          Quiet Branches Labs 2026
-        </footer>
       </main>
+      <footer className="border-t border-[color:var(--color-border-subtle)] py-3 text-center text-xs text-[color:var(--color-foreground)]/55">
+        <a
+          href="https://quietbranches.com"
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-[color:var(--color-primary)]"
+        >
+          Quiet Branches Labs 2026
+        </a>
+      </footer>
     </div>
   );
 }
