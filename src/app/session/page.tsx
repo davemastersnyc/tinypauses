@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 
@@ -52,6 +52,16 @@ export default function SessionPage() {
   const [kind, setKind] = useState<PromptKind | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [loadingPrompt, setLoadingPrompt] = useState(false);
+
+  const accentByStep: Record<
+    "choose" | "prompt" | "mood" | "done",
+    string
+  > = {
+    choose: "#25e0c5", // teal
+    prompt: "#ff2f92", // pink
+    mood: "#ffd84a", // yellow
+    done: "#9f7fff", // purple
+  };
 
   useEffect(() => {
     async function loadUser() {
@@ -115,18 +125,27 @@ export default function SessionPage() {
 
   return (
     <PageShell maxWidth="md">
-      <header className="text-center space-y-1">
-        <BrandPill>Mindful moment</BrandPill>
-        <h1 className="mt-1 text-2xl font-semibold text-[color:var(--color-primary)]">
-          {step === "choose" && "What do you want help with today?"}
-          {step === "prompt" && "Try this tiny pause"}
-          {step === "mood" && "How do you feel now?"}
-          {step === "done" && "Nice work taking a pause"}
-        </h1>
-      </header>
+      <div
+        style={
+          {
+            "--color-accent": accentByStep[step],
+          } as CSSProperties
+        }
+        className="space-y-6"
+      >
+        <header className="text-center space-y-2">
+          <BrandPill>Mindful moment</BrandPill>
+          <h1 className="mt-1 text-2xl font-semibold text-[color:var(--color-primary)]">
+            {step === "choose" && "What do you want help with today?"}
+            {step === "prompt" && "Try this tiny pause"}
+            {step === "mood" && "How do you feel now?"}
+            {step === "done" && "Nice work taking a pause"}
+          </h1>
+          <div className="mx-auto h-1 w-16 rounded-full bg-[color:var(--color-accent)]" />
+        </header>
 
-      {step === "choose" && (
-        <BrandCard>
+        {step === "choose" && (
+          <BrandCard>
           <p className="text-sm text-[color:var(--color-foreground)]/85">
             Pick the kind of moment that would feel most helpful right now.
           </p>
@@ -139,7 +158,7 @@ export default function SessionPage() {
                 await loadPromptForKind(selected);
                 setStep("prompt");
               }}
-              className="rounded-2xl border border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] px-3 py-2 text-xs font-medium text-[color:var(--color-primary)] transition"
+              className="rounded-2xl border border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] px-3 py-2 text-xs font-medium text-[color:var(--color-ink-on-accent-soft)] transition"
             >
               Just a pause
             </button>
@@ -183,11 +202,11 @@ export default function SessionPage() {
           <BrandButton href="/" variant="secondary" fullWidth>
             Maybe later
           </BrandButton>
-        </BrandCard>
-      )}
+          </BrandCard>
+        )}
 
-      {step === "prompt" && (
-        <BrandCard>
+        {step === "prompt" && (
+          <BrandCard>
           {loadingPrompt || !prompt || !kind ? (
             <p className="text-sm text-[color:var(--color-foreground)]/85">
               Finding a prompt…
@@ -202,7 +221,7 @@ export default function SessionPage() {
                   {prompt.body}
                 </p>
               </div>
-              <div className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] p-4 text-sm text-[color:var(--color-primary)]">
+              <div className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] p-4 text-sm text-[color:var(--color-ink-on-accent-soft)]">
                 <p className="font-medium">Your tiny step</p>
                 <p className="mt-1">{prompt.step}</p>
               </div>
@@ -220,11 +239,11 @@ export default function SessionPage() {
               Maybe later
             </BrandButton>
           </div>
-        </BrandCard>
-      )}
+          </BrandCard>
+        )}
 
-      {step === "mood" && (
-        <BrandCard>
+        {step === "mood" && (
+          <BrandCard>
           <p className="text-sm text-[color:var(--color-foreground)]/85">
             There&apos;s no right answer. This just helps you notice how your
             body and brain feel after taking a tiny pause.
@@ -241,7 +260,7 @@ export default function SessionPage() {
                 }}
                 className={`flex flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2 text-xs font-medium transition ${
                   mood === option.value
-                    ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-primary)]"
+                    ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
                     : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]"
                 }`}
               >
@@ -261,11 +280,11 @@ export default function SessionPage() {
           >
             Skip for now
           </BrandButton>
-        </BrandCard>
-      )}
+          </BrandCard>
+        )}
 
-      {step === "done" && (
-        <BrandCard tone="accent">
+        {step === "done" && (
+          <BrandCard tone="accent">
           <div className="space-y-4 text-center">
             <p className="text-4xl">🌱</p>
             <p className="text-base font-medium text-[color:var(--color-primary)]">
@@ -284,8 +303,9 @@ export default function SessionPage() {
               </BrandButton>
             </div>
           </div>
-        </BrandCard>
-      )}
+          </BrandCard>
+        )}
+      </div>
     </PageShell>
   );
 }

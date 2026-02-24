@@ -1,20 +1,25 @@
 @import "tailwindcss";
 
+html {
+  font-size: 112.5%; /* bump all rem-based text ~+1 size step */
+}
+
 :root {
   /* Brand neutrals */
-  --background: #fdf8f3;
-  --foreground: #111827;
+  --background: #101320;
+  --foreground: #e5e7eb;
 
   /* Brand colors */
-  --primary: #1f2937;
-  --primary-soft: #e5e7eb;
+  --primary: #f9fafb;
+  --primary-soft: #1f2937;
   --accent: #f97316;
-  --accent-soft: #ffedd5;
+  --accent-soft: #ffe4c4;
+  --ink-on-accent-soft: #111827;
 
   /* Surfaces & borders */
-  --surface: #ffffff;
-  --surface-soft: #f9fafb;
-  --border-subtle: rgba(15, 23, 42, 0.08);
+  --surface: #181b29;
+  --surface-soft: #1f2433;
+  --border-subtle: rgba(148, 163, 184, 0.3);
 
   /* Radii & shadows */
   --radius-card: 1.25rem;
@@ -29,6 +34,7 @@
   --color-primary-soft: var(--primary-soft);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-ink-on-accent-soft: var(--ink-on-accent-soft);
   --color-surface: var(--surface);
   --color-surface-soft: var(--surface-soft);
   --color-border-subtle: var(--border-subtle);
@@ -42,14 +48,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #020617;
+    --background: #050814;
     --foreground: #e5e7eb;
-    --primary: #e5e7eb;
-    --primary-soft: rgba(148, 163, 184, 0.24);
+    --primary: #f9fafb;
+    --primary-soft: #020617;
     --accent: #fb923c;
-    --surface: rgba(15, 23, 42, 0.9);
-    --surface-soft: rgba(15, 23, 42, 0.8);
-    --border-subtle: rgba(15, 23, 42, 0.9);
+    --surface: #0b1020;
+    --surface-soft: #101320;
+    --border-subtle: rgba(148, 163, 184, 0.4);
   }
 }
 

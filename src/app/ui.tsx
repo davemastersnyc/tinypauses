@@ -14,7 +14,7 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
         : "max-w-3xl";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(248,113,22,0.16),_transparent_55%)] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[color:var(--color-background)] px-4">
       <main
         className={`mx-auto flex w-full flex-col gap-8 py-12 ${maxWidthClass}`}
       >
