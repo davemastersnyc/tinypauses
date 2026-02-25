@@ -24,6 +24,10 @@ type MomentRow = {
   mood_value: number | null;
   card_type: string | null;
 };
+type SessionFallbackRow = {
+  completed_at: string | null;
+  mood_after: number | null;
+};
 type WrapUpRow = {
   id: string;
   period_type: WrapUpPeriod;
@@ -220,7 +224,29 @@ export default function DashboardPage() {
         .select("id, created_at, category, prompt_name, mood_value, card_type")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      setMoments((momentRows ?? []) as MomentRow[]);
+      if (momentRows && momentRows.length > 0) {
+        setMoments((momentRows ?? []) as MomentRow[]);
+      } else {
+        // Backward compatibility: if moments is empty/unavailable, derive from sessions.
+        const { data: sessionRows } = await supabase
+          .from("sessions")
+          .select("completed_at, mood_after")
+          .eq("user_id", user.id)
+          .order("completed_at", { ascending: false });
+
+        const fallbackMoments: MomentRow[] = ((sessionRows ?? []) as SessionFallbackRow[])
+          .filter((s) => Boolean(s.completed_at))
+          .map((s) => ({
+            id: `session-${s.completed_at}`,
+            created_at: s.completed_at as string,
+            category: "Mindful moment",
+            prompt_name: "Tiny pause",
+            mood_value: s.mood_after ?? null,
+            card_type: "moment",
+          }));
+
+        setMoments(fallbackMoments);
+      }
 
       const { data: wrapUpRows } = await supabase
         .from("wrap_ups")
