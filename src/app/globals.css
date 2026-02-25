@@ -2,7 +2,7 @@
 
 html {
   font-size: 112.5%; /* bump all rem-based text ~+1 size step */
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 :root {
@@ -49,19 +49,6 @@ html {
   --radius-pill: var(--radius-pill);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #050814;
-    --foreground: #edf2ff;
-    --primary: #f8fafc;
-    --primary-soft: #0a1022;
-    --accent: #fb923c;
-    --surface: #111b35;
-    --surface-soft: #182542;
-    --border-subtle: rgba(148, 163, 184, 0.36);
-  }
-}
-
 body {
   margin: 0;
   min-height: 100vh;
@@ -71,15 +58,6 @@ body {
     linear-gradient(180deg, #fdfbf8 0%, var(--background) 44%, #f4eee7 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background:
-      radial-gradient(1200px 620px at 50% -140px, rgba(37, 224, 197, 0.12), transparent 60%),
-      radial-gradient(900px 520px at 95% 10%, rgba(255, 47, 146, 0.09), transparent 56%),
-      linear-gradient(180deg, #060a1a 0%, var(--background) 45%, #030611 100%);
-  }
 }
 
 h1,
