@@ -94,7 +94,7 @@ export function AppNav() {
         <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-primary)]/95">
           <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--color-accent)]" />
           <Link href="/" className="hover:text-[color:var(--color-accent)]">
-            Tiny Pause
+            Tiny Pauses
           </Link>
         </div>
 

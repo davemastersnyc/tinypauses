@@ -1,6 +1,6 @@
-# Tiny Pause
+# Tiny Pauses
 
-Tiny Pause is a Next.js app for short guided mindful moments with optional sign-in, progress tracking, and shareable cards.
+Tiny Pauses is a Next.js app for short guided mindful moments with optional sign-in, progress tracking, and shareable cards.
 
 ## Local development
 

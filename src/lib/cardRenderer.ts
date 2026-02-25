@@ -128,7 +128,7 @@ function drawMomentCard(
 
   ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
   ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText("tinypause.app", size / 2, 952);
+  ctx.fillText("tinypauses.com", size / 2, 952);
 }
 
 function drawWrapUpCard(
@@ -242,7 +242,7 @@ function drawWrapUpCard(
 
   ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
   ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText("tinypause.app", size / 2, 952);
+  ctx.fillText("tinypauses.com", size / 2, 952);
 }
 
 function drawLargeCount(

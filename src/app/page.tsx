@@ -78,7 +78,7 @@ export default function Home() {
           className="hero-orb pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(37,224,197,0.15)_0%,rgba(249,115,22,0.08)_48%,rgba(249,115,22,0)_74%)] blur-2xl"
         />
         <div className="relative space-y-4">
-          <BrandPill>Tiny Pause · Tiny mindful moments</BrandPill>
+          <BrandPill>TINY PAUSES · TINY MINDFUL MOMENTS</BrandPill>
           <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
             2–3 minutes.{" "}
             <span className="text-[color:var(--color-accent)]">
@@ -148,7 +148,7 @@ export default function Home() {
             Gentle, no-streak tracking
           </p>
           <p className="mt-1">
-            When you log in, Tiny Pause keeps a soft record of your moments. No
+            When you log in, Tiny Pauses keeps a soft record of your moments. No
             streaks, no shaming—just a quiet way to see your tiny wins.
           </p>
         </BrandCard>

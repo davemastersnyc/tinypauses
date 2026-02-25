@@ -417,7 +417,7 @@ export default function DashboardPage() {
         typeof nav.canShare === "function" &&
         nav.canShare({ files: [file] });
       if (canShareFiles) {
-        await nav.share({ title: "Tiny Pause", files: [file] });
+        await nav.share({ title: "Tiny Pauses", files: [file] });
         return;
       }
       if (downloadUrl) URL.revokeObjectURL(downloadUrl);

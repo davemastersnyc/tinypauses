@@ -334,7 +334,7 @@ export default function SessionPage() {
 
       if (canShareFiles) {
         await nav.share({
-          title: "Tiny Pause",
+          title: "Tiny Pauses",
           text: "I took a tiny pause today.",
           files: [file],
         });
