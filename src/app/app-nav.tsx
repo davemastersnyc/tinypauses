@@ -109,7 +109,7 @@ export function AppNav() {
             href="/session"
             className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
           >
-            Session
+            Moment
           </Link>
           <Link
             href="/dashboard"

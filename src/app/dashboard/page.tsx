@@ -97,6 +97,33 @@ function moodDotStyle(mood: number | null | undefined): DotStyle {
   return { fill: "rgba(37, 224, 197, 0.95)", radius: 5.6 };
 }
 
+function drawSprout(
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  color: string,
+) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 14;
+  ctx.lineCap = "round";
+
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY + 40);
+  ctx.bezierCurveTo(centerX - 4, centerY - 18, centerX + 4, centerY - 62, centerX, centerY - 120);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(centerX - 46, centerY - 118, 56, 30, -0.45, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(centerX + 46, centerY - 118, 56, 30, 0.45, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [nickname, setNickname] = useState("Friend");
@@ -154,6 +181,26 @@ export default function DashboardPage() {
     [sessions],
   );
 
+  const sessionsSorted = useMemo(
+    () =>
+      [...sessionsWithDates].sort(
+        (a, b) =>
+          new Date(a.completed_at as string).getTime() -
+          new Date(b.completed_at as string).getTime(),
+      ),
+    [sessionsWithDates],
+  );
+
+  const latestMomentByDay = useMemo(() => {
+    const byDay = new Map<string, SessionHistoryRow>();
+    for (const moment of sessionsSorted) {
+      const d = startOfDay(new Date(moment.completed_at as string));
+      byDay.set(dateKey(d), moment);
+    }
+    return byDay;
+  }, [sessionsSorted]);
+
+  const daysWithMomentsCount = latestMomentByDay.size;
   const totalMoments = sessionsWithDates.length;
 
   const week = useMemo(() => {
@@ -162,11 +209,9 @@ export default function DashboardPage() {
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 6);
 
-    for (const session of sessionsWithDates) {
-      const d = startOfDay(new Date(session.completed_at as string));
-      if (d >= sevenDaysAgo && d <= today) {
-        recentByDay.add(dateKey(d));
-      }
+    for (const key of latestMomentByDay.keys()) {
+      const d = startOfDay(new Date(`${key}T00:00:00`));
+      if (d >= sevenDaysAgo && d <= today) recentByDay.add(key);
     }
 
     return buildWeekSkeleton().map((day, idx) => {
@@ -174,16 +219,11 @@ export default function DashboardPage() {
       d.setDate(today.getDate() - (6 - idx));
       return { ...day, practiced: recentByDay.has(dateKey(d)) };
     });
-  }, [sessionsWithDates]);
+  }, [latestMomentByDay]);
 
   const historyModel = useMemo(() => {
-    const sorted = [...sessionsWithDates].sort(
-      (a, b) =>
-        new Date(a.completed_at as string).getTime() -
-        new Date(b.completed_at as string).getTime(),
-    );
     const today = startOfDay(new Date());
-    if (sorted.length === 0) {
+    if (sessionsSorted.length === 0) {
       return {
         dots: [] as HistoryDot[],
         weekCount: 1,
@@ -191,20 +231,16 @@ export default function DashboardPage() {
       };
     }
 
-    const byDay = new Map<string, SessionHistoryRow>();
-    for (const session of sorted) {
-      const d = startOfDay(new Date(session.completed_at as string));
-      byDay.set(dateKey(d), session);
-    }
-
-    const firstSessionDay = startOfDay(new Date(sorted[0].completed_at as string));
+    const firstMomentDay = startOfDay(
+      new Date(sessionsSorted[0].completed_at as string),
+    );
     const sixMonthsAgo = startOfDay(new Date());
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     const start = showFullHistory
-      ? firstSessionDay
-      : new Date(Math.max(firstSessionDay.getTime(), sixMonthsAgo.getTime()));
-    const hasOlderHistory = firstSessionDay.getTime() < sixMonthsAgo.getTime();
+      ? firstMomentDay
+      : new Date(Math.max(firstMomentDay.getTime(), sixMonthsAgo.getTime()));
+    const hasOlderHistory = firstMomentDay.getTime() < sixMonthsAgo.getTime();
 
     const totalDays =
       Math.floor((today.getTime() - start.getTime()) / 86_400_000) + 1;
@@ -219,7 +255,7 @@ export default function DashboardPage() {
         date: d,
         weekIndex: Math.floor(i / 7),
         dayIndex: i % 7,
-        session: byDay.get(key) ?? null,
+        session: latestMomentByDay.get(key) ?? null,
       });
     }
 
@@ -228,18 +264,25 @@ export default function DashboardPage() {
       weekCount: Math.max(1, Math.ceil(totalDays / 7)),
       hasOlderHistory,
     };
-  }, [sessionsWithDates, showFullHistory]);
+  }, [latestMomentByDay, sessionsSorted, showFullHistory]);
 
   const storyLine =
-    totalMoments === 0
+    daysWithMomentsCount === 0
       ? "Your story starts with your first tiny pause."
-      : totalMoments <= 4
+      : daysWithMomentsCount <= 4
         ? "Your story is just getting started."
-        : totalMoments <= 15
+        : daysWithMomentsCount <= 15
           ? "You're building something real here."
-          : totalMoments <= 30
+          : daysWithMomentsCount <= 30
             ? "Look at all these tiny pauses."
             : "You've been showing up for yourself for a while now.";
+
+  const earlyStoryMessage =
+    daysWithMomentsCount === 0
+      ? "Your story grid is waiting for your first pause."
+      : daysWithMomentsCount <= 3
+        ? "Your story is just starting. A few more days and your grid will begin to grow."
+        : "Almost there. Your story grid unlocks soon.";
 
   const hasAnyPracticeThisWeek = week.some((d) => d.practiced);
   const formattedNickname = toTitleCase(nickname);
@@ -279,37 +322,44 @@ export default function DashboardPage() {
       248,
     );
 
-    const sourceDots = historyModel.dots;
-    const maxWeeks = 16;
-    const maxColumns = Math.max(
-      1,
-      Math.min(maxWeeks, historyModel.weekCount),
-    );
-    const startWeek = Math.max(0, historyModel.weekCount - maxColumns);
-    const shareDots = sourceDots
-      .filter((dot) => dot.weekIndex >= startWeek)
-      .map((dot) => ({
-        ...dot,
-        weekIndex: dot.weekIndex - startWeek,
-      }));
+    if (daysWithMomentsCount >= 10) {
+      const today = startOfDay(new Date());
+      const weeks = 16;
+      const totalDays = weeks * 7;
+      const start = new Date(today);
+      start.setDate(today.getDate() - (totalDays - 1));
 
-    const shareCell = 42;
-    const gridWidth = maxColumns * shareCell;
-    const gridHeight = 7 * shareCell;
-    const x0 = (cardSize - gridWidth) / 2;
-    const y0 = 340;
+      const shareCell = 38;
+      const gridWidth = weeks * shareCell;
+      const x0 = (cardSize - gridWidth) / 2;
+      const y0 = 336;
 
-    for (const dot of shareDots) {
-      const cx = x0 + dot.weekIndex * shareCell + shareCell / 2;
-      const cy = y0 + dot.dayIndex * shareCell + shareCell / 2;
-      const style = dot.session
-        ? moodDotStyle(dot.session.mood_after)
-        : { fill: "rgba(163, 171, 179, 0.2)", radius: 12 };
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const key = dateKey(d);
+        const dayMoment = latestMomentByDay.get(key) ?? null;
+        const weekIndex = Math.floor(i / 7);
+        const dayIndex = i % 7;
+        const cx = x0 + weekIndex * shareCell + shareCell / 2;
+        const cy = y0 + dayIndex * shareCell + shareCell / 2;
+        const style = dayMoment
+          ? moodDotStyle(dayMoment.mood_after)
+          : { fill: "rgba(163, 171, 179, 0.2)", radius: 9.5 };
 
-      ctx.beginPath();
-      ctx.arc(cx, cy, dot.session ? style.radius * 2.1 : style.radius, 0, Math.PI * 2);
-      ctx.fillStyle = style.fill;
-      ctx.fill();
+        ctx.beginPath();
+        ctx.arc(
+          cx,
+          cy,
+          dayMoment ? style.radius * 1.9 : style.radius,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = style.fill;
+        ctx.fill();
+      }
+    } else {
+      drawSprout(ctx, cardSize / 2, 560, "#2f7e58");
     }
 
     ctx.fillStyle = "rgba(27, 36, 56, 0.62)";
@@ -409,7 +459,7 @@ export default function DashboardPage() {
               This week
             </p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
-              Every dot is a day. Filled in means you took a tiny pause.
+              Every dot is a day you showed up for yourself.
             </p>
             <div className="mt-4 flex items-center justify-between gap-2">
               {week.map((day) => (
@@ -446,9 +496,9 @@ export default function DashboardPage() {
               ref={storyWrapRef}
               className="relative mt-4 overflow-x-auto rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 p-2"
             >
-              {historyModel.dots.length === 0 ? (
-                <p className="px-1 py-6 text-sm text-[color:var(--color-foreground)]/72">
-                  Your story is just getting started. Each pause adds a dot.
+              {daysWithMomentsCount < 7 ? (
+                <p className="px-4 py-8 text-center text-sm text-[color:var(--color-foreground)]/68">
+                  {earlyStoryMessage}
                 </p>
               ) : (
                 <svg
@@ -456,7 +506,7 @@ export default function DashboardPage() {
                   height={svgHeight}
                   viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                   role="img"
-                  aria-label="Session history dots"
+                  aria-label="Moment history dots"
                 >
                   {historyModel.dots.map((dot) => {
                     const cx = pad + dot.weekIndex * cell + cell / 2;
@@ -506,13 +556,8 @@ export default function DashboardPage() {
                   })}
                 </svg>
               )}
-              {totalMoments < 5 && historyModel.dots.length > 0 && (
-                <p className="mt-2 px-1 pb-1 text-sm text-[color:var(--color-foreground)]/72">
-                  Your story is just getting started. Each pause adds a dot.
-                </p>
-              )}
 
-              {activeTooltip?.dot.session && (
+              {daysWithMomentsCount >= 7 && activeTooltip?.dot.session && (
                 <div
                   className="pointer-events-none absolute z-10 w-52 rounded-xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs text-[color:var(--color-foreground)] shadow-[var(--shadow-soft)]"
                   style={{
@@ -538,7 +583,9 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {historyModel.hasOlderHistory && !showFullHistory && (
+            {daysWithMomentsCount >= 7 &&
+              historyModel.hasOlderHistory &&
+              !showFullHistory && (
               <button
                 type="button"
                 onClick={() => setShowFullHistory(true)}
@@ -546,16 +593,18 @@ export default function DashboardPage() {
               >
                 Show more
               </button>
-            )}
+              )}
 
-            <button
-              type="button"
-              onClick={handleShareStory}
-              disabled={storyShareLoading || totalMoments === 0}
-              className="mt-3 text-xs text-[color:var(--color-primary)]/82 underline decoration-[color:var(--color-primary)]/45 underline-offset-2 hover:text-[color:var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-55"
-            >
-              {storyShareLoading ? "Preparing story..." : "Share your story"}
-            </button>
+            {daysWithMomentsCount >= 10 && (
+              <button
+                type="button"
+                onClick={handleShareStory}
+                disabled={storyShareLoading || totalMoments === 0}
+                className="mt-3 text-xs text-[color:var(--color-primary)]/82 underline decoration-[color:var(--color-primary)]/45 underline-offset-2 hover:text-[color:var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                {storyShareLoading ? "Preparing story..." : "Share your story"}
+              </button>
+            )}
           </BrandCard>
         </div>
 
@@ -572,7 +621,7 @@ export default function DashboardPage() {
           <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
             {totalMoments === 0
               ? "Everyone starts somewhere. Your first tiny moment is waiting."
-              : "That’s how many mindful moments you’ve taken overall. Each one is a small, real win."}
+              : "That's how many mindful moments you've taken overall. Each one is a small, real win."}
           </p>
         </BrandCard>
       </section>

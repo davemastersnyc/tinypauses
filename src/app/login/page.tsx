@@ -90,7 +90,7 @@ export default function LoginPage() {
             </label>
             <p className="text-xs text-[color:var(--color-foreground)]/75">
               We&apos;ll send a sign‑in link to this address so you can gently
-              keep track of Tiny Pause sessions.
+              keep track of Tiny Pause moments.
             </p>
             <input
               id="email"
