@@ -1,52 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tiny Pause
 
-## Getting Started
+Tiny Pause is a Next.js app for short guided mindful moments with optional sign-in, progress tracking, and shareable cards.
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. Install dependencies:
+   - `npm install`
+2. Start dev server:
+   - `npm run dev`
+3. Open:
+   - `http://localhost:3000`
+
+Core app code lives in:
+- `src/app`
+- `src/lib`
+
+## Environment variables
+
+Set these in your local env and deployment env:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+## Supabase setup
+
+Run these SQL files in Supabase SQL Editor:
+
+1. Prompt seed data:
+   - `sql/seed_prompts_40.sql`
+2. Moments + wrap-ups schema/functions/cron:
+   - `sql/moments_and_wrapups.sql`
+
+Prompt seed behavior (`sql/seed_prompts_40.sql`):
+- Idempotent (safe to re-run).
+- Upserts the curated prompt set (44 active prompts total: 11 per kind).
+- Deactivates retired/non-curated prompts for `pause`, `letting-go`, `reflect`, and `kindness`.
+
+### Quick verification
+
+After running schema SQL:
+
+```sql
+select
+  to_regclass('public.moments') as moments_table,
+  to_regclass('public.wrap_ups') as wrapups_table;
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Expected:
+- `public.moments`
+- `public.wrap_ups`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+After running prompt seed SQL:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sql
+select kind, count(*) filter (where is_active) as active_count
+from prompts
+where kind in ('pause', 'letting-go', 'reflect', 'kindness')
+group by kind
+order by kind;
+```
 
-## Learn More
+Expected:
+- `pause`: 11
+- `letting-go`: 11
+- `reflect`: 11
+- `kindness`: 11
 
-To learn more about Next.js, take a look at the following resources:
+## Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Prompt seed data
-
-To add 40 additional session activities, run:
-
-- `sql/seed_prompts_40.sql`
-
-in the Supabase SQL Editor for your project.
-
-## Moments and wrap-ups schema
-
-To enable saved moments + wrap-up cards/timeline, run:
-
-- `sql/moments_and_wrapups.sql`
-
-in the Supabase SQL Editor.
+- Card images are generated client-side with Canvas and are **not** stored in Supabase Storage.
+- Dashboard supports fallback from `moments` metadata to legacy `sessions` if needed during rollout.
+- The app is currently forced to light mode (system dark mode is intentionally ignored).

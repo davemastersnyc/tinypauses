@@ -219,7 +219,7 @@ export default function DashboardPage() {
   const [moments, setMoments] = useState<MomentRow[]>([]);
   const [wrapUps, setWrapUps] = useState<WrapUpRow[]>([]);
   const [showFullHistory, setShowFullHistory] = useState(false);
-  const [visibleTimelineCount, setVisibleTimelineCount] = useState(10);
+  const [visibleTimelineCount, setVisibleTimelineCount] = useState(5);
   const [selectedCard, setSelectedCard] = useState<TimelineEntry | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
