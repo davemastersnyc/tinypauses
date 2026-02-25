@@ -42,3 +42,11 @@ To add 40 additional session activities, run:
 - `sql/seed_prompts_40.sql`
 
 in the Supabase SQL Editor for your project.
+
+## Moments and wrap-ups schema
+
+To enable saved moments + wrap-up cards/timeline, run:
+
+- `sql/moments_and_wrapups.sql`
+
+in the Supabase SQL Editor.

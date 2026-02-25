@@ -3,49 +3,57 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  type CardMetadata,
+  type MomentCardMetadata,
+  type WrapUpCardMetadata,
+  type WrapUpPeriod,
+  type WrapUpStats,
+  fallbackCardText,
+  renderCardBlob,
+  renderCardCanvas,
+} from "@/lib/cardRenderer";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
 
-type DayEntry = {
-  dateLabel: string;
-  practiced: boolean;
+type DayEntry = { dateLabel: string; practiced: boolean };
+type MomentRow = {
+  id: string;
+  created_at: string;
+  category: string | null;
+  prompt_name: string | null;
+  mood_value: number | null;
+  card_type: string | null;
 };
-
-type SessionHistoryRow = {
-  completed_at: string | null;
-  mood_after?: number | null;
-  kind?: string | null;
-  category?: string | null;
-  prompt_title?: string | null;
-  prompt_name?: string | null;
-  title?: string | null;
+type WrapUpRow = {
+  id: string;
+  period_type: WrapUpPeriod;
+  period_start: string;
+  stats: WrapUpStats;
+  created_at: string;
 };
-
 type HistoryDot = {
   dayKey: string;
   date: Date;
   weekIndex: number;
   dayIndex: number;
-  session: SessionHistoryRow | null;
+  moment: MomentRow | null;
 };
-
-type DotStyle = {
-  fill: string;
-  radius: number;
-};
+type DotStyle = { fill: string; radius: number };
+type TimelineEntry =
+  | { kind: "moment"; id: string; createdAt: string; metadata: MomentCardMetadata; row: MomentRow }
+  | { kind: "wrap_up"; id: string; createdAt: string; metadata: WrapUpCardMetadata; row: WrapUpRow };
 
 function buildWeekSkeleton(): DayEntry[] {
   const today = new Date();
   const days: DayEntry[] = [];
-
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const label = d.toLocaleDateString(undefined, {
-      weekday: "short",
+    days.push({
+      dateLabel: d.toLocaleDateString(undefined, { weekday: "short" }),
+      practiced: false,
     });
-    days.push({ dateLabel: label, practiced: false });
   }
-
   return days;
 }
 
@@ -66,30 +74,12 @@ function toTitleCase(value: string) {
   return value
     .trim()
     .split(/\s+/)
-    .map((part) =>
-      part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part,
-    )
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part))
     .join(" ");
 }
 
-function toCategoryLabel(session: SessionHistoryRow | null) {
-  const raw = session?.kind ?? session?.category ?? "mindful moment";
-  return toTitleCase(raw.replace(/[-_]/g, " "));
-}
-
-function toPromptLabel(session: SessionHistoryRow | null) {
-  return (
-    session?.prompt_title ??
-    session?.prompt_name ??
-    session?.title ??
-    "Tiny pause"
-  );
-}
-
 function moodDotStyle(mood: number | null | undefined): DotStyle {
-  if (mood == null) {
-    return { fill: "rgba(120, 116, 109, 0.45)", radius: 4.5 };
-  }
+  if (mood == null) return { fill: "rgba(120, 116, 109, 0.45)", radius: 4.5 };
   if (mood <= 1) return { fill: "rgba(125, 145, 168, 0.82)", radius: 3.9 };
   if (mood === 2) return { fill: "rgba(197, 151, 120, 0.86)", radius: 4.2 };
   if (mood === 3) return { fill: "rgba(204, 167, 109, 0.9)", radius: 4.7 };
@@ -97,46 +87,108 @@ function moodDotStyle(mood: number | null | undefined): DotStyle {
   return { fill: "rgba(37, 224, 197, 0.95)", radius: 5.6 };
 }
 
-function drawSprout(
-  ctx: CanvasRenderingContext2D,
-  centerX: number,
-  centerY: number,
-  color: string,
-) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 14;
-  ctx.lineCap = "round";
+function toMomentMetadata(row: MomentRow): MomentCardMetadata {
+  return {
+    type: "moment",
+    category: row.category ?? "Mindful moment",
+    promptName: row.prompt_name ?? "Tiny pause",
+    moodValue: row.mood_value ?? null,
+  };
+}
 
-  ctx.beginPath();
-  ctx.moveTo(centerX, centerY + 40);
-  ctx.bezierCurveTo(centerX - 4, centerY - 18, centerX + 4, centerY - 62, centerX, centerY - 120);
-  ctx.stroke();
+function toWrapUpMetadata(row: WrapUpRow): WrapUpCardMetadata {
+  return {
+    type: "wrap_up",
+    periodType: row.period_type,
+    periodStart: row.period_start,
+    stats: row.stats ?? { total_moments: 0, total_days_with_moments: 0 },
+  };
+}
 
-  ctx.beginPath();
-  ctx.ellipse(centerX - 46, centerY - 118, 56, 30, -0.45, 0, Math.PI * 2);
-  ctx.fill();
+function getWrapUpLabel(row: WrapUpRow) {
+  const start = new Date(`${row.period_start}T00:00:00`);
+  if (row.period_type === "weekly") {
+    return `Week of ${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  }
+  if (row.period_type === "monthly") {
+    return start.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  }
+  return String(start.getFullYear());
+}
 
-  ctx.beginPath();
-  ctx.ellipse(centerX + 46, centerY - 118, 56, 30, 0.45, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
+function getWrapUpSummary(row: WrapUpRow) {
+  if (row.stats?.closing_line) return row.stats.closing_line;
+  if (row.stats?.mood_descriptor) return row.stats.mood_descriptor;
+  return `${row.stats?.total_moments ?? 0} moments`;
+}
+
+function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
+  const [visible, setVisible] = useState(false);
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const [fallback, setFallback] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const target = ref.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setVisible(true);
+      },
+      { rootMargin: "120px 0px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!visible || thumbUrl || fallback) return;
+    const canvas = renderCardCanvas(metadata, 120);
+    if (!canvas) {
+      setFallback(true);
+      return;
+    }
+    setThumbUrl(canvas.toDataURL("image/png"));
+  }, [visible, thumbUrl, fallback, metadata]);
+
+  useEffect(
+    () => () => {
+      if (thumbUrl?.startsWith("blob:")) URL.revokeObjectURL(thumbUrl);
+    },
+    [thumbUrl],
+  );
+
+  const fallbackText = fallbackCardText(metadata);
+
+  return (
+    <div
+      ref={ref}
+      className="h-[120px] w-[120px] overflow-hidden rounded-xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)]"
+    >
+      {thumbUrl ? (
+        <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
+      ) : fallback ? (
+        <div className="flex h-full w-full flex-col justify-center px-2 text-center">
+          <p className="text-[11px] font-semibold text-[color:var(--color-primary)]/85">{fallbackText.title}</p>
+        </div>
+      ) : (
+        <div className="h-full w-full animate-pulse bg-[color:var(--color-surface-soft)]" />
+      )}
+    </div>
+  );
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const [nickname, setNickname] = useState("Friend");
-  const [sessions, setSessions] = useState<SessionHistoryRow[]>([]);
+  const [moments, setMoments] = useState<MomentRow[]>([]);
+  const [wrapUps, setWrapUps] = useState<WrapUpRow[]>([]);
   const [showFullHistory, setShowFullHistory] = useState(false);
-  const [activeTooltip, setActiveTooltip] = useState<{
-    x: number;
-    y: number;
-    dot: HistoryDot;
-  } | null>(null);
-  const [storyShareLoading, setStoryShareLoading] = useState(false);
-  const [storyImageUrl, setStoryImageUrl] = useState<string | null>(null);
-  const [showStoryModal, setShowStoryModal] = useState(false);
+  const [visibleTimelineCount, setVisibleTimelineCount] = useState(10);
+  const [selectedCard, setSelectedCard] = useState<TimelineEntry | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [activeTooltip, setActiveTooltip] = useState<{ x: number; y: number; dot: HistoryDot } | null>(null);
   const storyWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -153,67 +205,56 @@ export default function DashboardPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("nickname, age_band")
+        .select("nickname")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile?.nickname) {
-        setNickname(profile.nickname);
-      } else {
+      if (!profile?.nickname) {
         router.replace("/onboarding");
         return;
       }
+      setNickname(profile.nickname);
 
-      const { data: allSessions } = await supabase
-        .from("sessions")
-        .select("*")
+      const { data: momentRows } = await supabase
+        .from("moments")
+        .select("id, created_at, category, prompt_name, mood_value, card_type")
         .eq("user_id", user.id)
-        .order("completed_at", { ascending: true });
+        .order("created_at", { ascending: false });
+      setMoments((momentRows ?? []) as MomentRow[]);
 
-      setSessions((allSessions ?? []) as SessionHistoryRow[]);
+      const { data: wrapUpRows } = await supabase
+        .from("wrap_ups")
+        .select("id, period_type, period_start, stats, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      setWrapUps((wrapUpRows ?? []) as WrapUpRow[]);
     }
 
     load();
-  }, []);
+  }, [router]);
 
-  const sessionsWithDates = useMemo(
-    () => sessions.filter((s) => Boolean(s.completed_at)),
-    [sessions],
-  );
-
-  const sessionsSorted = useMemo(
-    () =>
-      [...sessionsWithDates].sort(
-        (a, b) =>
-          new Date(a.completed_at as string).getTime() -
-          new Date(b.completed_at as string).getTime(),
-      ),
-    [sessionsWithDates],
-  );
-
+  const momentsAscending = useMemo(() => [...moments].reverse(), [moments]);
   const latestMomentByDay = useMemo(() => {
-    const byDay = new Map<string, SessionHistoryRow>();
-    for (const moment of sessionsSorted) {
-      const d = startOfDay(new Date(moment.completed_at as string));
-      byDay.set(dateKey(d), moment);
+    const byDay = new Map<string, MomentRow>();
+    for (const moment of momentsAscending) {
+      const key = dateKey(startOfDay(new Date(moment.created_at)));
+      byDay.set(key, moment);
     }
     return byDay;
-  }, [sessionsSorted]);
+  }, [momentsAscending]);
 
+  const totalMoments = moments.length;
   const daysWithMomentsCount = latestMomentByDay.size;
-  const totalMoments = sessionsWithDates.length;
 
   const week = useMemo(() => {
     const recentByDay = new Set<string>();
     const today = startOfDay(new Date());
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 6);
-
     for (const key of latestMomentByDay.keys()) {
-      const d = startOfDay(new Date(`${key}T00:00:00`));
+      const d = new Date(`${key}T00:00:00`);
       if (d >= sevenDaysAgo && d <= today) recentByDay.add(key);
     }
-
     return buildWeekSkeleton().map((day, idx) => {
       const d = new Date(today);
       d.setDate(today.getDate() - (6 - idx));
@@ -222,30 +263,19 @@ export default function DashboardPage() {
   }, [latestMomentByDay]);
 
   const historyModel = useMemo(() => {
+    const days = Array.from(latestMomentByDay.keys()).sort();
     const today = startOfDay(new Date());
-    if (sessionsSorted.length === 0) {
-      return {
-        dots: [] as HistoryDot[],
-        weekCount: 1,
-        hasOlderHistory: false,
-      };
-    }
+    if (days.length === 0) return { dots: [] as HistoryDot[], weekCount: 1, hasOlderHistory: false };
 
-    const firstMomentDay = startOfDay(
-      new Date(sessionsSorted[0].completed_at as string),
-    );
+    const firstMomentDay = new Date(`${days[0]}T00:00:00`);
     const sixMonthsAgo = startOfDay(new Date());
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
     const start = showFullHistory
       ? firstMomentDay
       : new Date(Math.max(firstMomentDay.getTime(), sixMonthsAgo.getTime()));
-    const hasOlderHistory = firstMomentDay.getTime() < sixMonthsAgo.getTime();
+    const totalDays = Math.floor((today.getTime() - start.getTime()) / 86_400_000) + 1;
 
-    const totalDays =
-      Math.floor((today.getTime() - start.getTime()) / 86_400_000) + 1;
     const dots: HistoryDot[] = [];
-
     for (let i = 0; i < totalDays; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
@@ -255,16 +285,15 @@ export default function DashboardPage() {
         date: d,
         weekIndex: Math.floor(i / 7),
         dayIndex: i % 7,
-        session: latestMomentByDay.get(key) ?? null,
+        moment: latestMomentByDay.get(key) ?? null,
       });
     }
-
     return {
       dots,
       weekCount: Math.max(1, Math.ceil(totalDays / 7)),
-      hasOlderHistory,
+      hasOlderHistory: firstMomentDay.getTime() < sixMonthsAgo.getTime(),
     };
-  }, [latestMomentByDay, sessionsSorted, showFullHistory]);
+  }, [latestMomentByDay, showFullHistory]);
 
   const storyLine =
     daysWithMomentsCount === 0
@@ -284,7 +313,28 @@ export default function DashboardPage() {
         ? "Your story is just starting. A few more days and your grid will begin to grow."
         : "Almost there. Your story grid unlocks soon.";
 
-  const hasAnyPracticeThisWeek = week.some((d) => d.practiced);
+  const timelineEntries = useMemo(() => {
+    const momentEntries: TimelineEntry[] = moments.map((m) => ({
+      kind: "moment",
+      id: `moment-${m.id}`,
+      createdAt: m.created_at,
+      metadata: toMomentMetadata(m),
+      row: m,
+    }));
+    const wrapEntries: TimelineEntry[] = wrapUps.map((w) => ({
+      kind: "wrap_up",
+      id: `wrap-${w.id}`,
+      createdAt: w.created_at,
+      metadata: toWrapUpMetadata(w),
+      row: w,
+    }));
+    return [...momentEntries, ...wrapEntries].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [moments, wrapUps]);
+
+  const visibleEntries = timelineEntries.slice(0, visibleTimelineCount);
+  const hasAnyMomentThisWeek = week.some((d) => d.practiced);
   const formattedNickname = toTitleCase(nickname);
 
   const cell = 14;
@@ -292,133 +342,41 @@ export default function DashboardPage() {
   const svgWidth = pad * 2 + historyModel.weekCount * cell;
   const svgHeight = pad * 2 + 7 * cell;
 
-  async function generateStoryCardBlob() {
-    const cardSize = 1080;
-    const canvas = document.createElement("canvas");
-    canvas.width = cardSize;
-    canvas.height = cardSize;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Could not create canvas context.");
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, cardSize);
-    gradient.addColorStop(0, "#ffedd8");
-    gradient.addColorStop(1, "#ffe2bf");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, cardSize, cardSize);
-
-    ctx.fillStyle = "rgba(255,255,255,0.32)";
-    ctx.fillRect(78, 78, 924, 924);
-
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#1b2438";
-    ctx.font = "600 66px Inter, Avenir Next, Segoe UI, sans-serif";
-    ctx.fillText("My tiny pauses", cardSize / 2, 156);
-
-    ctx.fillStyle = "#f97316";
-    ctx.font = "700 82px Inter, Avenir Next, Segoe UI, sans-serif";
-    ctx.fillText(
-      `${totalMoments} ${totalMoments === 1 ? "moment" : "moments"}`,
-      cardSize / 2,
-      248,
-    );
-
-    if (daysWithMomentsCount >= 10) {
-      const today = startOfDay(new Date());
-      const weeks = 16;
-      const totalDays = weeks * 7;
-      const start = new Date(today);
-      start.setDate(today.getDate() - (totalDays - 1));
-
-      const shareCell = 38;
-      const gridWidth = weeks * shareCell;
-      const x0 = (cardSize - gridWidth) / 2;
-      const y0 = 336;
-
-      for (let i = 0; i < totalDays; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        const key = dateKey(d);
-        const dayMoment = latestMomentByDay.get(key) ?? null;
-        const weekIndex = Math.floor(i / 7);
-        const dayIndex = i % 7;
-        const cx = x0 + weekIndex * shareCell + shareCell / 2;
-        const cy = y0 + dayIndex * shareCell + shareCell / 2;
-        const style = dayMoment
-          ? moodDotStyle(dayMoment.mood_after)
-          : { fill: "rgba(163, 171, 179, 0.2)", radius: 9.5 };
-
-        ctx.beginPath();
-        ctx.arc(
-          cx,
-          cy,
-          dayMoment ? style.radius * 1.9 : style.radius,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fillStyle = style.fill;
-        ctx.fill();
-      }
-    } else {
-      drawSprout(ctx, cardSize / 2, 560, "#2f7e58");
-    }
-
-    ctx.fillStyle = "rgba(27, 36, 56, 0.62)";
-    ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
-    ctx.fillText("tinypause.app", cardSize / 2, 988);
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png"),
-    );
-    if (!blob) throw new Error("Could not encode story image.");
-    return blob;
-  }
-
-  async function handleShareStory() {
-    if (storyShareLoading) return;
-    setStoryShareLoading(true);
+  async function shareSelectedCard(entry: TimelineEntry) {
+    setShareLoading(true);
     try {
-      const blob = await generateStoryCardBlob();
-      const file = new File([blob], "tiny-pause-story.png", { type: "image/png" });
-      const nav = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-      };
-
+      const blob = await renderCardBlob(entry.metadata, 1080);
+      if (!blob) return;
+      const file = new File([blob], "tiny-pause-card.png", { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
       const canShareFiles =
         typeof nav.share === "function" &&
         typeof nav.canShare === "function" &&
         nav.canShare({ files: [file] });
-
       if (canShareFiles) {
-        await nav.share({
-          title: "My tiny pauses",
-          text: "My Tiny Pause story so far.",
-          files: [file],
-        });
+        await nav.share({ title: "Tiny Pause", files: [file] });
         return;
       }
-
-      if (storyImageUrl) URL.revokeObjectURL(storyImageUrl);
-      const url = URL.createObjectURL(blob);
-      setStoryImageUrl(url);
-      setShowStoryModal(true);
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+      setDownloadUrl(URL.createObjectURL(blob));
     } catch (error) {
-      console.error("Unable to share story", error);
+      console.error("Could not share card", error);
     } finally {
-      setStoryShareLoading(false);
+      setShareLoading(false);
     }
   }
 
-  function closeStoryModal() {
-    if (storyImageUrl) URL.revokeObjectURL(storyImageUrl);
-    setStoryImageUrl(null);
-    setShowStoryModal(false);
+  function closeCardModal() {
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    setDownloadUrl(null);
+    setSelectedCard(null);
   }
 
-  function downloadStoryImage() {
-    if (!storyImageUrl) return;
+  function downloadCard() {
+    if (!downloadUrl) return;
     const link = document.createElement("a");
-    link.href = storyImageUrl;
-    link.download = "tiny-pause-story.png";
+    link.href = downloadUrl;
+    link.download = "tiny-pause-card.png";
     link.click();
   }
 
@@ -426,24 +384,18 @@ export default function DashboardPage() {
     <PageShell maxWidth="lg">
       <header className="space-y-2">
         <BrandPill>Your calm corner</BrandPill>
-        <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
-          Hi, {formattedNickname}.
-        </h1>
+        <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">Hi, {formattedNickname}.</h1>
         <p className="text-sm text-[color:var(--color-foreground)]/80">
-          You can take a tiny mindful moment any time you like. We&apos;ll keep
-          gentle track for you.
+          You can take a tiny mindful moment any time you like. We'll keep gentle track for you.
         </p>
       </header>
 
       <BrandCard>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-[color:var(--color-primary)]">
-              Ready for today&apos;s moment?
-            </p>
+            <p className="text-sm font-medium text-[color:var(--color-primary)]">Ready for today's moment?</p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/85">
-              It only takes a minute or two. After, you can see how many tiny
-              pauses you&apos;ve taken this week.
+              It only takes a minute or two. After, you can see how many tiny pauses you've taken this week.
             </p>
           </div>
           <BrandButton href="/session" variant="primary">
@@ -455,12 +407,8 @@ export default function DashboardPage() {
       <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
         <div className="space-y-4">
           <BrandCard>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
-              This week
-            </p>
-            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
-              Every dot is a day you showed up for yourself.
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">This week</p>
+            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">Every dot is a day you showed up for yourself.</p>
             <div className="mt-4 flex items-center justify-between gap-2">
               {week.map((day) => (
                 <div key={day.dateLabel} className="flex flex-col items-center">
@@ -471,35 +419,24 @@ export default function DashboardPage() {
                         : "bg-[color:var(--color-surface-soft)]"
                     }`}
                   />
-                  <span className="text-[11px] font-medium text-[color:var(--color-foreground)]/70">
-                    {day.dateLabel}
-                  </span>
+                  <span className="text-[11px] font-medium text-[color:var(--color-foreground)]/70">{day.dateLabel}</span>
                 </div>
               ))}
             </div>
-            {!hasAnyPracticeThisWeek && (
-              <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">
-                Your first tiny pause will show up here.
-              </p>
+            {!hasAnyMomentThisWeek && (
+              <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">Your first tiny pause will show up here.</p>
             )}
           </BrandCard>
 
           <BrandCard>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">
-              Your story so far
-            </p>
-            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
-              {storyLine}
-            </p>
-
+            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">Your story so far</p>
+            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">{storyLine}</p>
             <div
               ref={storyWrapRef}
               className="relative mt-4 overflow-x-auto rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 p-2"
             >
               {daysWithMomentsCount < 7 ? (
-                <p className="px-4 py-8 text-center text-sm text-[color:var(--color-foreground)]/68">
-                  {earlyStoryMessage}
-                </p>
+                <p className="px-4 py-8 text-center text-sm text-[color:var(--color-foreground)]/68">{earlyStoryMessage}</p>
               ) : (
                 <svg
                   width={svgWidth}
@@ -511,10 +448,9 @@ export default function DashboardPage() {
                   {historyModel.dots.map((dot) => {
                     const cx = pad + dot.weekIndex * cell + cell / 2;
                     const cy = pad + dot.dayIndex * cell + cell / 2;
-                    const style = dot.session
-                      ? moodDotStyle(dot.session.mood_after)
+                    const style = dot.moment
+                      ? moodDotStyle(dot.moment.mood_value)
                       : { fill: "rgba(137, 146, 157, 0.16)", radius: 4.2 };
-
                     return (
                       <circle
                         key={dot.dayKey}
@@ -522,9 +458,9 @@ export default function DashboardPage() {
                         cy={cy}
                         r={style.radius}
                         fill={style.fill}
-                        className={dot.session ? "cursor-pointer" : ""}
+                        className={dot.moment ? "cursor-pointer" : ""}
                         onMouseEnter={(event) => {
-                          if (!dot.session || !storyWrapRef.current) return;
+                          if (!dot.moment || !storyWrapRef.current) return;
                           const rect = storyWrapRef.current.getBoundingClientRect();
                           setActiveTooltip({
                             x: event.clientX - rect.left + 10,
@@ -533,7 +469,7 @@ export default function DashboardPage() {
                           });
                         }}
                         onMouseMove={(event) => {
-                          if (!dot.session || !storyWrapRef.current) return;
+                          if (!dot.moment || !storyWrapRef.current) return;
                           const rect = storyWrapRef.current.getBoundingClientRect();
                           setActiveTooltip({
                             x: event.clientX - rect.left + 10,
@@ -542,29 +478,16 @@ export default function DashboardPage() {
                           });
                         }}
                         onMouseLeave={() => setActiveTooltip(null)}
-                        onClick={(event) => {
-                          if (!dot.session || !storyWrapRef.current) return;
-                          const rect = storyWrapRef.current.getBoundingClientRect();
-                          setActiveTooltip({
-                            x: event.clientX - rect.left + 10,
-                            y: event.clientY - rect.top - 10,
-                            dot,
-                          });
-                        }}
                       />
                     );
                   })}
                 </svg>
               )}
-
-              {daysWithMomentsCount >= 7 && activeTooltip?.dot.session && (
+              {daysWithMomentsCount >= 7 && activeTooltip?.dot.moment && (
                 <div
                   className="pointer-events-none absolute z-10 w-52 rounded-xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs text-[color:var(--color-foreground)] shadow-[var(--shadow-soft)]"
                   style={{
-                    left: Math.min(
-                      Math.max(activeTooltip.x, 8),
-                      (storyWrapRef.current?.clientWidth ?? 240) - 220,
-                    ),
+                    left: Math.min(Math.max(activeTooltip.x, 8), (storyWrapRef.current?.clientWidth ?? 240) - 220),
                     top: Math.max(activeTooltip.y - 54, 8),
                   }}
                 >
@@ -576,16 +499,14 @@ export default function DashboardPage() {
                     })}
                   </p>
                   <p className="mt-0.5 text-[color:var(--color-foreground)]/78">
-                    {toCategoryLabel(activeTooltip.dot.session)} ·{" "}
-                    {toPromptLabel(activeTooltip.dot.session)}
+                    {(activeTooltip.dot.moment.category ?? "Mindful moment")} ·{" "}
+                    {(activeTooltip.dot.moment.prompt_name ?? "Tiny pause")}
                   </p>
                 </div>
               )}
             </div>
 
-            {daysWithMomentsCount >= 7 &&
-              historyModel.hasOlderHistory &&
-              !showFullHistory && (
+            {daysWithMomentsCount >= 7 && historyModel.hasOlderHistory && !showFullHistory && (
               <button
                 type="button"
                 onClick={() => setShowFullHistory(true)}
@@ -593,25 +514,72 @@ export default function DashboardPage() {
               >
                 Show more
               </button>
-              )}
-
-            {daysWithMomentsCount >= 10 && (
-              <button
-                type="button"
-                onClick={handleShareStory}
-                disabled={storyShareLoading || totalMoments === 0}
-                className="mt-3 text-xs text-[color:var(--color-primary)]/82 underline decoration-[color:var(--color-primary)]/45 underline-offset-2 hover:text-[color:var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-55"
-              >
-                {storyShareLoading ? "Preparing story..." : "Share your story"}
-              </button>
             )}
           </BrandCard>
+
+          {totalMoments > 0 && (
+            <BrandCard>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">Your check-ins</p>
+              <div className="mt-3 space-y-3">
+                {visibleEntries.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => setSelectedCard(entry)}
+                    className={`flex w-full items-start gap-3 rounded-2xl border border-[color:var(--color-border-subtle)] p-3 text-left transition hover:bg-[color:var(--color-surface-soft)] ${
+                      entry.kind === "wrap_up" ? "bg-[color:var(--color-accent-soft)]/28" : "bg-[color:var(--color-surface)]"
+                    }`}
+                  >
+                    <TimelineThumb metadata={entry.metadata} />
+                    <div className="min-w-0 flex-1">
+                      {entry.kind === "moment" ? (
+                        <>
+                          <p className="inline-flex rounded-full bg-[color:var(--color-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-ink-on-accent-soft)]">
+                            {entry.row.category ?? "Mindful moment"}
+                          </p>
+                          <p className="mt-1 truncate text-sm font-medium text-[color:var(--color-primary)]">
+                            {entry.row.prompt_name ?? "Tiny pause"}
+                          </p>
+                          <p className="mt-1 text-xs text-[color:var(--color-foreground)]/72">
+                            {new Date(entry.createdAt).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-[color:var(--color-primary)]">{getWrapUpLabel(entry.row)}</p>
+                            <span className="rounded-full bg-[color:var(--color-surface)] px-2 py-0.5 text-[10px] font-semibold uppercase text-[color:var(--color-primary)]/75">
+                              {entry.row.period_type}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-[color:var(--color-foreground)]/74">
+                            {getWrapUpSummary(entry.row)}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {visibleTimelineCount < timelineEntries.length && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleTimelineCount((v) => v + 10)}
+                  className="mt-3 text-xs text-[color:var(--color-primary)]/82 underline decoration-[color:var(--color-primary)]/45 underline-offset-2 hover:text-[color:var(--color-primary)]"
+                >
+                  Load more
+                </button>
+              )}
+            </BrandCard>
+          )}
         </div>
 
         <BrandCard tone="muted">
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
-            Your tiny wins so far
-          </p>
+          <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your tiny wins so far</p>
           <p className="mt-2 text-4xl font-semibold text-[color:var(--color-accent)]">
             {totalMoments}
             <span className="ml-2 text-base font-medium text-[color:var(--color-primary)]/80">
@@ -627,37 +595,51 @@ export default function DashboardPage() {
       </section>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-[color:var(--color-foreground)]/70">
-        <a
-          href="/"
-          className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80"
-        >
+        <a href="/" className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80">
           Back to home
         </a>
-        <a
-          href="/login"
-          className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80"
-        >
-          Sign in as a different grown‑up
+        <a href="/login" className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80">
+          Sign in as a different grown-up
         </a>
       </footer>
-      {showStoryModal && storyImageUrl && (
+
+      {selectedCard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4">
           <div className="w-full max-w-md rounded-2xl bg-[color:var(--color-surface)] p-4 shadow-[0_22px_55px_rgba(2,6,23,0.45)]">
-            <img
-              src={storyImageUrl}
-              alt="Story share card preview"
-              className="w-full rounded-xl border border-[color:var(--color-border-subtle)]"
-            />
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <BrandButton type="button" onClick={downloadStoryImage} fullWidth>
-                Download image
+            {(() => {
+              const canvas = renderCardCanvas(selectedCard.metadata, 720);
+              if (!canvas) {
+                const fallback = fallbackCardText(selectedCard.metadata);
+                return (
+                  <div className="rounded-xl border border-[color:var(--color-border-subtle)] p-6 text-center">
+                    <p className="text-base font-semibold text-[color:var(--color-primary)]">{fallback.title}</p>
+                    <p className="mt-1 text-sm text-[color:var(--color-foreground)]/75">{fallback.subtitle}</p>
+                    <p className="mt-2 text-xs text-[color:var(--color-foreground)]/62">
+                      Canvas isn't available here. You can screenshot this card.
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <img
+                  src={canvas.toDataURL("image/png")}
+                  alt="Card preview"
+                  className="w-full rounded-xl border border-[color:var(--color-border-subtle)]"
+                />
+              );
+            })()}
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <BrandButton type="button" onClick={() => shareSelectedCard(selectedCard)} fullWidth>
+                {shareLoading ? "Preparing..." : "Share"}
               </BrandButton>
-              <BrandButton
-                type="button"
-                variant="secondary"
-                onClick={closeStoryModal}
-                fullWidth
-              >
+              {downloadUrl ? (
+                <BrandButton type="button" variant="secondary" onClick={downloadCard} fullWidth>
+                  Download image
+                </BrandButton>
+              ) : (
+                <div />
+              )}
+              <BrandButton type="button" variant="secondary" onClick={closeCardModal} fullWidth>
                 Close
               </BrandButton>
             </div>

@@ -2,6 +2,7 @@
 
 import { type CSSProperties, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { type MomentCardMetadata, renderCardBlob } from "@/lib/cardRenderer";
 import { BrandButton, BrandCard, PageShell } from "../ui";
 
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
@@ -160,12 +161,6 @@ export default function SessionPage() {
     mood: "#ffd84a", // yellow
     done: "#9f7fff", // purple
   };
-  const accentByKind: Record<PromptKind, string> = {
-    pause: "#25e0c5",
-    "letting-go": "#ff2f92",
-    reflect: "#ffd84a",
-    kindness: "#9f7fff",
-  };
 
   useEffect(() => {
     async function loadUser() {
@@ -221,10 +216,19 @@ export default function SessionPage() {
     if (!userId) return;
 
     try {
+      const momentCreatedAt = new Date().toISOString();
       await supabase.from("sessions").insert({
         user_id: userId,
         mood_after: selectedMood,
-        completed_at: new Date().toISOString(),
+        completed_at: momentCreatedAt,
+      });
+      await supabase.from("moments").insert({
+        user_id: userId,
+        created_at: momentCreatedAt,
+        category: kind ? kindLabels[kind] : "Mindful moment",
+        prompt_name: prompt?.title ?? "Tiny pause",
+        mood_value: selectedMood,
+        card_type: "moment",
       });
     } catch (error) {
       console.error("Error recording session", error);
@@ -282,107 +286,6 @@ export default function SessionPage() {
     }
   }
 
-  function drawRoundedRect(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    radius: number,
-  ) {
-    const r = Math.min(radius, width / 2, height / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + width, y, x + width, y + height, r);
-    ctx.arcTo(x + width, y + height, x, y + height, r);
-    ctx.arcTo(x, y + height, x, y, r);
-    ctx.arcTo(x, y, x + width, y, r);
-    ctx.closePath();
-  }
-
-  function drawSprout(
-    ctx: CanvasRenderingContext2D,
-    centerX: number,
-    centerY: number,
-    color: string,
-  ) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;
-    ctx.lineWidth = 14;
-    ctx.lineCap = "round";
-
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY + 40);
-    ctx.bezierCurveTo(centerX - 4, centerY - 18, centerX + 4, centerY - 62, centerX, centerY - 120);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.ellipse(centerX - 46, centerY - 118, 56, 30, -0.45, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.ellipse(centerX + 46, centerY - 118, 56, 30, 0.45, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  async function generateShareCardBlob() {
-    const size = 1080;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Could not create share canvas.");
-
-    const badgeColor = kind ? accentByKind[kind] : "#9f7fff";
-    const badgeLabel = kind ? kindLabels[kind] : "Mindful moment";
-    const promptTitle = prompt?.title ?? "Tiny pause";
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, size);
-    gradient.addColorStop(0, "#ffedd8");
-    gradient.addColorStop(1, "#ffe3c1");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-
-    ctx.fillStyle = "rgba(255,255,255,0.34)";
-    drawRoundedRect(ctx, 86, 86, 908, 908, 48);
-    ctx.fill();
-
-    ctx.font = "500 42px Inter, Avenir Next, Segoe UI, sans-serif";
-    const badgeWidth = Math.max(260, ctx.measureText(badgeLabel).width + 90);
-    const badgeX = (size - badgeWidth) / 2;
-    const badgeY = 170;
-    ctx.fillStyle = badgeColor;
-    drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 78, 39);
-    ctx.fill();
-
-    ctx.fillStyle = "#121826";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(badgeLabel, size / 2, badgeY + 40);
-
-    drawSprout(ctx, size / 2, 520, "#2f7e58");
-
-    ctx.fillStyle = "#1b2438";
-    ctx.font = "600 58px Inter, Avenir Next, Segoe UI, sans-serif";
-    ctx.fillText("I took a tiny pause today.", size / 2, 700);
-
-    ctx.fillStyle = "rgba(27, 36, 56, 0.82)";
-    ctx.font = "500 38px Inter, Avenir Next, Segoe UI, sans-serif";
-    ctx.fillText(promptTitle, size / 2, 768);
-
-    ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
-    ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
-    ctx.fillText("tinypause.app", size / 2, 952);
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png"),
-    );
-    if (!blob) throw new Error("Could not encode share image.");
-    return blob;
-  }
-
   function closeShareModal() {
     if (shareImageUrl) URL.revokeObjectURL(shareImageUrl);
     setShareImageUrl(null);
@@ -393,7 +296,32 @@ export default function SessionPage() {
     if (shareLoading) return;
     setShareLoading(true);
     try {
-      const blob = await generateShareCardBlob();
+      let metadata: MomentCardMetadata = {
+        type: "moment",
+        category: kind ? kindLabels[kind] : "Mindful moment",
+        promptName: prompt?.title ?? "Tiny pause",
+        moodValue: mood,
+      };
+      if (supabase && userId) {
+        const { data: latestMoment } = await supabase
+          .from("moments")
+          .select("category, prompt_name, mood_value")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (latestMoment) {
+          metadata = {
+            type: "moment",
+            category: latestMoment.category ?? metadata.category,
+            promptName: latestMoment.prompt_name ?? metadata.promptName,
+            moodValue: latestMoment.mood_value ?? metadata.moodValue ?? null,
+          };
+        }
+      }
+
+      const blob = await renderCardBlob(metadata, 1080);
+      if (!blob) throw new Error("Canvas rendering unavailable.");
       const file = new File([blob], "tiny-pause-moment.png", { type: "image/png" });
       const nav = navigator as Navigator & {
         canShare?: (data: ShareData) => boolean;
