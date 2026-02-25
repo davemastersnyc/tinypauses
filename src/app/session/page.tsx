@@ -380,7 +380,7 @@ export default function SessionPage() {
             {step === "choose" && "What do you want help with today?"}
             {step === "prompt" && "Try this tiny pause"}
             {step === "mood" && "How do you feel now?"}
-            {step === "done" && "Nice work taking a pause"}
+            {step === "done" && "You just took a tiny pause."}
           </h1>
           <div className="mx-auto h-1 w-16 rounded-full bg-[color:var(--color-accent)]" />
           <div className="mx-auto mt-3 flex max-w-sm items-center justify-between gap-2">
@@ -620,7 +620,7 @@ export default function SessionPage() {
               </BrandButton>
               <BrandButton
                 type="button"
-                variant="secondary"
+                variant="outlineAccent"
                 onClick={saveCurrentPrompt}
                 fullWidth
               >

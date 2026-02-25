@@ -470,7 +470,7 @@ export default function DashboardPage() {
       <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
         <div className="space-y-4">
           <BrandCard>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">This week</p>
+            <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">This week</p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">Every dot is a day you showed up for yourself.</p>
             <div className="mt-4 flex items-center justify-between gap-2">
               {week.map((day) => (
@@ -492,7 +492,7 @@ export default function DashboardPage() {
           </BrandCard>
 
           <BrandCard>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">Your story so far</p>
+            <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your story so far</p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">{storyLine}</p>
             <div
               ref={storyWrapRef}
@@ -582,7 +582,7 @@ export default function DashboardPage() {
 
           {totalMoments > 0 && (
             <BrandCard>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/75">Your check-ins</p>
+              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your check-ins</p>
               <div className="mt-3 space-y-3">
                 {visibleEntries.map((entry) => (
                   <button
