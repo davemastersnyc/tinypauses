@@ -219,12 +219,13 @@ export default function DashboardPage() {
       }
       setNickname(profile.nickname);
 
-      const { data: momentRows } = await supabase
+      const { data: momentRows, error: momentsError } = await supabase
         .from("moments")
         .select("id, created_at, category, prompt_name, mood_value, card_type")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      if (momentRows && momentRows.length > 0) {
+      const momentsUnavailable = Boolean(momentsError);
+      if (!momentsUnavailable && momentRows && momentRows.length > 0) {
         setMoments((momentRows ?? []) as MomentRow[]);
       } else {
         // Backward compatibility: if moments is empty/unavailable, derive from sessions.
@@ -248,12 +249,17 @@ export default function DashboardPage() {
         setMoments(fallbackMoments);
       }
 
-      const { data: wrapUpRows } = await supabase
-        .from("wrap_ups")
-        .select("id, period_type, period_start, stats, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      setWrapUps((wrapUpRows ?? []) as WrapUpRow[]);
+      // Only query wrap_ups if moments table is available (same migration bundle).
+      if (!momentsUnavailable) {
+        const { data: wrapUpRows } = await supabase
+          .from("wrap_ups")
+          .select("id, period_type, period_start, stats, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        setWrapUps((wrapUpRows ?? []) as WrapUpRow[]);
+      } else {
+        setWrapUps([]);
+      }
     }
 
     load();

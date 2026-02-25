@@ -31,18 +31,29 @@ export type CardMetadata = MomentCardMetadata | WrapUpCardMetadata;
 
 export function renderCardCanvas(metadata: CardMetadata, size = 1080) {
   if (typeof document === "undefined") return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
+  const baseSize = 1080;
+
+  const baseCanvas = document.createElement("canvas");
+  baseCanvas.width = baseSize;
+  baseCanvas.height = baseSize;
+  const baseCtx = baseCanvas.getContext("2d");
+  if (!baseCtx) return null;
 
   if (metadata.type === "moment") {
-    drawMomentCard(ctx, size, metadata);
+    drawMomentCard(baseCtx, baseSize, metadata);
   } else {
-    drawWrapUpCard(ctx, size, metadata);
+    drawWrapUpCard(baseCtx, baseSize, metadata);
   }
-  return canvas;
+
+  if (size === baseSize) return baseCanvas;
+
+  const scaledCanvas = document.createElement("canvas");
+  scaledCanvas.width = size;
+  scaledCanvas.height = size;
+  const scaledCtx = scaledCanvas.getContext("2d");
+  if (!scaledCtx) return null;
+  scaledCtx.drawImage(baseCanvas, 0, 0, size, size);
+  return scaledCanvas;
 }
 
 export async function renderCardBlob(metadata: CardMetadata, size = 1080) {
@@ -334,13 +345,16 @@ function drawRoundedRect(
   height: number,
   radius: number,
 ) {
-  const r = Math.min(radius, width / 2, height / 2);
+  const safeWidth = Math.max(0, width);
+  const safeHeight = Math.max(0, height);
+  if (safeWidth === 0 || safeHeight === 0) return;
+  const r = Math.max(0, Math.min(radius, safeWidth / 2, safeHeight / 2));
   ctx.beginPath();
   ctx.moveTo(x + r, y);
-  ctx.arcTo(x + width, y, x + width, y + height, r);
-  ctx.arcTo(x + width, y + height, x, y + height, r);
-  ctx.arcTo(x, y + height, x, y, r);
-  ctx.arcTo(x, y, x + width, y, r);
+  ctx.arcTo(x + safeWidth, y, x + safeWidth, y + safeHeight, r);
+  ctx.arcTo(x + safeWidth, y + safeHeight, x, y + safeHeight, r);
+  ctx.arcTo(x, y + safeHeight, x, y, r);
+  ctx.arcTo(x, y, x + safeWidth, y, r);
   ctx.closePath();
 }
 
