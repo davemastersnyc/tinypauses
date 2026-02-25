@@ -21,6 +21,9 @@ type MomentRow = {
   created_at: string;
   category: string | null;
   prompt_name: string | null;
+  kind?: string | null;
+  prompt_title?: string | null;
+  title?: string | null;
   mood_value: number | null;
   card_type: string | null;
 };
@@ -91,11 +94,39 @@ function moodDotStyle(mood: number | null | undefined): DotStyle {
   return { fill: "rgba(37, 224, 197, 0.95)", radius: 5.6 };
 }
 
+function cleanText(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function categoryFromKind(kind: string | null | undefined) {
+  const raw = cleanText(kind)?.toLowerCase();
+  if (!raw) return null;
+  if (raw === "pause") return "Just a pause";
+  if (raw === "letting-go") return "Letting go";
+  if (raw === "reflect") return "Reflecting on today";
+  if (raw === "kindness") return "Kindness";
+  return toTitleCase(raw.replace(/[-_]/g, " "));
+}
+
+function resolveMomentCategory(row: MomentRow) {
+  return cleanText(row.category) ?? categoryFromKind(row.kind) ?? "Mindful moment";
+}
+
+function resolveMomentPrompt(row: MomentRow) {
+  return (
+    cleanText(row.prompt_name) ??
+    cleanText(row.prompt_title) ??
+    cleanText(row.title) ??
+    "Tiny pause"
+  );
+}
+
 function toMomentMetadata(row: MomentRow): MomentCardMetadata {
   return {
     type: "moment",
-    category: row.category ?? "Mindful moment",
-    promptName: row.prompt_name ?? "Tiny pause",
+    category: resolveMomentCategory(row),
+    promptName: resolveMomentPrompt(row),
     moodValue: row.mood_value ?? null,
   };
 }
@@ -221,7 +252,7 @@ export default function DashboardPage() {
 
       const { data: momentRows, error: momentsError } = await supabase
         .from("moments")
-        .select("id, created_at, category, prompt_name, mood_value, card_type")
+        .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       const momentsUnavailable = Boolean(momentsError);
@@ -531,8 +562,8 @@ export default function DashboardPage() {
                     })}
                   </p>
                   <p className="mt-0.5 text-[color:var(--color-foreground)]/78">
-                    {(activeTooltip.dot.moment.category ?? "Mindful moment")} ·{" "}
-                    {(activeTooltip.dot.moment.prompt_name ?? "Tiny pause")}
+                    {resolveMomentCategory(activeTooltip.dot.moment)} ·{" "}
+                    {resolveMomentPrompt(activeTooltip.dot.moment)}
                   </p>
                 </div>
               )}
@@ -567,10 +598,10 @@ export default function DashboardPage() {
                       {entry.kind === "moment" ? (
                         <>
                           <p className="inline-flex rounded-full bg-[color:var(--color-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-ink-on-accent-soft)]">
-                            {entry.row.category ?? "Mindful moment"}
+                            {resolveMomentCategory(entry.row)}
                           </p>
                           <p className="mt-1 truncate text-sm font-medium text-[color:var(--color-primary)]">
-                            {entry.row.prompt_name ?? "Tiny pause"}
+                            {resolveMomentPrompt(entry.row)}
                           </p>
                           <p className="mt-1 text-xs text-[color:var(--color-foreground)]/72">
                             {new Date(entry.createdAt).toLocaleDateString(undefined, {

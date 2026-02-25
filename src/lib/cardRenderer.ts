@@ -386,12 +386,13 @@ function drawSprout(
 }
 
 function badgeColorForCategory(category: string) {
-  const lower = category.toLowerCase();
+  const lower = category.trim().toLowerCase();
   if (lower.includes("letting")) return "#ff2f92";
   if (lower.includes("reflect")) return "#ffd84a";
   if (lower.includes("kind")) return "#9f7fff";
   if (lower.includes("pause")) return "#25e0c5";
-  return "#9f7fff";
+  if (lower.includes("mindful")) return "#25e0c5";
+  return "#f97316";
 }
 
 function daysInMonth(year: number, monthOneBased: number) {
