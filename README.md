@@ -20,6 +20,7 @@ Core app code lives in:
 Set these in your local env and deployment env:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `ADMIN_EMAIL` (for `/admin` access check)
 
 ## Supabase setup
 
@@ -27,9 +28,11 @@ Run these SQL files in Supabase SQL Editor:
 
 1. Prompt seed data:
    - `sql/seed_prompts_40.sql`
-2. Profile onboarding fields:
+2. Prompt admin fields + brain break steps:
+   - `sql/admin_prompt_management.sql`
+3. Profile onboarding fields:
    - `sql/profile_onboarding_fields.sql`
-3. Moments + wrap-ups schema/functions/cron:
+4. Moments + wrap-ups schema/functions/cron:
    - `sql/moments_and_wrapups.sql`
 
 Prompt seed behavior (`sql/seed_prompts_40.sql`):

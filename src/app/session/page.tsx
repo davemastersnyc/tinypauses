@@ -78,7 +78,7 @@ type BrainBreakSoundMode = "quiet" | "sound";
 
 const brainBreakAccent = "#5caec3";
 
-const brainBreakSteps = [
+const defaultBrainBreakSteps = [
   {
     instruction:
       "Shake your hands like you're flicking water off them. Arms too if you want.",
@@ -288,6 +288,9 @@ export default function SessionPage() {
   const [brainBreakSoundMode, setBrainBreakSoundMode] =
     useState<BrainBreakSoundMode>("quiet");
   const [brainBreakStep, setBrainBreakStep] = useState(-1);
+  const [brainBreakSteps, setBrainBreakSteps] = useState(
+    defaultBrainBreakSteps.map((item) => ({ instruction: item.instruction })),
+  );
   const [brainBreakShowFinishActions, setBrainBreakShowFinishActions] =
     useState(false);
   const [brainBreakLogged, setBrainBreakLogged] = useState(false);
@@ -360,6 +363,24 @@ export default function SessionPage() {
         if (typeof profile?.child_name === "string" && profile.child_name.trim()) {
           setChildName(profile.child_name.trim());
         }
+        const { data: stepsData } = await supabase
+          .from("brain_break_steps")
+          .select("step_number, instruction")
+          .order("step_number", { ascending: true });
+        const normalized = (stepsData ?? [])
+          .map((row) => ({
+            step: Number((row as { step_number?: number }).step_number ?? 0),
+            instruction: String(
+              (row as { instruction?: string }).instruction ?? "",
+            ).trim(),
+          }))
+          .filter((row) => row.step >= 1 && row.step <= 6 && row.instruction);
+        if (normalized.length === 6) {
+          normalized.sort((a, b) => a.step - b.step);
+          setBrainBreakSteps(
+            normalized.map((row) => ({ instruction: row.instruction })),
+          );
+        }
       }
     }
     loadUser();
@@ -407,7 +428,7 @@ export default function SessionPage() {
           .from("prompts")
           .select("id, title, body, step")
           .eq("kind", selectedKind)
-          .eq("is_active", true)
+          .eq("status", "active")
           .order("created_at", { ascending: false })
           .limit(20);
 
