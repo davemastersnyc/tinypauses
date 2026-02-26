@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "./ui";
@@ -106,6 +107,14 @@ export default function Home() {
           className="hero-orb pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(37,224,197,0.15)_0%,rgba(249,115,22,0.08)_48%,rgba(249,115,22,0)_74%)] blur-2xl"
         />
         <div className="relative space-y-4">
+          <Image
+            src="/brand/LogoLockUp.png"
+            alt="Tiny Pauses"
+            width={4000}
+            height={2000}
+            priority
+            className="mx-auto h-auto w-44 sm:w-56"
+          />
           <BrandPill>TINY PAUSES · TINY MINDFUL MOMENTS</BrandPill>
           <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
             2–3 minutes.{" "}

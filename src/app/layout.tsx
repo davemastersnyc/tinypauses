@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://tinypauses.com",
   },
+  icons: {
+    icon: "/brand/SmileFavicon.png",
+    shortcut: "/brand/SmileFavicon.png",
+    apple: "/brand/SmileFavicon.png",
+  },
   openGraph: {
     title: "Tiny Pauses · Tiny mindful moments",
     description:

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -112,10 +113,16 @@ export function AppNav() {
   return (
     <nav className="w-full border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)]/72 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-primary)]/95">
-          <span className="h-2 w-2 rounded-full bg-[color:var(--color-accent)]/55" />
-          <Link href="/" className="hover:text-[color:var(--color-accent)]">
-            Tiny Pauses
+        <div className="flex items-center">
+          <Link href="/" className="inline-flex items-center">
+            <Image
+              src="/brand/LogoText.png"
+              alt="Tiny Pauses"
+              width={400}
+              height={100}
+              priority
+              className="h-6 w-auto"
+            />
           </Link>
         </div>
 
