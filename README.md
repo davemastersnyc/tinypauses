@@ -34,11 +34,44 @@ Run these SQL files in Supabase SQL Editor:
    - `sql/profile_onboarding_fields.sql`
 4. Moments + wrap-ups schema/functions/cron:
    - `sql/moments_and_wrapups.sql`
+5. Seasonal + weekly special prompts:
+   - `sql/special_prompts_system.sql`
 
 Prompt seed behavior (`sql/seed_prompts_40.sql`):
 - Idempotent (safe to re-run).
 - Upserts the curated prompt set (44 active prompts total: 11 per kind).
 - Deactivates retired/non-curated prompts for `pause`, `letting-go`, `reflect`, and `kindness`.
+
+Special prompts behavior (`sql/special_prompts_system.sql`):
+- Idempotent (safe to re-run).
+- Adds `moments.special_type` and `moments.special_key` for special-session tracking.
+- Creates `seasonal_windows` and `special_prompts`.
+- Seeds:
+  - Seasonal windows: back-to-school, halloween, thanksgiving-week, holiday-season, valentines-day, end-of-school-year.
+  - Weekly windows: sunday-evening and monday-morning prompt pools.
+
+## Special prompts runtime
+
+- Dashboard computes one active special nudge at a time:
+  - Seasonal first (if currently in an active window).
+  - Weekly fallback:
+    - Sunday evening: 5pm to 11:59pm local time.
+    - Monday morning: 5am to 11:59am local time.
+- Nudge dismissal is stored in local storage for 24 hours per special key.
+- Session supports deep links from dashboard (`/session?specialType=...&specialKey=...&promptId=...`).
+- Completing a special session writes `special_type` and `special_key` to `moments`.
+- Sharing rules:
+  - Seasonal special moments are shareable.
+  - Weekly special moments are intentionally non-shareable.
+
+## Admin panel
+
+`/admin` now includes:
+- `Prompts` (base prompt library)
+- `Seasonal Prompts` (window activation + seasonal prompt management)
+- `Weekly Prompts` (weekly prompt management + rotation order)
+- `Brain Break Steps`
+- `Stats`
 
 ### Quick verification
 
@@ -53,6 +86,30 @@ select
 Expected:
 - `public.moments`
 - `public.wrap_ups`
+
+After running special prompts SQL:
+
+```sql
+select
+  to_regclass('public.seasonal_windows') as seasonal_windows_table,
+  to_regclass('public.special_prompts') as special_prompts_table;
+```
+
+Expected:
+- `public.seasonal_windows`
+- `public.special_prompts`
+
+```sql
+select special_type, special_key, count(*) as prompt_count
+from public.special_prompts
+where status = 'active'
+group by special_type, special_key
+order by special_type, special_key;
+```
+
+Expected:
+- Seasonal keys each have active prompts.
+- Weekly keys include `sunday-evening` and `monday-morning`.
 
 After running prompt seed SQL:
 

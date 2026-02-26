@@ -1,8 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  buildSeasonalContext,
+  buildWeeklyContext,
+  getActiveSeasonalWindow,
+  getActiveWeeklyKey,
+  pickSeasonalPrompt,
+  pickWeeklyPrompt,
+  specialNudgeStorageKey,
+  type SeasonalWindowRow,
+  type SpecialContext,
+  type SpecialPromptRow,
+} from "@/lib/specialPrompts";
 import {
   type CardMetadata,
   type MomentCardMetadata,
@@ -13,7 +27,7 @@ import {
   renderCardBlob,
   renderCardCanvas,
 } from "@/lib/cardRenderer";
-import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
+import { BrandButton, BrandCard, PageShell } from "../ui";
 
 type DayEntry = { dateLabel: string; practiced: boolean };
 type MomentRow = {
@@ -26,6 +40,8 @@ type MomentRow = {
   title?: string | null;
   mood_value: number | null;
   card_type: string | null;
+  special_type?: "seasonal" | "weekly" | null;
+  special_key?: string | null;
 };
 type SessionFallbackRow = {
   completed_at: string | null;
@@ -114,6 +130,12 @@ function categoryFromKind(kind: string | null | undefined) {
 }
 
 function resolveMomentCategory(row: MomentRow) {
+  if (row.special_type === "seasonal") {
+    return cleanText(row.category) ?? "Seasonal";
+  }
+  if (row.special_type === "weekly") {
+    return cleanText(row.category) ?? "Weekly";
+  }
   const raw = cleanText(row.category);
   if (raw) {
     const lower = raw.toLowerCase();
@@ -138,11 +160,17 @@ function toMomentMetadata(row: MomentRow): MomentCardMetadata {
     category: resolveMomentCategory(row),
     promptName: resolveMomentPrompt(row),
     moodValue: row.mood_value ?? null,
+    specialType: row.special_type ?? null,
+    specialKey: row.special_key ?? null,
   };
 }
 
 function isBrainBreakMomentRow(row: MomentRow) {
   return resolveMomentCategory(row).toLowerCase() === "brain break";
+}
+
+function isWeeklySpecialMomentRow(row: MomentRow) {
+  return row.special_type === "weekly";
 }
 
 function toWrapUpMetadata(row: WrapUpRow): WrapUpCardMetadata {
@@ -173,8 +201,6 @@ function getWrapUpSummary(row: WrapUpRow) {
 
 function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
   const [visible, setVisible] = useState(false);
-  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
-  const [fallback, setFallback] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -190,22 +216,11 @@ function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!visible || thumbUrl || fallback) return;
+  const thumbUrl = useMemo(() => {
+    if (!visible) return null;
     const canvas = renderCardCanvas(metadata, 120);
-    if (!canvas) {
-      setFallback(true);
-      return;
-    }
-    setThumbUrl(canvas.toDataURL("image/png"));
-  }, [visible, thumbUrl, fallback, metadata]);
-
-  useEffect(
-    () => () => {
-      if (thumbUrl?.startsWith("blob:")) URL.revokeObjectURL(thumbUrl);
-    },
-    [thumbUrl],
-  );
+    return canvas ? canvas.toDataURL("image/png") : null;
+  }, [visible, metadata]);
 
   const fallbackText = fallbackCardText(metadata);
 
@@ -215,8 +230,15 @@ function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
       className="h-[120px] w-[120px] overflow-hidden rounded-xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)]"
     >
       {thumbUrl ? (
-        <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
-      ) : fallback ? (
+        <Image
+          src={thumbUrl}
+          alt=""
+          width={120}
+          height={120}
+          unoptimized
+          className="h-full w-full object-cover"
+        />
+      ) : visible ? (
         <div className="flex h-full w-full flex-col justify-center px-2 text-center">
           <p className="text-[11px] font-semibold text-[color:var(--color-primary)]/85">{fallbackText.title}</p>
         </div>
@@ -241,6 +263,7 @@ export default function DashboardPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [activeTooltip, setActiveTooltip] = useState<{ x: number; y: number; dot: HistoryDot } | null>(null);
+  const [specialNudge, setSpecialNudge] = useState<SpecialContext | null>(null);
   const storyWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -330,6 +353,82 @@ export default function DashboardPage() {
       } else {
         setWrapUps([]);
       }
+
+      const now = new Date();
+      const completedRows = (momentRows ?? []) as MomentRow[];
+      const completedByKey = new Map<string, Set<string>>();
+      for (const row of completedRows) {
+        const key = cleanText(row.special_key);
+        const promptName = cleanText(row.prompt_name);
+        if (!key || !promptName) continue;
+        const current = completedByKey.get(key) ?? new Set<string>();
+        current.add(promptName);
+        completedByKey.set(key, current);
+      }
+
+      const [{ data: seasonalRows }, { data: specialPromptRows }] = await Promise.all([
+        supabase
+          .from("seasonal_windows")
+          .select("*")
+          .eq("active", true),
+        supabase
+          .from("special_prompts")
+          .select("*")
+          .eq("status", "active"),
+      ]);
+
+      const seasonalWindows = (seasonalRows ?? []) as SeasonalWindowRow[];
+      const specialPrompts = (specialPromptRows ?? []) as SpecialPromptRow[];
+      const activeSeasonal = getActiveSeasonalWindow(seasonalWindows, now);
+
+      let nextSpecial: SpecialContext | null = null;
+      if (activeSeasonal) {
+        const seasonalPrompt = pickSeasonalPrompt(specialPrompts, activeSeasonal.key, now);
+        if (seasonalPrompt) {
+          const activeCount = specialPrompts.filter(
+            (prompt) =>
+              prompt.special_type === "seasonal" &&
+              prompt.special_key === activeSeasonal.key &&
+              prompt.status === "active",
+          ).length;
+          const completedCount =
+            completedByKey.get(activeSeasonal.key)?.size ?? 0;
+          if (completedCount < activeCount) {
+            nextSpecial = buildSeasonalContext(activeSeasonal, seasonalPrompt);
+          }
+        }
+      }
+
+      if (!nextSpecial) {
+        const weeklyKey = getActiveWeeklyKey(now);
+        if (weeklyKey === "sunday-evening" || weeklyKey === "monday-morning") {
+          const weeklyPrompt = pickWeeklyPrompt(specialPrompts, weeklyKey, now);
+          if (weeklyPrompt) {
+            const completedThisPrompt = completedByKey
+              .get(weeklyKey)
+              ?.has(weeklyPrompt.name);
+            if (!completedThisPrompt) {
+              nextSpecial = buildWeeklyContext(weeklyKey, weeklyPrompt);
+            }
+          }
+        }
+      }
+
+      if (nextSpecial && typeof window !== "undefined") {
+        const key = specialNudgeStorageKey(nextSpecial.key);
+        const dismissedAtRaw = window.localStorage.getItem(key);
+        if (dismissedAtRaw) {
+          const dismissedAt = Number(dismissedAtRaw);
+          const elapsed = Number.isFinite(dismissedAt)
+            ? now.getTime() - dismissedAt
+            : Number.POSITIVE_INFINITY;
+          if (elapsed < 24 * 60 * 60 * 1000) {
+            nextSpecial = null;
+          }
+        }
+      }
+
+      setSpecialNudge(nextSpecial);
     }
 
     load();
@@ -410,17 +509,6 @@ export default function DashboardPage() {
     };
   }, [latestMomentByDay, showFullHistory]);
 
-  const storyLine =
-    daysWithMomentsCount === 0
-      ? "Your story starts with your first tiny pause."
-      : daysWithMomentsCount <= 4
-        ? "Your story is just getting started."
-        : daysWithMomentsCount <= 15
-          ? "You're building something real here."
-          : daysWithMomentsCount <= 30
-            ? "Look at all these tiny pauses."
-            : "You've been showing up for yourself for a while now.";
-
   const earlyStoryMessage =
     daysWithMomentsCount === 0
       ? "Your story grid is waiting for your first pause."
@@ -451,6 +539,10 @@ export default function DashboardPage() {
   const visibleEntries = timelineEntries.slice(0, visibleTimelineCount);
   const hasAnyMomentThisWeek = week.some((d) => d.practiced);
   const formattedGreetingName = greetingName ? toTitleCase(greetingName) : null;
+  const selectedCardSharingDisabled =
+    selectedCard?.kind === "moment" &&
+    (isBrainBreakMomentRow(selectedCard.row) ||
+      isWeeklySpecialMomentRow(selectedCard.row));
 
   const cell = 14;
   const pad = 8;
@@ -458,7 +550,12 @@ export default function DashboardPage() {
   const svgHeight = pad * 2 + 7 * cell;
 
   async function shareSelectedCard(entry: TimelineEntry) {
-    if (entry.kind === "moment" && isBrainBreakMomentRow(entry.row)) return;
+    if (
+      entry.kind === "moment" &&
+      (isBrainBreakMomentRow(entry.row) || isWeeklySpecialMomentRow(entry.row))
+    ) {
+      return;
+    }
     setShareLoading(true);
     try {
       const blob = await renderCardBlob(entry.metadata, 1080);
@@ -513,24 +610,45 @@ export default function DashboardPage() {
     router.push("/session");
   }
 
+  function dismissSpecialNudge() {
+    if (!specialNudge || typeof window === "undefined") return;
+    window.localStorage.setItem(
+      specialNudgeStorageKey(specialNudge.key),
+      String(Date.now()),
+    );
+    setSpecialNudge(null);
+  }
+
+  function startSpecialFromNudge() {
+    if (!specialNudge) return;
+    const query = new URLSearchParams({
+      specialType: specialNudge.type,
+      specialKey: specialNudge.key,
+      promptId: specialNudge.prompt.id,
+    });
+    router.push(`/session?${query.toString()}`);
+  }
+
   return (
     <PageShell maxWidth="lg">
       <header className="space-y-2">
-        <BrandPill>Your calm corner</BrandPill>
+        <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
+          Your calm corner
+        </p>
         <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
           {formattedGreetingName ? `Hi, ${formattedGreetingName}.` : "Hi there."}
         </h1>
         <p className="text-sm text-[color:var(--color-foreground)]/80">
-          You can take a tiny mindful moment any time you like. We'll keep gentle track for you.
+          You can take a tiny mindful moment any time you like. We&apos;ll keep gentle track for you.
         </p>
       </header>
 
       <BrandCard>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-[color:var(--color-primary)]">Ready for today's moment?</p>
+            <p className="text-sm font-medium text-[color:var(--color-primary)]">Ready for today&apos;s moment?</p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/85">
-              It only takes a minute or two. After, you can see how many tiny pauses you've taken this week.
+              It only takes a minute or two. After, you can see how many tiny pauses you&apos;ve taken this week.
             </p>
           </div>
           <BrandButton href="/session" variant="primary">
@@ -595,12 +713,45 @@ export default function DashboardPage() {
             )}
           </BrandCard>
 
+          {specialNudge && (
+            <BrandCard tone="muted">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p
+                    className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                    style={{
+                      backgroundColor: `${specialNudge.accentColor}26`,
+                      color: "#1f2a44",
+                    }}
+                  >
+                    {specialNudge.badgeLabel}
+                  </p>
+                  <p className="mt-2 text-sm text-[color:var(--color-primary)]/88">
+                    {specialNudge.nudgeCopy}
+                  </p>
+                  <div className="mt-3">
+                    <BrandButton type="button" onClick={startSpecialFromNudge}>
+                      Try this one
+                    </BrandButton>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={dismissSpecialNudge}
+                  className="rounded-full px-2 py-1 text-xs text-[color:var(--color-primary)]/62 hover:bg-[color:var(--color-surface-soft)] hover:text-[color:var(--color-primary)]"
+                  aria-label="Dismiss special nudge"
+                >
+                  ×
+                </button>
+              </div>
+            </BrandCard>
+          )}
+
           <BrandCard>
             <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your story so far</p>
-            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">{storyLine}</p>
             <div
               ref={storyWrapRef}
-              className="relative mt-4 overflow-x-auto rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 p-2"
+              className="relative mt-3 overflow-x-auto rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 p-2"
             >
               {daysWithMomentsCount < 7 ? (
                 <p className="px-4 py-8 text-center text-sm text-[color:var(--color-foreground)]/68">{earlyStoryMessage}</p>
@@ -688,25 +839,26 @@ export default function DashboardPage() {
             <BrandCard>
               <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your check-ins</p>
               <div className="mt-3 space-y-3">
-                {visibleEntries.map((entry) => (
-                  (() => {
-                    const isBrainBreak =
-                      entry.kind === "moment" && isBrainBreakMomentRow(entry.row);
-                    const wrapperClass = `flex w-full items-start gap-3 rounded-2xl border border-[color:var(--color-border-subtle)] p-3 text-left transition ${
-                      entry.kind === "wrap_up"
-                        ? "bg-[color:var(--color-accent-soft)]/28"
-                        : "bg-[color:var(--color-surface)]"
-                    } ${
-                      isBrainBreak
-                        ? "cursor-default"
-                        : "hover:bg-[color:var(--color-surface-soft)]"
-                    }`;
-                    return (
+                {visibleEntries.map((entry) => {
+                  const isBrainBreak =
+                    entry.kind === "moment" && isBrainBreakMomentRow(entry.row);
+                  const isWeeklySpecial =
+                    entry.kind === "moment" && isWeeklySpecialMomentRow(entry.row);
+                  const wrapperClass = `flex w-full items-start gap-3 rounded-2xl border border-[color:var(--color-border-subtle)] p-3 text-left transition ${
+                    entry.kind === "wrap_up"
+                      ? "bg-[color:var(--color-accent-soft)]/28"
+                      : "bg-[color:var(--color-surface)]"
+                  } ${
+                    isBrainBreak || isWeeklySpecial
+                      ? "cursor-default"
+                      : "hover:bg-[color:var(--color-surface-soft)]"
+                  }`;
+                  return (
                   <button
                     key={entry.id}
                     type="button"
                     onClick={() => {
-                      if (isBrainBreak) return;
+                      if (isBrainBreak || isWeeklySpecial) return;
                       setSelectedCard(entry);
                     }}
                     className={wrapperClass}
@@ -719,8 +871,19 @@ export default function DashboardPage() {
                             className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
                               isBrainBreak
                                 ? "bg-[#d9f3f8] text-[#1f6f86]"
+                                : entry.row.special_type === "seasonal"
+                                  ? "text-[#3a2d14]"
+                                  : entry.row.special_type === "weekly"
+                                    ? "bg-[#ede7ff] text-[#4f3e85]"
                                 : "bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
                             }`}
+                            style={
+                              entry.row.special_type === "seasonal"
+                                ? {
+                                    backgroundColor: "#f4c44733",
+                                  }
+                                : undefined
+                            }
                           >
                             {resolveMomentCategory(entry.row)}
                           </p>
@@ -750,9 +913,8 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </button>
-                    );
-                  })()
-                ))}
+                  );
+                })}
               </div>
               {visibleTimelineCount < timelineEntries.length && (
                 <button
@@ -784,12 +946,12 @@ export default function DashboardPage() {
       </section>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-[color:var(--color-foreground)]/70">
-        <a href="/" className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80">
+        <Link href="/" className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80">
           Back to home
-        </a>
-        <a href="/login" className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80">
+        </Link>
+        <Link href="/login" className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80">
           Sign in as a different grown-up
-        </a>
+        </Link>
       </footer>
 
       {selectedCard && (
@@ -804,23 +966,32 @@ export default function DashboardPage() {
                     <p className="text-base font-semibold text-[color:var(--color-primary)]">{fallback.title}</p>
                     <p className="mt-1 text-sm text-[color:var(--color-foreground)]/75">{fallback.subtitle}</p>
                     <p className="mt-2 text-xs text-[color:var(--color-foreground)]/62">
-                      Canvas isn't available here. You can screenshot this card.
+                      Canvas isn&apos;t available here. You can screenshot this card.
                     </p>
                   </div>
                 );
               }
               return (
-                <img
+                <Image
                   src={canvas.toDataURL("image/png")}
                   alt="Card preview"
+                  width={720}
+                  height={720}
+                  unoptimized
                   className="w-full rounded-xl border border-[color:var(--color-border-subtle)]"
                 />
               );
             })()}
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <BrandButton type="button" onClick={() => shareSelectedCard(selectedCard)} fullWidth>
-                {shareLoading ? "Preparing..." : "Share"}
-              </BrandButton>
+              {selectedCardSharingDisabled ? (
+                <BrandButton type="button" variant="secondary" fullWidth disabled>
+                  Sharing unavailable
+                </BrandButton>
+              ) : (
+                <BrandButton type="button" onClick={() => shareSelectedCard(selectedCard)} fullWidth>
+                  {shareLoading ? "Preparing..." : "Share"}
+                </BrandButton>
+              )}
               {downloadUrl ? (
                 <BrandButton type="button" variant="secondary" onClick={downloadCard} fullWidth>
                   Download image

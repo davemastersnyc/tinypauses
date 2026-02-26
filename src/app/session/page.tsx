@@ -1,9 +1,22 @@
 "use client";
 
-import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { type MomentCardMetadata, renderCardBlob } from "@/lib/cardRenderer";
+import {
+  buildSeasonalContext,
+  buildWeeklyContext,
+  getActiveSeasonalWindow,
+  getActiveWeeklyKey,
+  pickSeasonalPrompt,
+  pickWeeklyPrompt,
+  type SeasonalWindowRow,
+  type SpecialContext,
+  type SpecialPromptRow,
+} from "@/lib/specialPrompts";
 import { BrandButton, BrandCard, PageShell } from "../ui";
 
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
@@ -271,6 +284,7 @@ function BrainBreakStepVisual({ step }: { step: number }) {
 
 export default function SessionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<"choose" | "prompt" | "mood" | "done">(
     "choose",
   );
@@ -298,6 +312,7 @@ export default function SessionPage() {
   const [showTogetherBanner, setShowTogetherBanner] = useState(false);
   const [firstTogetherSession, setFirstTogetherSession] = useState(false);
   const [showTogetherDoneCopy, setShowTogetherDoneCopy] = useState(false);
+  const [specialContext, setSpecialContext] = useState<SpecialContext | null>(null);
   const brainBreakAudioContextRef = useRef<AudioContext | null>(null);
   const brainBreakOscillatorRef = useRef<OscillatorNode | null>(null);
   const brainBreakGainRef = useRef<GainNode | null>(null);
@@ -395,6 +410,84 @@ export default function SessionPage() {
     );
   }, []);
 
+  const loadSpecialPromptFromRoute = useCallback(async () => {
+    if (!supabase) return;
+    const routeSpecialType = searchParams.get("specialType");
+    const routeSpecialKey = searchParams.get("specialKey");
+    const routePromptId = searchParams.get("promptId");
+    if (
+      (routeSpecialType !== "seasonal" && routeSpecialType !== "weekly") ||
+      !routeSpecialKey
+    ) {
+      return;
+    }
+
+    const now = new Date();
+    setLoadingPrompt(true);
+    try {
+      const [{ data: seasonalRows }, { data: promptRows }] = await Promise.all([
+        supabase
+          .from("seasonal_windows")
+          .select("*")
+          .eq("active", true),
+        supabase
+          .from("special_prompts")
+          .select("*")
+          .eq("status", "active"),
+      ]);
+
+      const seasonal = (seasonalRows ?? []) as SeasonalWindowRow[];
+      const prompts = (promptRows ?? []) as SpecialPromptRow[];
+      let nextContext: SpecialContext | null = null;
+
+      if (routeSpecialType === "seasonal") {
+        const activeWindow = getActiveSeasonalWindow(
+          seasonal.filter((item) => item.key === routeSpecialKey),
+          now,
+        );
+        if (!activeWindow) return;
+        const selectedPrompt =
+          prompts.find(
+            (item) =>
+              item.id === routePromptId &&
+              item.special_type === "seasonal" &&
+              item.special_key === routeSpecialKey,
+          ) ?? pickSeasonalPrompt(prompts, routeSpecialKey, now);
+        if (!selectedPrompt) return;
+        nextContext = buildSeasonalContext(activeWindow, selectedPrompt);
+      } else {
+        const activeKey = getActiveWeeklyKey(now);
+        if (activeKey !== routeSpecialKey) return;
+        const selectedPrompt =
+          prompts.find(
+            (item) =>
+              item.id === routePromptId &&
+              item.special_type === "weekly" &&
+              item.special_key === routeSpecialKey,
+          ) ?? pickWeeklyPrompt(prompts, routeSpecialKey, now);
+        if (!selectedPrompt) return;
+        nextContext = buildWeeklyContext(activeKey, selectedPrompt);
+      }
+
+      if (!nextContext) return;
+      setSpecialContext(nextContext);
+      setKind(null);
+      setPrompt({
+        id: nextContext.prompt.id,
+        title: nextContext.prompt.name,
+        body: nextContext.prompt.body,
+        step: nextContext.prompt.tiny_step,
+      });
+      setStep("prompt");
+    } finally {
+      setLoadingPrompt(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    void loadSpecialPromptFromRoute();
+  }, [loadSpecialPromptFromRoute]);
+
   useEffect(() => {
     if (mode !== "regular" || step !== "choose") {
       setShowBrainBreakNudge(false);
@@ -413,7 +506,7 @@ export default function SessionPage() {
       void recordBrainBreakCompletion();
     }, 3000);
     return () => window.clearTimeout(timeout);
-  }, [mode, brainBreakStep]);
+  }, [mode, brainBreakStep, recordBrainBreakCompletion]);
 
   useEffect(() => {
     return () => stopBrainBreakTone();
@@ -473,10 +566,16 @@ export default function SessionPage() {
       await supabase.from("moments").insert({
         user_id: userId,
         created_at: momentCreatedAt,
-        category: kind ? kindLabels[kind] : "Mindful moment",
+        category: specialContext
+          ? specialContext.badgeLabel
+          : kind
+            ? kindLabels[kind]
+            : "Mindful moment",
         prompt_name: prompt?.title ?? "Tiny pause",
         mood_value: selectedMood,
         card_type: "moment",
+        special_type: specialContext?.type ?? null,
+        special_key: specialContext?.key ?? null,
       });
     } catch (error) {
       console.error("Error recording session", error);
@@ -485,6 +584,13 @@ export default function SessionPage() {
 
   function goToStep(target: "choose" | "prompt" | "mood" | "done") {
     setStep(target);
+  }
+
+  async function selectPromptKind(selected: PromptKind) {
+    setSpecialContext(null);
+    setKind(selected);
+    await loadPromptForKind(selected);
+    setStep("prompt");
   }
 
   function startBrainBreak() {
@@ -517,7 +623,7 @@ export default function SessionPage() {
     setBrainBreakStep((prev) => Math.min(prev + 1, 5));
   }
 
-  async function recordBrainBreakCompletion() {
+  const recordBrainBreakCompletion = useCallback(async () => {
     if (brainBreakLogged) return;
     setBrainBreakLogged(true);
     if (!supabase || !userId) return;
@@ -539,7 +645,7 @@ export default function SessionPage() {
     } catch (error) {
       console.error("Error recording brain break", error);
     }
-  }
+  }, [brainBreakLogged, userId]);
 
   function handleBrainBreakDoneAction() {
     stopBrainBreakTone();
@@ -565,6 +671,7 @@ export default function SessionPage() {
     setLoadingPrompt(false);
     setIsPromptSaved(false);
     setShowTogetherDoneCopy(false);
+    setSpecialContext(null);
     setStep("choose");
   }
 
@@ -637,14 +744,20 @@ export default function SessionPage() {
     try {
       let metadata: MomentCardMetadata = {
         type: "moment",
-        category: kind ? kindLabels[kind] : "Mindful moment",
+        category: specialContext
+          ? specialContext.badgeLabel
+          : kind
+            ? kindLabels[kind]
+            : "Mindful moment",
         promptName: prompt?.title ?? "Tiny pause",
         moodValue: mood,
+        specialType: specialContext?.type ?? null,
+        specialKey: specialContext?.key ?? null,
       };
       if (supabase && userId) {
         const { data: latestMoment } = await supabase
           .from("moments")
-          .select("category, prompt_name, mood_value")
+          .select("category, prompt_name, mood_value, special_type, special_key")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -655,6 +768,8 @@ export default function SessionPage() {
             category: latestMoment.category ?? metadata.category,
             promptName: latestMoment.prompt_name ?? metadata.promptName,
             moodValue: latestMoment.mood_value ?? metadata.moodValue ?? null,
+            specialType: latestMoment.special_type ?? metadata.specialType ?? null,
+            specialKey: latestMoment.special_key ?? metadata.specialKey ?? null,
           };
         }
       }
@@ -705,7 +820,11 @@ export default function SessionPage() {
         style={
           {
             "--color-accent":
-              mode === "brain-break" ? brainBreakAccent : accentByStep[step],
+              mode === "brain-break"
+                ? brainBreakAccent
+                : specialContext && step !== "choose"
+                  ? specialContext.accentColor
+                  : accentByStep[step],
           } as CSSProperties
         }
         className="space-y-5"
@@ -715,7 +834,11 @@ export default function SessionPage() {
         <header className="text-center space-y-1.5">
           {step !== "choose" && (
             <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium tracking-wide text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
-              {kind ? kindLabels[kind] : "Mindful moment"}
+              {specialContext
+                ? specialContext.badgeLabel
+                : kind
+                  ? kindLabels[kind]
+                  : "Mindful moment"}
             </p>
           )}
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-[color:var(--color-primary)]">
@@ -725,7 +848,9 @@ export default function SessionPage() {
             {step === "done" &&
               (showTogetherDoneCopy
                 ? "You just took a tiny pause together. That's a really good start."
-                : "You just took a tiny pause.")}
+                : specialContext
+                  ? `You just took a ${specialContext.name.toLowerCase()} pause.`
+                  : "You just took a tiny pause.")}
           </h1>
           <div className="mx-auto h-1 w-16 rounded-full bg-[color:var(--color-accent)]" />
           <div className="mx-auto mt-3 flex max-w-sm items-center justify-between gap-2">
@@ -775,48 +900,28 @@ export default function SessionPage() {
           <div className="mt-4 grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              onClick={async () => {
-                const selected: PromptKind = "pause";
-                setKind(selected);
-                await loadPromptForKind(selected);
-                setStep("prompt");
-              }}
+              onClick={() => selectPromptKind("pause")}
               className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Just a pause
             </button>
             <button
               type="button"
-              onClick={async () => {
-                const selected: PromptKind = "letting-go";
-                setKind(selected);
-                await loadPromptForKind(selected);
-                setStep("prompt");
-              }}
+              onClick={() => selectPromptKind("letting-go")}
               className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Letting go
             </button>
             <button
               type="button"
-              onClick={async () => {
-                const selected: PromptKind = "reflect";
-                setKind(selected);
-                await loadPromptForKind(selected);
-                setStep("prompt");
-              }}
+              onClick={() => selectPromptKind("reflect")}
               className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Reflecting on today
             </button>
             <button
               type="button"
-              onClick={async () => {
-                const selected: PromptKind = "kindness";
-                setKind(selected);
-                await loadPromptForKind(selected);
-                setStep("prompt");
-              }}
+              onClick={() => selectPromptKind("kindness")}
               className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
             >
               Kindness
@@ -841,18 +946,18 @@ export default function SessionPage() {
               Need to slow down first?
             </button>
           )}
-          <a
+          <Link
             href="/"
             className="mt-3 inline-block text-xs text-[color:var(--color-foreground)]/62 transition hover:text-[color:var(--color-foreground)]/86"
           >
             Maybe later
-          </a>
+          </Link>
           </BrandCard>
         )}
 
         {step === "prompt" && (
           <BrandCard>
-          {loadingPrompt || !prompt || !kind ? (
+          {loadingPrompt || !prompt ? (
             <p className="text-sm text-[color:var(--color-foreground)]/85">
               Finding a prompt…
             </p>
@@ -866,7 +971,15 @@ export default function SessionPage() {
                   {prompt.body}
                 </p>
               </div>
-              <div className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] p-5 text-[color:var(--color-ink-on-accent-soft)] sm:p-6">
+              <div
+                className="mt-4 rounded-2xl p-5 text-[color:var(--color-ink-on-accent-soft)] sm:p-6"
+                style={{
+                  backgroundColor:
+                    specialContext?.type === "seasonal"
+                      ? `${specialContext.accentColor}24`
+                      : "var(--color-accent-soft)",
+                }}
+              >
                 <p className="text-base font-semibold">Your tiny step</p>
                 <p className="mt-2 text-base leading-relaxed">{prompt.step}</p>
               </div>
@@ -887,12 +1000,12 @@ export default function SessionPage() {
                 >
                   Back
                 </button>
-                <a
+                <Link
                   href="/"
                   className="px-1 py-1 text-[color:var(--color-foreground)]/65 hover:text-[color:var(--color-primary)]"
                 >
                   Maybe later
-                </a>
+                </Link>
               </div>
             </>
           )}
@@ -972,25 +1085,27 @@ export default function SessionPage() {
               You can come back for another moment any time you like. For now,
               notice one more thing around you that makes you feel okay or safe.
             </p>
-            <button
-              type="button"
-              onClick={handleShareMoment}
-              disabled={shareLoading}
-              className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[#8f67ff] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(143,103,255,0.35)] transition hover:bg-[#7f57ef] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <svg
-                viewBox="0 0 20 20"
-                aria-hidden="true"
-                className="h-4 w-4"
-                fill="none"
+            {specialContext?.shareable !== false && (
+              <button
+                type="button"
+                onClick={handleShareMoment}
+                disabled={shareLoading}
+                className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[#8f67ff] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(143,103,255,0.35)] transition hover:bg-[#7f57ef] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                <path
-                  d="M10 2.5l1.3 3.2 3.2 1.3-3.2 1.3-1.3 3.2-1.3-3.2-3.2-1.3 3.2-1.3L10 2.5zM15.5 10.2l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"
-                  fill="currentColor"
-                />
-              </svg>
-              {shareLoading ? "Preparing image..." : "Share this moment"}
-            </button>
+                <svg
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                  fill="none"
+                >
+                  <path
+                    d="M10 2.5l1.3 3.2 3.2 1.3-3.2 1.3-1.3 3.2-1.3-3.2-3.2-1.3 3.2-1.3L10 2.5zM15.5 10.2l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"
+                    fill="currentColor"
+                  />
+                </svg>
+                {shareLoading ? "Preparing image..." : "Share this moment"}
+              </button>
+            )}
             <div className="flex flex-col gap-3">
               <BrandButton type="button" onClick={startAnotherRound} fullWidth>
                 Try another round
@@ -1013,9 +1128,12 @@ export default function SessionPage() {
         {showShareModal && shareImageUrl && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4">
             <div className="w-full max-w-md rounded-2xl bg-[color:var(--color-surface)] p-4 shadow-[0_22px_55px_rgba(2,6,23,0.45)]">
-              <img
+              <Image
                 src={shareImageUrl}
                 alt="Share card preview"
+                width={1080}
+                height={1080}
+                unoptimized
                 className="w-full rounded-xl border border-[color:var(--color-border-subtle)]"
               />
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">

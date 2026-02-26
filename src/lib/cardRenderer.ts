@@ -22,6 +22,8 @@ export type MomentCardMetadata = {
   category: string;
   promptName: string;
   moodValue: number | null;
+  specialType?: "seasonal" | "weekly" | null;
+  specialKey?: string | null;
 };
 
 export type WrapUpCardMetadata = {
@@ -96,8 +98,16 @@ function drawMomentCard(
   metadata: MomentCardMetadata,
 ) {
   const gradient = ctx.createLinearGradient(0, 0, 0, size);
-  gradient.addColorStop(0, "#ffedd8");
-  gradient.addColorStop(1, "#ffe3c1");
+  if (metadata.specialType === "seasonal") {
+    gradient.addColorStop(0, "#ffe8d6");
+    gradient.addColorStop(1, "#ffd7bb");
+  } else if (metadata.specialType === "weekly") {
+    gradient.addColorStop(0, "#efe8ff");
+    gradient.addColorStop(1, "#e2d4ff");
+  } else {
+    gradient.addColorStop(0, "#ffedd8");
+    gradient.addColorStop(1, "#ffe3c1");
+  }
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
 
@@ -119,6 +129,10 @@ function drawMomentCard(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(badgeLabel, size / 2, badgeY + 40);
+
+  if (metadata.specialType && metadata.specialKey) {
+    drawSpecialCornerIllustration(ctx, size - 170, 150, metadata.specialKey);
+  }
 
   drawSprout(ctx, size / 2, 520, "#2f7e58");
 
@@ -498,6 +512,107 @@ function badgeColorForCategory(category: string) {
   if (lower.includes("pause")) return "#25e0c5";
   if (lower.includes("mindful")) return "#25e0c5";
   return "#f97316";
+}
+
+function drawSpecialCornerIllustration(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  specialKey: string,
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  drawRoundedRect(ctx, -52, -52, 104, 104, 28);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(27,36,56,0.18)";
+  ctx.lineWidth = 2;
+  drawRoundedRect(ctx, -52, -52, 104, 104, 28);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#2a3141";
+  ctx.fillStyle = "#2a3141";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+
+  if (specialKey === "back-to-school") {
+    ctx.beginPath();
+    ctx.moveTo(-18, 18);
+    ctx.lineTo(22, -22);
+    ctx.stroke();
+    ctx.fillStyle = "#f4c447";
+    ctx.beginPath();
+    ctx.moveTo(22, -22);
+    ctx.lineTo(30, -30);
+    ctx.lineTo(16, -28);
+    ctx.closePath();
+    ctx.fill();
+  } else if (specialKey === "halloween") {
+    ctx.beginPath();
+    ctx.arc(0, 4, 22, Math.PI, 0);
+    ctx.fillStyle = "#f3a35f";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-22, 4);
+    ctx.quadraticCurveTo(-10, 34, 0, 16);
+    ctx.quadraticCurveTo(10, 34, 22, 4);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-9, 0, 4, 0, Math.PI * 2);
+    ctx.arc(9, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (specialKey === "thanksgiving-week") {
+    ctx.fillStyle = "#cc8f3a";
+    ctx.beginPath();
+    ctx.ellipse(0, 5, 22, 14, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#83551f";
+    ctx.beginPath();
+    ctx.moveTo(-10, -12);
+    ctx.quadraticCurveTo(8, -24, 12, 8);
+    ctx.stroke();
+  } else if (specialKey === "holiday-season") {
+    ctx.strokeStyle = "#2a3141";
+    ctx.beginPath();
+    ctx.moveTo(0, -28);
+    ctx.lineTo(0, 26);
+    ctx.moveTo(-26, 0);
+    ctx.lineTo(26, 0);
+    ctx.moveTo(-18, -18);
+    ctx.lineTo(18, 18);
+    ctx.moveTo(18, -18);
+    ctx.lineTo(-18, 18);
+    ctx.stroke();
+  } else if (specialKey === "valentines-day") {
+    ctx.fillStyle = "#d878aa";
+    ctx.beginPath();
+    ctx.moveTo(0, 24);
+    ctx.bezierCurveTo(-22, 5, -28, -8, -14, -18);
+    ctx.bezierCurveTo(-5, -24, 0, -14, 0, -10);
+    ctx.bezierCurveTo(0, -14, 5, -24, 14, -18);
+    ctx.bezierCurveTo(28, -8, 22, 5, 0, 24);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = "#f1b84f";
+    ctx.beginPath();
+    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      const x1 = Math.cos(angle) * 20;
+      const y1 = Math.sin(angle) * 20;
+      const x2 = Math.cos(angle) * 30;
+      const y2 = Math.sin(angle) * 30;
+      ctx.strokeStyle = "#f1b84f";
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
 }
 
 function daysInMonth(year: number, monthOneBased: number) {

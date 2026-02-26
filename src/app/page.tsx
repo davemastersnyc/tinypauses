@@ -75,6 +75,7 @@ function GentleTrackIcon() {
 
 export default function Home() {
   const [hideKidsLine, setHideKidsLine] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     async function checkAdultMode() {
@@ -82,6 +83,7 @@ export default function Home() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      setIsSignedIn(Boolean(user));
       if (!user) {
         setHideKidsLine(false);
         return;
@@ -139,8 +141,8 @@ export default function Home() {
             <BrandButton href="/session" variant="primary">
               Start a mindful moment
             </BrandButton>
-            <BrandButton href="/login" variant="secondary">
-              Log in to keep track
+            <BrandButton href={isSignedIn ? "/dashboard" : "/login"} variant="secondary">
+              {isSignedIn ? "Go to my dashboard" : "Log in to keep track"}
             </BrandButton>
           </div>
         </div>
@@ -181,6 +183,10 @@ export default function Home() {
           </p>
         </BrandCard>
       </section>
+
+      <p className="text-center text-sm text-[color:var(--color-foreground)]/60">
+        Made for kids. Loved by grown-ups too.
+      </p>
 
     </PageShell>
   );

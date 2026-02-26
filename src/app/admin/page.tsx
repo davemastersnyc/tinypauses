@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, PageShell } from "../ui";
 
-type AdminView = "prompts" | "brain-break" | "stats";
+type AdminView = "prompts" | "seasonal" | "weekly" | "brain-break" | "stats";
 type PromptStatus = "active" | "inactive" | "draft";
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
 type PromptFilter = "all" | PromptKind;
@@ -28,6 +28,33 @@ type BrainBreakStepRow = {
   updated_at: string;
 };
 
+type SeasonalWindowRow = {
+  id: string;
+  key: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  accent_color: string;
+  badge_label: string;
+  nudge_copy: string;
+  active: boolean;
+};
+
+type SpecialPromptStatus = "active" | "inactive" | "draft";
+type SpecialPromptRow = {
+  id: string;
+  special_type: "seasonal" | "weekly";
+  special_key: string;
+  seasonal_window_key: string | null;
+  name: string;
+  body: string;
+  tiny_step: string;
+  rotation_order: number | null;
+  status: SpecialPromptStatus;
+  internal_notes: string | null;
+  created_at: string;
+};
+
 type StatsModel = {
   activeByCategory: Array<{ label: string; count: number }>;
   byStatus: Array<{ label: string; count: number }>;
@@ -47,6 +74,8 @@ const categoryLabels: Record<PromptKind, string> = {
 
 const navItems: Array<{ id: AdminView; label: string }> = [
   { id: "prompts", label: "Prompts" },
+  { id: "seasonal", label: "Seasonal Prompts" },
+  { id: "weekly", label: "Weekly Prompts" },
   { id: "brain-break", label: "Brain Break Steps" },
   { id: "stats", label: "Stats" },
 ];
@@ -68,7 +97,7 @@ function formatDate(value: string) {
   });
 }
 
-function getStatusClass(status: PromptStatus) {
+function getStatusClass(status: PromptStatus | SpecialPromptStatus) {
   if (status === "active") return "bg-emerald-100 text-emerald-800";
   if (status === "inactive") return "bg-slate-200 text-slate-700";
   return "bg-amber-100 text-amber-800";
@@ -92,6 +121,12 @@ export default function AdminPage() {
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
   const [promptForm, setPromptForm] = useState(defaultPromptForm);
   const [savingPrompt, setSavingPrompt] = useState(false);
+
+  const [seasonalWindows, setSeasonalWindows] = useState<SeasonalWindowRow[]>([]);
+  const [seasonalPrompts, setSeasonalPrompts] = useState<SpecialPromptRow[]>([]);
+  const [weeklyPrompts, setWeeklyPrompts] = useState<SpecialPromptRow[]>([]);
+  const [specialLoading, setSpecialLoading] = useState(false);
+  const [specialError, setSpecialError] = useState<string | null>(null);
 
   const [brainBreakSteps, setBrainBreakSteps] = useState<BrainBreakStepRow[]>([]);
   const [editingBrainStepId, setEditingBrainStepId] = useState<string | null>(null);
@@ -204,6 +239,161 @@ export default function AdminPage() {
     }
     setBrainBreakSteps((data ?? []) as BrainBreakStepRow[]);
     setBrainStepsLoading(false);
+  }
+
+  async function loadSpecialPrompts() {
+    if (!supabase) return;
+    setSpecialLoading(true);
+    setSpecialError(null);
+    const [{ data: windowRows, error: windowError }, { data: promptRows, error: promptError }] =
+      await Promise.all([
+        supabase.from("seasonal_windows").select("*").order("name", { ascending: true }),
+        supabase.from("special_prompts").select("*").order("rotation_order", { ascending: true }),
+      ]);
+    if (windowError) {
+      setSpecialError(`Could not load seasonal windows: ${windowError.message}`);
+      setSpecialLoading(false);
+      return;
+    }
+    if (promptError) {
+      setSpecialError(`Could not load special prompts: ${promptError.message}`);
+      setSpecialLoading(false);
+      return;
+    }
+    const windows = (windowRows ?? []) as SeasonalWindowRow[];
+    const specials = (promptRows ?? []) as SpecialPromptRow[];
+    setSeasonalWindows(windows);
+    setSeasonalPrompts(specials.filter((row) => row.special_type === "seasonal"));
+    setWeeklyPrompts(specials.filter((row) => row.special_type === "weekly"));
+    setSpecialLoading(false);
+  }
+
+  async function toggleSeasonalWindow(windowRow: SeasonalWindowRow) {
+    if (!supabase) return;
+    const { error } = await supabase
+      .from("seasonal_windows")
+      .update({ active: !windowRow.active })
+      .eq("id", windowRow.id);
+    if (error) {
+      setSpecialError(`Could not update window: ${error.message}`);
+      return;
+    }
+    await loadSpecialPrompts();
+  }
+
+  async function toggleSpecialPromptStatus(row: SpecialPromptRow) {
+    if (!supabase) return;
+    const nextStatus: SpecialPromptStatus =
+      row.status === "active" ? "inactive" : "active";
+    const { error } = await supabase
+      .from("special_prompts")
+      .update({ status: nextStatus })
+      .eq("id", row.id);
+    if (error) {
+      setSpecialError(`Could not update prompt status: ${error.message}`);
+      return;
+    }
+    await loadSpecialPrompts();
+  }
+
+  async function shiftWeeklyRotation(row: SpecialPromptRow, delta: number) {
+    if (!supabase) return;
+    const currentOrder = row.rotation_order ?? 999;
+    const { error } = await supabase
+      .from("special_prompts")
+      .update({ rotation_order: Math.max(1, currentOrder + delta) })
+      .eq("id", row.id);
+    if (error) {
+      setSpecialError(`Could not update rotation: ${error.message}`);
+      return;
+    }
+    await loadSpecialPrompts();
+  }
+
+  async function saveSeasonalWindowEdits(row: SeasonalWindowRow) {
+    if (!supabase) return;
+    const startDate = window.prompt("Start date (YYYY-MM-DD)", row.start_date);
+    if (!startDate) return;
+    const endDate = window.prompt("End date (YYYY-MM-DD)", row.end_date);
+    if (!endDate) return;
+    const badgeLabel = window.prompt("Badge label", row.badge_label);
+    if (!badgeLabel) return;
+    const accentColor = window.prompt("Accent color (hex)", row.accent_color);
+    if (!accentColor) return;
+    const nudgeCopy = window.prompt("Nudge copy", row.nudge_copy);
+    if (!nudgeCopy) return;
+    const { error } = await supabase
+      .from("seasonal_windows")
+      .update({
+        start_date: startDate,
+        end_date: endDate,
+        badge_label: badgeLabel,
+        accent_color: accentColor,
+        nudge_copy: nudgeCopy,
+      })
+      .eq("id", row.id);
+    if (error) {
+      setSpecialError(`Could not save window edits: ${error.message}`);
+      return;
+    }
+    await loadSpecialPrompts();
+  }
+
+  async function addSpecialPrompt(
+    specialType: "seasonal" | "weekly",
+    specialKey: string,
+    seasonalWindowKey: string | null,
+  ) {
+    if (!supabase) return;
+    const name = window.prompt("Prompt name");
+    if (!name) return;
+    const body = window.prompt("Prompt body");
+    if (!body) return;
+    const tinyStep = window.prompt("Tiny step");
+    if (!tinyStep) return;
+    const rotationRaw = window.prompt("Rotation order (number)", "1");
+    const rotationOrder = Number(rotationRaw ?? "1");
+    const statusRaw = window.prompt("Status (active, inactive, draft)", "active");
+    const status =
+      statusRaw === "inactive" || statusRaw === "draft" ? statusRaw : "active";
+    const { error } = await supabase.from("special_prompts").insert({
+      special_type: specialType,
+      special_key: specialKey,
+      seasonal_window_key: seasonalWindowKey,
+      name: name.trim(),
+      body: body.trim(),
+      tiny_step: tinyStep.trim(),
+      rotation_order: Number.isFinite(rotationOrder) ? rotationOrder : 1,
+      status,
+    });
+    if (error) {
+      setSpecialError(`Could not create prompt: ${error.message}`);
+      return;
+    }
+    await loadSpecialPrompts();
+  }
+
+  async function quickEditSpecialPrompt(row: SpecialPromptRow) {
+    if (!supabase) return;
+    const name = window.prompt("Prompt name", row.name);
+    if (!name) return;
+    const body = window.prompt("Prompt body", row.body);
+    if (!body) return;
+    const tinyStep = window.prompt("Tiny step", row.tiny_step);
+    if (!tinyStep) return;
+    const { error } = await supabase
+      .from("special_prompts")
+      .update({
+        name: name.trim(),
+        body: body.trim(),
+        tiny_step: tinyStep.trim(),
+      })
+      .eq("id", row.id);
+    if (error) {
+      setSpecialError(`Could not edit prompt: ${error.message}`);
+      return;
+    }
+    await loadSpecialPrompts();
   }
 
   async function loadStats() {
@@ -329,6 +519,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!authorized) return;
     if (view === "prompts") void loadPrompts();
+    if (view === "seasonal" || view === "weekly") void loadSpecialPrompts();
     if (view === "brain-break") void loadBrainBreakSteps();
     if (view === "stats") void loadStats();
   }, [authorized, view]);
@@ -787,6 +978,212 @@ export default function AdminPage() {
                       </button>
                     </div>
                   </div>
+                </div>
+              )}
+            </BrandCard>
+          )}
+
+          {view === "seasonal" && (
+            <BrandCard>
+              <p className="text-sm font-semibold text-[color:var(--color-primary)]">
+                Seasonal Prompts
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--color-foreground)]/72">
+                Manage active windows, prompts, and nudge copy for seasonal moments.
+              </p>
+              {specialError && (
+                <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                  {specialError}
+                </p>
+              )}
+              {specialLoading ? (
+                <p className="mt-3 text-sm text-[color:var(--color-foreground)]/70">
+                  Loading seasonal prompts...
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {seasonalWindows.map((windowRow) => {
+                    const rows = seasonalPrompts
+                      .filter((prompt) => prompt.special_key === windowRow.key)
+                      .sort((a, b) => (a.rotation_order ?? 999) - (b.rotation_order ?? 999));
+                    return (
+                      <div
+                        key={windowRow.id}
+                        className="rounded-xl border border-[color:var(--color-border-subtle)] bg-white p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-[color:var(--color-primary)]">
+                              {windowRow.name}
+                            </p>
+                            <p className="text-xs text-[color:var(--color-foreground)]/70">
+                              {windowRow.start_date.slice(5)} to {windowRow.end_date.slice(5)} · {windowRow.badge_label}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => saveSeasonalWindowEdits(windowRow)}
+                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                            >
+                              Edit window
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                addSpecialPrompt(
+                                  "seasonal",
+                                  windowRow.key,
+                                  windowRow.key,
+                                )
+                              }
+                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                            >
+                              Add prompt
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSeasonalWindow(windowRow)}
+                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                            >
+                              {windowRow.active ? "Set inactive" : "Set active"}
+                            </button>
+                          </div>
+                        </div>
+                        <p className="mt-2 rounded-lg px-2 py-1 text-xs" style={{ backgroundColor: `${windowRow.accent_color}26` }}>
+                          Nudge: {windowRow.nudge_copy}
+                        </p>
+                        <div className="mt-2 space-y-1">
+                          {rows.map((row) => (
+                            <div key={row.id} className="flex items-start justify-between gap-2 rounded-lg border border-[color:var(--color-border-subtle)] p-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-[color:var(--color-primary)]">
+                                  {row.name}
+                                </p>
+                                <p className="truncate text-xs text-[color:var(--color-foreground)]/72">
+                                  {row.body}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => toggleSpecialPromptStatus(row)}
+                                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${getStatusClass(row.status)}`}
+                              >
+                                {row.status}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quickEditSpecialPrompt(row)}
+                                className="shrink-0 rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-[11px] hover:bg-[#eef8fb]"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          ))}
+                          {rows.length === 0 && (
+                            <p className="text-xs text-[color:var(--color-foreground)]/68">
+                              No seasonal prompts for this window.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </BrandCard>
+          )}
+
+          {view === "weekly" && (
+            <BrandCard>
+              <p className="text-sm font-semibold text-[color:var(--color-primary)]">
+                Weekly Prompts
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--color-foreground)]/72">
+                Sunday evening and Monday morning prompts rotate each week by order.
+              </p>
+              {specialError && (
+                <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                  {specialError}
+                </p>
+              )}
+              {specialLoading ? (
+                <p className="mt-3 text-sm text-[color:var(--color-foreground)]/70">
+                  Loading weekly prompts...
+                </p>
+              ) : (
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {(["sunday-evening", "monday-morning"] as const).map((key) => {
+                    const rows = weeklyPrompts
+                      .filter((row) => row.special_key === key)
+                      .sort((a, b) => (a.rotation_order ?? 999) - (b.rotation_order ?? 999));
+                    return (
+                      <div
+                        key={key}
+                        className="rounded-xl border border-[color:var(--color-border-subtle)] bg-white p-3"
+                      >
+                        <p className="text-sm font-semibold text-[color:var(--color-primary)]">
+                          {key === "sunday-evening" ? "Sunday evening" : "Monday morning"}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => addSpecialPrompt("weekly", key, null)}
+                          className="mt-1 rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                        >
+                          Add prompt
+                        </button>
+                        <div className="mt-2 space-y-2">
+                          {rows.map((row) => (
+                            <div key={row.id} className="rounded-lg border border-[color:var(--color-border-subtle)] p-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-sm font-medium text-[color:var(--color-primary)]">
+                                  #{row.rotation_order ?? "-"} {row.name}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSpecialPromptStatus(row)}
+                                  className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getStatusClass(row.status)}`}
+                                >
+                                  {row.status}
+                                </button>
+                              </div>
+                              <p className="mt-1 text-xs text-[color:var(--color-foreground)]/72">
+                                {row.body}
+                              </p>
+                              <div className="mt-2 flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => quickEditSpecialPrompt(row)}
+                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => shiftWeeklyRotation(row, -1)}
+                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                                >
+                                  Move up
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => shiftWeeklyRotation(row, 1)}
+                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                                >
+                                  Move down
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          {rows.length === 0 && (
+                            <p className="text-xs text-[color:var(--color-foreground)]/68">
+                              No prompts in this set yet.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </BrandCard>
