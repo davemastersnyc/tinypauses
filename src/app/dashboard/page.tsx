@@ -69,7 +69,6 @@ type TimelineEntry =
 const togetherBannerKey = "tinyPauses.showTogetherBanner";
 const togetherSessionKey = "tinyPauses.firstTogetherSession";
 const dashboardNudgeKey = "tinyPauses.showTogetherNudge";
-const keepMomentWelcomeKey = "tinyPauses.keepMomentWelcome";
 
 function buildWeekSkeleton(): DayEntry[] {
   const today = new Date();
@@ -266,7 +265,6 @@ export default function DashboardPage() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [activeTooltip, setActiveTooltip] = useState<{ x: number; y: number; dot: HistoryDot } | null>(null);
   const [specialNudge, setSpecialNudge] = useState<SpecialContext | null>(null);
-  const [showKeepMomentWelcome, setShowKeepMomentWelcome] = useState(false);
   const storyWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -293,29 +291,24 @@ export default function DashboardPage() {
         .select("*")
         .eq("id", user.id)
         .maybeSingle();
-      const keepMomentWelcome =
-        typeof window !== "undefined" &&
-        window.sessionStorage.getItem(keepMomentWelcomeKey) === "1";
-      if (keepMomentWelcome && typeof window !== "undefined") {
-        setShowKeepMomentWelcome(true);
-        window.sessionStorage.removeItem(keepMomentWelcomeKey);
-      }
 
       const shouldOnboard = !Boolean(
-        profile?.onboarding_complete || profile?.adult_mode || profile?.nickname,
+        profile?.onboarding_complete,
       );
-      if (shouldOnboard && !keepMomentWelcome) {
+      if (shouldOnboard) {
         router.replace("/onboarding");
         return;
       }
       const adultMode = Boolean(profile?.adult_mode);
       setIsAdultMode(adultMode);
+      const displayNameValue =
+        typeof profile?.display_name === "string" ? profile.display_name : null;
       const nicknameValue =
         typeof profile?.nickname === "string" ? profile.nickname : null;
       const childNameValue =
         typeof profile?.child_name === "string" ? profile.child_name : null;
       if (adultMode) {
-        setGreetingName(nicknameValue || null);
+        setGreetingName(displayNameValue || null);
         setChildNameForNudge(null);
       } else {
         setGreetingName(childNameValue || nicknameValue || "Friend");
@@ -657,14 +650,6 @@ export default function DashboardPage() {
           You can take a tiny mindful moment any time you like. We&apos;ll keep gentle track for you.
         </p>
       </header>
-
-      {showKeepMomentWelcome && (
-        <BrandCard tone="muted">
-          <p className="text-sm text-[color:var(--color-primary)]/88">
-            Your tiny pause is saved. Welcome.
-          </p>
-        </BrandCard>
-      )}
 
       <BrandCard>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

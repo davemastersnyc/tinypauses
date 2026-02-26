@@ -21,7 +21,12 @@ export default function LoginPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        router.replace("/dashboard");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_complete")
+          .eq("id", user.id)
+          .maybeSingle();
+        router.replace(profile?.onboarding_complete ? "/dashboard" : "/onboarding");
       }
     }
 

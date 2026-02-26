@@ -127,7 +127,7 @@ const defaultBrainBreakSteps: BrainBreakStep[] = [
 
 const togetherBannerKey = "tinyPauses.showTogetherBanner";
 const togetherSessionKey = "tinyPauses.firstTogetherSession";
-const keepMomentIntentKey = "tinyPauses.keepMomentIntent";
+const pendingMomentKey = "pending_moment";
 
 function MoodFace({ level }: { level: number }) {
   const stroke = "currentColor";
@@ -686,10 +686,22 @@ function SessionPageInner() {
   }
 
   function keepThisMoment() {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(keepMomentIntentKey, "1");
-    }
     router.push("/login");
+  }
+
+  function storePendingMoment(selectedMood: number | null) {
+    if (typeof window === "undefined" || userId) return;
+    const pendingMoment = {
+      prompt_name: prompt?.title ?? "Tiny pause",
+      category: specialContext
+        ? specialContext.badgeLabel
+        : kind
+          ? kindLabels[kind]
+          : "Mindful moment",
+      mood_value: selectedMood,
+      created_at: new Date().toISOString(),
+    };
+    window.localStorage.setItem(pendingMomentKey, JSON.stringify(pendingMoment));
   }
 
   function completeRegularSession(selectedMood: number | null) {
@@ -700,6 +712,7 @@ function SessionPageInner() {
       window.sessionStorage.removeItem(togetherSessionKey);
       window.sessionStorage.removeItem(togetherBannerKey);
     }
+    storePendingMoment(selectedMood);
     recordSession(selectedMood);
     setStep("done");
   }

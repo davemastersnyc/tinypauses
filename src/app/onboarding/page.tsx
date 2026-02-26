@@ -10,11 +10,14 @@ type AnchorMoment =
   | "Before bed"
   | "After dinner"
   | "We'll figure it out";
+type OnboardingView = "entry" | "child" | "adult-name" | "adult-welcome";
 
 const togetherBannerKey = "tinyPauses.showTogetherBanner";
 const togetherSessionKey = "tinyPauses.firstTogetherSession";
 const dashboardNudgeKey = "tinyPauses.showTogetherNudge";
-const onboardingSteps = 6;
+const pendingMomentKey = "pending_moment";
+const pendingMomentSavedKey = "tinyPauses.pendingMomentSaved";
+const childOnboardingSteps = 6;
 
 const anchorOptions: Array<{
   label: AnchorMoment;
@@ -64,9 +67,12 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState(1);
+  const [view, setView] = useState<OnboardingView>("entry");
+  const [childStep, setChildStep] = useState(1);
   const [childName, setChildName] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [anchorMoment, setAnchorMoment] = useState<AnchorMoment | null>(null);
+  const [pendingMomentSaved, setPendingMomentSaved] = useState(false);
 
   const childNameForCopy = useMemo(
     () => (childName.trim() ? childName.trim() : "your kid"),
@@ -97,7 +103,7 @@ export default function OnboardingPage() {
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile?.onboarding_complete || profile?.adult_mode) {
+      if (profile?.onboarding_complete) {
         router.replace("/dashboard");
         return;
       }
@@ -105,8 +111,21 @@ export default function OnboardingPage() {
       if (typeof profile?.child_name === "string") {
         setChildName(profile.child_name);
       }
+      if (typeof profile?.display_name === "string") {
+        setDisplayName(profile.display_name);
+      }
       if (typeof profile?.anchor_moment === "string") {
         setAnchorMoment(profile.anchor_moment as AnchorMoment);
+      }
+      if (profile?.adult_mode) {
+        setView("adult-name");
+      }
+      if (typeof window !== "undefined") {
+        const saved = window.sessionStorage.getItem(pendingMomentSavedKey) === "1";
+        if (saved) {
+          setPendingMomentSaved(true);
+          window.sessionStorage.removeItem(pendingMomentSavedKey);
+        }
       }
 
       setLoading(false);
@@ -124,10 +143,34 @@ export default function OnboardingPage() {
     if (upsertError) throw upsertError;
   }
 
+  async function persistPendingMomentIfAny() {
+    if (!supabase || !userId || typeof window === "undefined") return false;
+    const raw = window.localStorage.getItem(pendingMomentKey);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as {
+      prompt_name?: string;
+      category?: string;
+      mood_value?: number | null;
+      created_at?: string;
+    };
+    const { error: insertError } = await supabase.from("moments").insert({
+      user_id: userId,
+      created_at: parsed.created_at ?? new Date().toISOString(),
+      category: parsed.category ?? "Mindful moment",
+      prompt_name: parsed.prompt_name ?? "Tiny pause",
+      mood_value: typeof parsed.mood_value === "number" ? parsed.mood_value : null,
+      card_type: "moment",
+    });
+    if (insertError) throw insertError;
+    window.localStorage.removeItem(pendingMomentKey);
+    return true;
+  }
+
   async function skipSetup() {
     setSaving(true);
     setError(null);
     try {
+      await persistPendingMomentIfAny();
       await updateProfile({
         onboarding_complete: true,
         onboarding_skipped: true,
@@ -141,16 +184,13 @@ export default function OnboardingPage() {
     }
   }
 
-  async function enableAdultMode() {
+  async function chooseChildPath() {
     setSaving(true);
     setError(null);
     try {
-      await updateProfile({
-        adult_mode: true,
-        onboarding_complete: true,
-        onboarding_skipped: true,
-      });
-      router.replace("/session");
+      await updateProfile({ adult_mode: false });
+      setView("child");
+      setChildStep(1);
     } catch (err) {
       console.error(err);
       setError("Couldn’t save that right now. Please try again.");
@@ -159,13 +199,56 @@ export default function OnboardingPage() {
     }
   }
 
+  async function chooseAdultPath() {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateProfile({ adult_mode: true });
+      setView("adult-name");
+    } catch (err) {
+      console.error(err);
+      setError("Couldn’t save that right now. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function continueAdultToWelcome(name: string | null) {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateProfile({
+        adult_mode: true,
+        display_name: name,
+        onboarding_complete: true,
+        onboarding_skipped: false,
+      });
+      setView("adult-welcome");
+    } catch (err) {
+      console.error(err);
+      setError("Couldn’t save that right now. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveAdultNameAndContinue() {
+    const trimmed = displayName.trim();
+    if (!trimmed) return;
+    await continueAdultToWelcome(trimmed);
+  }
+
+  async function skipAdultName() {
+    await continueAdultToWelcome(null);
+  }
+
   async function saveChildNameAndNext() {
     if (!childName.trim()) return;
     setSaving(true);
     setError(null);
     try {
       await updateProfile({ child_name: childName.trim() });
-      setStep(5);
+      setChildStep(5);
     } catch (err) {
       console.error(err);
       setError("Couldn’t save that right now. Please try again.");
@@ -181,7 +264,7 @@ export default function OnboardingPage() {
       if (anchorMoment) {
         await updateProfile({ anchor_moment: anchorMoment });
       }
-      setStep(6);
+      setChildStep(6);
     } catch (err) {
       console.error(err);
       setError("Couldn’t save that right now. Please try again.");
@@ -250,32 +333,116 @@ export default function OnboardingPage() {
   return (
     <PageShell maxWidth="md">
       <section className="relative">
-        <button
-          type="button"
-          onClick={skipSetup}
-          disabled={saving}
-          className="absolute right-0 top-0 text-xs text-[color:var(--color-primary)]/70 underline decoration-[color:var(--color-primary)]/30 underline-offset-2 hover:text-[color:var(--color-primary)] disabled:opacity-50"
-        >
-          Skip setup
-        </button>
-        <div className="mx-auto mb-4 mt-7 w-full max-w-md">
-          <div className="mb-2 text-center text-xs font-medium text-[#2c7d91]/85">
-            Step {step} of {onboardingSteps}
-          </div>
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: onboardingSteps }).map((_, idx) => (
-              <span
-                key={idx}
-                className={`h-2 flex-1 rounded-full ${
-                  idx < step ? "bg-[#4ea6be]" : "bg-[#bfdde7]"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+        {view === "child" && (
+          <>
+            <button
+              type="button"
+              onClick={skipSetup}
+              disabled={saving}
+              className="absolute right-0 top-0 text-xs text-[color:var(--color-primary)]/70 underline decoration-[color:var(--color-primary)]/30 underline-offset-2 hover:text-[color:var(--color-primary)] disabled:opacity-50"
+            >
+              Skip setup
+            </button>
+            <div className="mx-auto mb-4 mt-7 w-full max-w-md">
+              <div className="mb-2 text-center text-xs font-medium text-[#2c7d91]/85">
+                Step {childStep} of {childOnboardingSteps}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: childOnboardingSteps }).map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`h-2 flex-1 rounded-full ${
+                      idx < childStep ? "bg-[#4ea6be]" : "bg-[#bfdde7]"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         <BrandCard>
-          {step === 1 && (
+          {view === "entry" && (
+            <div className="space-y-5 text-center">
+              <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
+                Who&apos;s this for?
+              </h1>
+              <p className="text-base text-[color:var(--color-foreground)]/82">
+                We&apos;ll set things up the right way.
+              </p>
+              <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                <BrandButton
+                  type="button"
+                  onClick={chooseChildPath}
+                  fullWidth
+                  disabled={saving}
+                >
+                  I&apos;m setting this up for my child
+                </BrandButton>
+                <BrandButton
+                  type="button"
+                  variant="secondary"
+                  onClick={chooseAdultPath}
+                  fullWidth
+                  disabled={saving}
+                >
+                  This is for me
+                </BrandButton>
+              </div>
+            </div>
+          )}
+
+          {view === "adult-name" && (
+            <div className="space-y-5 text-center">
+              <h1 className="text-2xl font-semibold text-[color:var(--color-primary)]">
+                What should we call you?
+              </h1>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                placeholder="Your name"
+                className="mx-auto block w-full max-w-sm rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-center text-lg text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[#4ea6be] focus:ring-2 focus:ring-[#d9f3f8]"
+              />
+              <BrandButton
+                type="button"
+                onClick={saveAdultNameAndContinue}
+                fullWidth
+                disabled={!displayName.trim() || saving}
+              >
+                That&apos;s me
+              </BrandButton>
+              <button
+                type="button"
+                onClick={skipAdultName}
+                disabled={saving}
+                className="text-xs text-[color:var(--color-primary)]/70 underline decoration-[color:var(--color-primary)]/26 underline-offset-2 hover:text-[color:var(--color-primary)]"
+              >
+                Skip for now
+              </button>
+            </div>
+          )}
+
+          {view === "adult-welcome" && (
+            <div className="space-y-6 text-center">
+              <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
+                {pendingMomentSaved ? "Your tiny pause is saved." : "You&apos;re all set."}
+              </h1>
+              <p className="mx-auto max-w-xl text-base text-[color:var(--color-foreground)]/84">
+                {pendingMomentSaved
+                  ? "It&apos;s the first one in your collection. Come back whenever you need another."
+                  : "Take a tiny pause any time you need one. We&apos;ll keep gentle track for you."}
+              </p>
+              <BrandButton
+                href={pendingMomentSaved ? "/dashboard" : "/session"}
+                fullWidth
+              >
+                {pendingMomentSaved ? "See my collection" : "Take my first tiny pause"}
+              </BrandButton>
+            </div>
+          )}
+
+          {view === "child" && childStep === 1 && (
             <div className="space-y-5 text-center">
               <BrandPill>You&apos;re setting this up for a kid.</BrandPill>
               <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
@@ -290,21 +457,13 @@ export default function OnboardingPage() {
                 one.
               </p>
               <p className="text-6xl" aria-hidden="true">🌱</p>
-              <BrandButton type="button" onClick={() => setStep(2)} fullWidth>
+              <BrandButton type="button" onClick={() => setChildStep(2)} fullWidth>
                 Let&apos;s get started
               </BrandButton>
-              <button
-                type="button"
-                onClick={enableAdultMode}
-                disabled={saving}
-                className="text-xs text-[color:var(--color-primary)]/72 underline decoration-[color:var(--color-primary)]/28 underline-offset-2 hover:text-[color:var(--color-primary)]"
-              >
-                I&apos;m here for myself, not a kid.
-              </button>
             </div>
           )}
 
-          {step === 2 && (
+          {view === "child" && childStep === 2 && (
             <div className="space-y-5">
               <h1 className="text-center text-2xl font-semibold text-[color:var(--color-primary)]">
                 Here&apos;s what you&apos;re giving them.
@@ -336,13 +495,13 @@ export default function OnboardingPage() {
               <p className="text-center text-xs italic text-[color:var(--color-foreground)]/68">
                 It&apos;s just a tiny pause. That&apos;s the whole idea.
               </p>
-              <BrandButton type="button" onClick={() => setStep(3)} fullWidth>
+              <BrandButton type="button" onClick={() => setChildStep(3)} fullWidth>
                 Got it
               </BrandButton>
             </div>
           )}
 
-          {step === 3 && (
+          {view === "child" && childStep === 3 && (
             <div className="space-y-5">
               <h1 className="text-center text-2xl font-semibold text-[color:var(--color-primary)]">
                 A note before you set this up.
@@ -373,13 +532,13 @@ export default function OnboardingPage() {
                   Read our full privacy policy
                 </a>
               </div>
-              <BrandButton type="button" onClick={() => setStep(4)} fullWidth>
+              <BrandButton type="button" onClick={() => setChildStep(4)} fullWidth>
                 I appreciate that
               </BrandButton>
             </div>
           )}
 
-          {step === 4 && (
+          {view === "child" && childStep === 4 && (
             <div className="space-y-5 text-center">
               <h1 className="text-2xl font-semibold text-[color:var(--color-primary)]">
                 What&apos;s your kid&apos;s name?
@@ -408,7 +567,7 @@ export default function OnboardingPage() {
               </BrandButton>
               <button
                 type="button"
-                onClick={() => setStep(5)}
+                onClick={() => setChildStep(5)}
                 disabled={saving}
                 className="text-xs text-[color:var(--color-primary)]/70 underline decoration-[color:var(--color-primary)]/26 underline-offset-2 hover:text-[color:var(--color-primary)]"
               >
@@ -417,7 +576,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 5 && (
+          {view === "child" && childStep === 5 && (
             <div className="space-y-5">
               <h1 className="text-center text-2xl font-semibold text-[color:var(--color-primary)]">
                 When might tiny pauses happen?
@@ -462,7 +621,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 6 && (
+          {view === "child" && childStep === 6 && (
             <div className="space-y-5 text-center">
               <h1 className="text-2xl font-semibold text-[color:var(--color-primary)]">
                 One last thing.

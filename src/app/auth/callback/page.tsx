@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandCard, BrandPill, PageShell } from "../../ui";
 
-const keepMomentIntentKey = "tinyPauses.keepMomentIntent";
-const keepMomentWelcomeKey = "tinyPauses.keepMomentWelcome";
+const pendingMomentKey = "pending_moment";
+const pendingMomentSavedKey = "tinyPauses.pendingMomentSaved";
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -19,6 +19,7 @@ function AuthCallbackContent() {
         setStatus("Sign-in is unavailable right now.");
         return;
       }
+      const client = supabase;
 
       try {
         const code = searchParams.get("code");
@@ -26,10 +27,10 @@ function AuthCallbackContent() {
         const type = searchParams.get("type");
 
         if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          const { error } = await client.auth.exchangeCodeForSession(code);
           if (error) throw error;
         } else if (tokenHash && type) {
-          const { error } = await supabase.auth.verifyOtp({
+          const { error } = await client.auth.verifyOtp({
             token_hash: tokenHash,
             type: type as "email" | "signup" | "magiclink" | "recovery",
           });
@@ -38,7 +39,7 @@ function AuthCallbackContent() {
 
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await client.auth.getUser();
 
         if (!user) {
           setStatus("Sign-in link expired. Please request a new one.");
@@ -46,14 +47,38 @@ function AuthCallbackContent() {
           return;
         }
 
-        const { data: profile } = await supabase
+        async function persistPendingMomentIfAny(userId: string) {
+          if (typeof window === "undefined") return false;
+          const raw = window.localStorage.getItem(pendingMomentKey);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw) as {
+            prompt_name?: string;
+            category?: string;
+            mood_value?: number | null;
+            created_at?: string;
+          };
+          await client.from("moments").insert({
+            user_id: userId,
+            created_at: parsed.created_at ?? new Date().toISOString(),
+            category: parsed.category ?? "Mindful moment",
+            prompt_name: parsed.prompt_name ?? "Tiny pause",
+            mood_value:
+              typeof parsed.mood_value === "number" ? parsed.mood_value : null,
+            card_type: "moment",
+          });
+          window.localStorage.removeItem(pendingMomentKey);
+          window.sessionStorage.setItem(pendingMomentSavedKey, "1");
+          return true;
+        }
+
+        const { data: profile } = await client
           .from("profiles")
           .select("*")
           .eq("id", user.id)
           .maybeSingle();
 
         if (!profile) {
-          await supabase.from("profiles").upsert(
+          await client.from("profiles").upsert(
             {
               id: user.id,
             },
@@ -61,23 +86,11 @@ function AuthCallbackContent() {
           );
         }
 
-        const shouldSkipOnboarding = Boolean(
-          profile?.onboarding_complete || profile?.adult_mode || profile?.nickname,
-        );
-        const keepMomentIntent =
-          typeof window !== "undefined" &&
-          window.localStorage.getItem(keepMomentIntentKey) === "1";
-        if (keepMomentIntent && typeof window !== "undefined") {
-          window.localStorage.removeItem(keepMomentIntentKey);
-          window.sessionStorage.setItem(keepMomentWelcomeKey, "1");
-        }
+        await persistPendingMomentIfAny(user.id);
+        const onboardingComplete = Boolean(profile?.onboarding_complete);
 
         setStatus("Signed in. Redirecting...");
-        if (keepMomentIntent) {
-          router.replace("/dashboard");
-          return;
-        }
-        router.replace(shouldSkipOnboarding ? "/dashboard" : "/onboarding");
+        router.replace(onboardingComplete ? "/dashboard" : "/onboarding");
       } catch (error) {
         console.error("Auth callback error", error);
         setStatus("Could not complete sign-in. Please try again.");
