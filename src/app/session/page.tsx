@@ -220,11 +220,23 @@ function BrainBreakStepVisual({ step }: { step: number }) {
   if (step === 2) {
     return (
       <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#599fb4]">
-        <g className="bb-squeeze-left" transform="translate(42 25)">
-          <rect x="0" y="0" width="44" height="64" rx="20" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" />
+        <g className="bb-squeeze-left" transform="translate(34 30)">
+          <path
+            d="M8 56c0-8 5-14 11-17v-10c0-4 5-4 5 0v8h4v-11c0-4 5-4 5 0v11h4v-10c0-4 5-4 5 0v12h4v-8c0-4 5-4 5 0v16c2 3 4 6 4 10 0 10-8 18-18 18H26C16 74 8 66 8 56Z"
+            fill="currentColor"
+            fillOpacity="0.18"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
         </g>
-        <g className="bb-squeeze-right" transform="translate(94 25)">
-          <rect x="0" y="0" width="44" height="64" rx="20" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" />
+        <g className="bb-squeeze-right" transform="translate(90 30)">
+          <path
+            d="M8 56c0-8 5-14 11-17v-10c0-4 5-4 5 0v8h4v-11c0-4 5-4 5 0v11h4v-10c0-4 5-4 5 0v12h4v-8c0-4 5-4 5 0v16c2 3 4 6 4 10 0 10-8 18-18 18H26C16 74 8 66 8 56Z"
+            fill="currentColor"
+            fillOpacity="0.18"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
         </g>
       </svg>
     );
