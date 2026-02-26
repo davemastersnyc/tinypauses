@@ -127,6 +127,7 @@ const defaultBrainBreakSteps: BrainBreakStep[] = [
 
 const togetherBannerKey = "tinyPauses.showTogetherBanner";
 const togetherSessionKey = "tinyPauses.firstTogetherSession";
+const keepMomentIntentKey = "tinyPauses.keepMomentIntent";
 
 function MoodFace({ level }: { level: number }) {
   const stroke = "currentColor";
@@ -333,6 +334,8 @@ function SessionPageInner() {
     mood: "#ffd84a", // yellow
     done: "#9f7fff", // purple
   };
+
+  const isSignedIn = Boolean(userId);
 
   function stopBrainBreakTone() {
     try {
@@ -680,6 +683,13 @@ function SessionPageInner() {
     setShowTogetherDoneCopy(false);
     setSpecialContext(null);
     setStep("choose");
+  }
+
+  function keepThisMoment() {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(keepMomentIntentKey, "1");
+    }
+    router.push("/login");
   }
 
   function completeRegularSession(selectedMood: number | null) {
@@ -1092,7 +1102,7 @@ function SessionPageInner() {
               You can come back for another moment any time you like. For now,
               notice one more thing around you that makes you feel okay or safe.
             </p>
-            {specialContext?.shareable !== false && (
+            {(isSignedIn ? specialContext?.shareable !== false : true) && (
               <button
                 type="button"
                 onClick={handleShareMoment}
@@ -1114,20 +1124,42 @@ function SessionPageInner() {
               </button>
             )}
             <div className="flex flex-col gap-3">
-              <BrandButton type="button" onClick={startAnotherRound} fullWidth>
-                Try another round
-              </BrandButton>
-              <BrandButton
-                type="button"
-                variant="outlineAccent"
-                onClick={saveCurrentPrompt}
-                fullWidth
-              >
-                {isPromptSaved ? "Saved to favorites" : "Save this prompt"}
-              </BrandButton>
-              <BrandButton href="/dashboard" fullWidth>
-                Go to my dashboard
-              </BrandButton>
+              {isSignedIn ? (
+                <>
+                  <BrandButton type="button" onClick={startAnotherRound} fullWidth>
+                    Try another round
+                  </BrandButton>
+                  <BrandButton
+                    type="button"
+                    variant="outlineAccent"
+                    onClick={saveCurrentPrompt}
+                    fullWidth
+                  >
+                    {isPromptSaved ? "Saved to favorites" : "Save this prompt"}
+                  </BrandButton>
+                  <BrandButton href="/dashboard" fullWidth>
+                    Go to my dashboard
+                  </BrandButton>
+                </>
+              ) : (
+                <>
+                  <BrandButton type="button" onClick={keepThisMoment} fullWidth>
+                    Keep this moment
+                  </BrandButton>
+                  <p className="px-1 text-center text-xs text-[color:var(--color-foreground)]/68">
+                    Create a free account to save your tiny pauses and see them
+                    grow over time.
+                  </p>
+                  <BrandButton
+                    type="button"
+                    variant="outlineAccent"
+                    onClick={startAnotherRound}
+                    fullWidth
+                  >
+                    Try another one
+                  </BrandButton>
+                </>
+              )}
             </div>
           </div>
           </BrandCard>

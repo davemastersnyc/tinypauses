@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandCard, BrandPill, PageShell } from "../../ui";
 
+const keepMomentIntentKey = "tinyPauses.keepMomentIntent";
+const keepMomentWelcomeKey = "tinyPauses.keepMomentWelcome";
+
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,8 +64,19 @@ function AuthCallbackContent() {
         const shouldSkipOnboarding = Boolean(
           profile?.onboarding_complete || profile?.adult_mode || profile?.nickname,
         );
+        const keepMomentIntent =
+          typeof window !== "undefined" &&
+          window.localStorage.getItem(keepMomentIntentKey) === "1";
+        if (keepMomentIntent && typeof window !== "undefined") {
+          window.localStorage.removeItem(keepMomentIntentKey);
+          window.sessionStorage.setItem(keepMomentWelcomeKey, "1");
+        }
 
         setStatus("Signed in. Redirecting...");
+        if (keepMomentIntent) {
+          router.replace("/dashboard");
+          return;
+        }
         router.replace(shouldSkipOnboarding ? "/dashboard" : "/onboarding");
       } catch (error) {
         console.error("Auth callback error", error);
