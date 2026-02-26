@@ -344,7 +344,7 @@ export default function OnboardingPage() {
               Skip setup
             </button>
             <div className="mx-auto mb-4 mt-7 w-full max-w-md">
-              <div className="mb-2 text-center text-xs font-medium text-[#2c7d91]/85">
+              <div className="mb-2 text-center text-xs font-medium text-[#66cccc]/85">
                 Step {childStep} of {childOnboardingSteps}
               </div>
               <div className="flex items-center gap-1.5">
@@ -352,7 +352,7 @@ export default function OnboardingPage() {
                   <span
                     key={idx}
                     className={`h-2 flex-1 rounded-full ${
-                      idx < childStep ? "bg-[#4ea6be]" : "bg-[#bfdde7]"
+                      idx < childStep ? "bg-[#66cccc]" : "bg-[#66cccc]/35"
                     }`}
                   />
                 ))}
@@ -402,7 +402,7 @@ export default function OnboardingPage() {
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder="Your name"
-                className="mx-auto block w-full max-w-sm rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-center text-lg text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[#4ea6be] focus:ring-2 focus:ring-[#d9f3f8]"
+                className="mx-auto block w-full max-w-sm rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-center text-lg text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[#66cccc] focus:ring-2 focus:ring-[#66cccc]/30"
               />
               <BrandButton
                 type="button"
@@ -469,11 +469,11 @@ export default function OnboardingPage() {
                 Here&apos;s what you&apos;re giving them.
               </h1>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-[#e8f8f5] p-4">
-                  <p className="text-sm font-semibold text-[#1d7f6f]">
+                <div className="rounded-2xl bg-[#66cccc]/20 p-4">
+                  <p className="text-sm font-semibold text-[#66cccc]">
                     Tiny Pauses is
                   </p>
-                  <ul className="mt-2 space-y-2 text-sm text-[#1d7f6f]/90">
+                  <ul className="mt-2 space-y-2 text-sm text-[#66cccc]/90">
                     <li>2-3 minutes, any time</li>
                     <li>Gentle and judgment-free</li>
                     <li>Something they control</li>
@@ -515,7 +515,7 @@ export default function OnboardingPage() {
                   "We built this for kids, not for advertisers.",
                 ].map((line) => (
                   <li key={line} className="flex items-start gap-2.5 leading-relaxed">
-                    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#e8f8f5] text-[#1d7f6f]">
+                    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#66cccc]/20 text-[#66cccc]">
                       ✓
                     </span>
                     <span>{line}</span>
@@ -552,7 +552,7 @@ export default function OnboardingPage() {
                 value={childName}
                 onChange={(event) => setChildName(event.target.value)}
                 placeholder="First name"
-                className="mx-auto block w-full max-w-sm rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-center text-lg text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[#4ea6be] focus:ring-2 focus:ring-[#d9f3f8]"
+                className="mx-auto block w-full max-w-sm rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-center text-lg text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[#66cccc] focus:ring-2 focus:ring-[#66cccc]/30"
               />
               <p className="text-xs text-[color:var(--color-foreground)]/66">
                 You can change this any time in settings.
@@ -596,8 +596,8 @@ export default function OnboardingPage() {
                       onClick={() => setAnchorMoment(option.label)}
                       className={`rounded-2xl border p-3 text-left transition ${
                         selected
-                          ? "border-[#4ea6be] bg-[#e6f5f9] text-[#1f6f86]"
-                          : "border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] text-[color:var(--color-primary)]/82 hover:border-[#4ea6be] hover:bg-[#eef8fb]"
+                          ? "border-[#66cccc] bg-[#66cccc]/20 text-[#66cccc]"
+                          : "border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] text-[color:var(--color-primary)]/82 hover:border-[#66cccc] hover:bg-[#66cccc]/15"
                       }`}
                     >
                       <span className="mb-1 inline-flex">{option.icon}</span>

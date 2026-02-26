@@ -49,7 +49,7 @@ const weeklyMeta = {
   "sunday-evening": {
     name: "Sunday evening",
     badgeLabel: "Sunday evening",
-    accentColor: "#b39ce9",
+    accentColor: "#66cccc",
     nudgeCopy: "The Sunday feeling is real. This one is for that.",
     illustrationKey: "moon" as const,
     shareable: false,

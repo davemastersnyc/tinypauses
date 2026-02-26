@@ -97,7 +97,7 @@ type FavoritePrompt = {
 type BrainBreakSoundMode = "quiet" | "sound";
 type BrainBreakStep = { instruction: string };
 
-const brainBreakAccent = "#5caec3";
+const brainBreakAccent = "#66cccc";
 
 const defaultBrainBreakSteps: BrainBreakStep[] = [
   {
@@ -197,7 +197,7 @@ function MoodFace({ level }: { level: number }) {
 function BrainBreakStepVisual({ step }: { step: number }) {
   if (step === 0) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#5caec3]">
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
         <path
           className="bb-hand-wiggle-left"
           d="M38 80c0-10 4-18 10-23V35c0-4 6-4 6 0v17h4V30c0-4 6-4 6 0v22h4V33c0-4 6-4 6 0v24h4V40c0-4 6-4 6 0v28c3 3 5 7 5 12 0 12-10 22-22 22H60c-12 0-22-10-22-22Z"
@@ -220,7 +220,7 @@ function BrainBreakStepVisual({ step }: { step: number }) {
 
   if (step === 1) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#4f94ab]">
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
         <rect x="18" y="92" width="144" height="8" rx="4" fill="currentColor" fillOpacity="0.22" />
         <g className="bb-feet-pulse">
           <path
@@ -244,7 +244,7 @@ function BrainBreakStepVisual({ step }: { step: number }) {
 
   if (step === 2) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#599fb4]">
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
         <g className="bb-squeeze-left" transform="translate(34 30)">
           <path
             d="M8 56c0-8 5-14 11-17v-10c0-4 5-4 5 0v8h4v-11c0-4 5-4 5 0v11h4v-10c0-4 5-4 5 0v12h4v-8c0-4 5-4 5 0v16c2 3 4 6 4 10 0 10-8 18-18 18H26C16 74 8 66 8 56Z"
@@ -269,7 +269,7 @@ function BrainBreakStepVisual({ step }: { step: number }) {
 
   if (step === 3) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#5daabf]">
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
         <rect x="24" y="74" width="132" height="12" rx="6" fill="currentColor" fillOpacity="0.25" />
         <path
           d="M70 76c0-14 7-31 18-31 9 0 13 11 13 22v9H70Z"
@@ -329,10 +329,10 @@ function SessionPageInner() {
     "choose" | "prompt" | "mood" | "done",
     string
   > = {
-    choose: "#25e0c5", // teal
-    prompt: "#ff2f92", // pink
-    mood: "#ffd84a", // yellow
-    done: "#9f7fff", // purple
+    choose: "#66cccc",
+    prompt: "#66cccc",
+    mood: "#66cccc",
+    done: "#66cccc",
   };
 
   const isSignedIn = Boolean(userId);
@@ -909,7 +909,7 @@ function SessionPageInner() {
         {step === "choose" && (
           <BrandCard>
           {showTogetherBanner && (
-            <div className="mb-3 flex items-start justify-between gap-3 rounded-xl bg-[#4ea6be] px-3 py-2 text-xs text-white">
+            <div className="mb-3 flex items-start justify-between gap-3 rounded-xl bg-[#66cccc] px-3 py-2 text-xs text-white">
               <p>
                 This one&apos;s for you and {childName ?? "your kid"} together.
                 Pick whatever feels right.
@@ -960,10 +960,10 @@ function SessionPageInner() {
           <button
             type="button"
             onClick={startBrainBreak}
-            className="mt-3 w-full rounded-2xl border border-[#8ac8d5] bg-[#eaf7fb] px-4 py-3 text-left transition hover:bg-[#dff1f6]"
+            className="mt-3 w-full rounded-2xl border border-[#66cccc] bg-[#66cccc]/20 px-4 py-3 text-left transition hover:bg-[#66cccc]/30"
           >
-            <p className="text-sm font-semibold text-[#2c6e83]">Brain Break</p>
-            <p className="mt-0.5 text-xs text-[#2c6e83]/80">
+            <p className="text-sm font-semibold text-[#66cccc]">Brain Break</p>
+            <p className="mt-0.5 text-xs text-[#66cccc]/80">
               Slow your brain down first.
             </p>
           </button>
@@ -971,7 +971,7 @@ function SessionPageInner() {
             <button
               type="button"
               onClick={startBrainBreak}
-              className="mt-3 inline-block text-xs text-[#2c6e83]/85 underline decoration-[#2c6e83]/45 underline-offset-2 hover:text-[#2c6e83]"
+              className="mt-3 inline-block text-xs text-[#66cccc]/85 underline decoration-[#66cccc]/45 underline-offset-2 hover:text-[#66cccc]"
             >
               Need to slow down first?
             </button>
@@ -1120,7 +1120,7 @@ function SessionPageInner() {
                 type="button"
                 onClick={handleShareMoment}
                 disabled={shareLoading}
-                className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[#8f67ff] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(143,103,255,0.35)] transition hover:bg-[#7f57ef] disabled:cursor-not-allowed disabled:opacity-70"
+                className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[#66cccc] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(102,204,204,0.35)] transition hover:bg-[#66cccc]/90 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <svg
                   viewBox="0 0 20 20"
@@ -1206,18 +1206,18 @@ function SessionPageInner() {
         )}
           </>
         ) : (
-          <section className="relative rounded-[var(--radius-card)] border border-[#cfe8ef] bg-[linear-gradient(180deg,#eef8fb_0%,#e5f3f7_100%)] p-4 sm:p-6">
+          <section className="relative rounded-[var(--radius-card)] border border-[#66cccc]/45 bg-[linear-gradient(180deg,#66cccc1f_0%,#66cccc14_100%)] p-4 sm:p-6">
             <button
               type="button"
               onClick={exitBrainBreak}
-              className="absolute right-4 top-3 text-xs text-[#285f72]/75 underline decoration-[#285f72]/35 underline-offset-2 hover:text-[#285f72]"
+              className="absolute right-4 top-3 text-xs text-[#66cccc]/75 underline decoration-[#66cccc]/35 underline-offset-2 hover:text-[#66cccc]"
             >
               exit
             </button>
             <div className="mx-auto flex min-h-[66vh] max-w-md flex-col items-center justify-center text-center">
               {brainBreakStep >= 0 && (
                 <div className="mb-5 w-full space-y-2">
-                  <p className="text-xs font-medium tracking-wide text-[#285f72]/80">
+                  <p className="text-xs font-medium tracking-wide text-[#66cccc]/80">
                     Step {brainBreakStep + 1} of 6
                   </p>
                   <div className="flex items-center gap-1.5">
@@ -1226,8 +1226,8 @@ function SessionPageInner() {
                         key={idx}
                         className={`h-2 flex-1 rounded-full ${
                           idx <= brainBreakStep
-                            ? "bg-[#4ea6be]"
-                            : "bg-[#bfdde7]"
+                            ? "bg-[#66cccc]"
+                            : "bg-[#66cccc]/35"
                         }`}
                       />
                     ))}
@@ -1237,10 +1237,10 @@ function SessionPageInner() {
 
               {brainBreakStep < 0 ? (
                 <div className="brain-break-fade space-y-5">
-                  <h2 className="text-3xl font-semibold text-[#1f4f60]">
+                  <h2 className="text-3xl font-semibold text-[#66cccc]">
                     Brain Break
                   </h2>
-                  <p className="text-lg text-[#1f4f60]/85">
+                  <p className="text-lg text-[#66cccc]/85">
                     This takes about 90 seconds. Just follow along.
                   </p>
                   <div className="mx-auto grid max-w-xs grid-cols-2 gap-2 rounded-2xl bg-white/50 p-2">
@@ -1249,8 +1249,8 @@ function SessionPageInner() {
                       onClick={() => setBrainBreakSoundMode("quiet")}
                       className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
                         brainBreakSoundMode === "quiet"
-                          ? "bg-[#5caec3] text-white"
-                          : "text-[#285f72] hover:bg-white/70"
+                          ? "bg-[#66cccc] text-white"
+                          : "text-[#66cccc] hover:bg-white/70"
                       }`}
                     >
                       Quiet
@@ -1260,8 +1260,8 @@ function SessionPageInner() {
                       onClick={() => setBrainBreakSoundMode("sound")}
                       className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
                         brainBreakSoundMode === "sound"
-                          ? "bg-[#5caec3] text-white"
-                          : "text-[#285f72] hover:bg-white/70"
+                          ? "bg-[#66cccc] text-white"
+                          : "text-[#66cccc] hover:bg-white/70"
                       }`}
                     >
                       With sound
@@ -1276,7 +1276,7 @@ function SessionPageInner() {
                   <div className="mx-auto flex justify-center">
                     <BrainBreakStepVisual step={brainBreakStep} />
                   </div>
-                  <p className="text-balance text-2xl font-semibold leading-snug text-[#1f4f60]">
+                  <p className="text-balance text-2xl font-semibold leading-snug text-[#66cccc]">
                     {brainBreakSteps[brainBreakStep]?.instruction}
                   </p>
                   {brainBreakStep < 5 ? (
@@ -1293,13 +1293,13 @@ function SessionPageInner() {
                       <button
                         type="button"
                         onClick={handleBrainBreakExitAction}
-                        className="text-sm text-[#285f72]/80 underline decoration-[#285f72]/35 underline-offset-2 hover:text-[#285f72]"
+                        className="text-sm text-[#66cccc]/80 underline decoration-[#66cccc]/35 underline-offset-2 hover:text-[#66cccc]"
                       >
                         I&apos;m good, thanks
                       </button>
                     </div>
                   ) : (
-                    <p className="text-sm text-[#285f72]/72">Nice work. Stay here for a moment.</p>
+                    <p className="text-sm text-[#66cccc]/72">Nice work. Stay here for a moment.</p>
                   )}
                 </div>
               )}

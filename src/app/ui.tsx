@@ -62,11 +62,11 @@ export function BrandButton({
 
   const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
     primary:
-      "bg-[color:var(--color-accent)] text-slate-900 shadow-[var(--shadow-soft)] hover:bg-orange-500 disabled:bg-orange-300",
+      "bg-[color:var(--color-accent)] text-slate-900 shadow-[var(--shadow-soft)] hover:bg-[color:var(--color-accent)]/90 disabled:bg-[color:var(--color-accent)]/40",
     secondary:
       "border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] disabled:bg-[color:var(--color-surface-soft)]",
     outlineAccent:
-      "border border-[#8f67ff] bg-white/70 text-[#6d49d6] hover:bg-white disabled:opacity-70",
+      "border border-[#66cccc] bg-white/70 text-[#66cccc] hover:bg-white disabled:opacity-70",
     ghost:
       "bg-transparent text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]",
   };

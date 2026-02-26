@@ -10,7 +10,7 @@ function KidsIcon() {
     <svg
       viewBox="0 0 32 32"
       aria-hidden="true"
-      className="h-8 w-8 text-[#25e0c5]"
+      className="h-8 w-8 text-[#66cccc]"
       fill="none"
     >
       <circle cx="13" cy="10" r="4.5" stroke="currentColor" strokeWidth="1.8" />
@@ -159,7 +159,7 @@ export default function Home() {
 
       <section className="mt-16 grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
         <BrandCard tone="muted">
-          <div className="-mx-6 -mt-6 mb-4 h-1 rounded-t-[var(--radius-card)] bg-[#25e0c5]/45" />
+          <div className="-mx-6 -mt-6 mb-4 h-1 rounded-t-[var(--radius-card)] bg-[#66cccc]/45" />
           <KidsIcon />
           <p className="mt-3 text-sm font-semibold text-[color:var(--color-primary)]/80">
             For kids 9–12 (and their grown‑ups)

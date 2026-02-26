@@ -681,7 +681,7 @@ export default function AdminPage() {
                 onClick={() => setView(item.id)}
                 className={`w-full rounded-xl px-3 py-2 text-left text-sm transition ${
                   view === item.id
-                    ? "bg-[#eef8fb] font-semibold text-[#1f6f86]"
+                    ? "bg-[#66cccc]/20 font-semibold text-[#66cccc]"
                     : "text-[color:var(--color-primary)]/80 hover:bg-[color:var(--color-surface-soft)]"
                 }`}
               >
@@ -709,8 +709,8 @@ export default function AdminPage() {
                           onClick={() => setPromptFilter(filter as PromptFilter)}
                           className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                             promptFilter === filter
-                              ? "bg-[#e6f5f9] text-[#1f6f86]"
-                              : "bg-[color:var(--color-surface-soft)] text-[color:var(--color-primary)]/75 hover:bg-[#eef8fb]"
+                              ? "bg-[#66cccc]/20 text-[#66cccc]"
+                              : "bg-[color:var(--color-surface-soft)] text-[color:var(--color-primary)]/75 hover:bg-[#66cccc]/15"
                           }`}
                         >
                           {label}
@@ -804,14 +804,14 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => openEditPromptForm(row)}
-                                className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 hover:bg-[#eef8fb]"
+                                className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 hover:bg-[#66cccc]/15"
                               >
                                 Edit
                               </button>
                               <button
                                 type="button"
                                 onClick={() => togglePromptStatus(row)}
-                                className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 hover:bg-[#eef8fb]"
+                                className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 hover:bg-[#66cccc]/15"
                               >
                                 {row.status === "active" ? "Set inactive" : "Set active"}
                               </button>
@@ -1024,7 +1024,7 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => saveSeasonalWindowEdits(windowRow)}
-                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                             >
                               Edit window
                             </button>
@@ -1037,14 +1037,14 @@ export default function AdminPage() {
                                   windowRow.key,
                                 )
                               }
-                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                             >
                               Add prompt
                             </button>
                             <button
                               type="button"
                               onClick={() => toggleSeasonalWindow(windowRow)}
-                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                              className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                             >
                               {windowRow.active ? "Set inactive" : "Set active"}
                             </button>
@@ -1074,7 +1074,7 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => quickEditSpecialPrompt(row)}
-                                className="shrink-0 rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-[11px] hover:bg-[#eef8fb]"
+                                className="shrink-0 rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-[11px] hover:bg-[#66cccc]/15"
                               >
                                 Edit
                               </button>
@@ -1128,7 +1128,7 @@ export default function AdminPage() {
                         <button
                           type="button"
                           onClick={() => addSpecialPrompt("weekly", key, null)}
-                          className="mt-1 rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                          className="mt-1 rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                         >
                           Add prompt
                         </button>
@@ -1154,21 +1154,21 @@ export default function AdminPage() {
                                 <button
                                   type="button"
                                   onClick={() => quickEditSpecialPrompt(row)}
-                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => shiftWeeklyRotation(row, -1)}
-                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                                 >
                                   Move up
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => shiftWeeklyRotation(row, 1)}
-                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                                  className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                                 >
                                   Move down
                                 </button>
@@ -1250,7 +1250,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => beginBrainStepEdit(stepRow)}
-                            className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#eef8fb]"
+                            className="rounded-md bg-[color:var(--color-surface-soft)] px-2 py-1 text-xs hover:bg-[#66cccc]/15"
                           >
                             Edit
                           </button>

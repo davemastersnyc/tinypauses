@@ -102,8 +102,8 @@ function drawMomentCard(
     gradient.addColorStop(0, "#ffe8d6");
     gradient.addColorStop(1, "#ffd7bb");
   } else if (metadata.specialType === "weekly") {
-    gradient.addColorStop(0, "#efe8ff");
-    gradient.addColorStop(1, "#e2d4ff");
+    gradient.addColorStop(0, "#66cccc");
+    gradient.addColorStop(1, "#66cccc");
   } else {
     gradient.addColorStop(0, "#ffedd8");
     gradient.addColorStop(1, "#ffe3c1");
@@ -177,7 +177,7 @@ function drawWrapUpCard(
 
     drawLargeCount(ctx, size / 2, 245, metadata.stats.total_moments);
     if ((metadata.stats.brain_break_count ?? 0) > 0) {
-      ctx.fillStyle = "#1f6f86";
+      ctx.fillStyle = "#66cccc";
       ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
       const count = metadata.stats.brain_break_count ?? 0;
       ctx.fillText(
@@ -232,7 +232,7 @@ function drawWrapUpCard(
     );
     const brainBreakCount = metadata.stats.brain_break_count ?? 0;
     if (brainBreakCount > 0) {
-      ctx.fillStyle = "#1f6f86";
+      ctx.fillStyle = "#66cccc";
       ctx.font = "600 28px Inter, Avenir Next, Segoe UI, sans-serif";
       ctx.fillText(
         `Brain breaks: ${brainBreakCount}`,
@@ -356,7 +356,7 @@ function drawYearBrainBreakCallout(
   ctx.lineWidth = 2;
   drawRoundedRect(ctx, x, y, width, height, 28);
   ctx.stroke();
-  ctx.fillStyle = "#1f6f86";
+  ctx.fillStyle = "#66cccc";
   ctx.font = "600 28px Inter, Avenir Next, Segoe UI, sans-serif";
   ctx.fillText(text, cx, cy + 1);
 }
@@ -507,10 +507,10 @@ function badgeColorForCategory(category: string) {
   const lower = category.trim().toLowerCase();
   if (lower.includes("letting")) return "#ff2f92";
   if (lower.includes("reflect")) return "#ffd84a";
-  if (lower.includes("kind")) return "#9f7fff";
-  if (lower.includes("brain")) return "#5caec3";
-  if (lower.includes("pause")) return "#25e0c5";
-  if (lower.includes("mindful")) return "#25e0c5";
+  if (lower.includes("kind")) return "#66cccc";
+  if (lower.includes("brain")) return "#66cccc";
+  if (lower.includes("pause")) return "#66cccc";
+  if (lower.includes("mindful")) return "#66cccc";
   return "#f97316";
 }
 

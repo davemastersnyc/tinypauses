@@ -53,7 +53,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 620px at 50% -140px, rgba(37, 224, 197, 0.06), transparent 62%),
+    radial-gradient(1200px 620px at 50% -140px, rgba(102, 204, 204, 0.06), transparent 62%),
     radial-gradient(900px 520px at 95% 10%, rgba(255, 47, 146, 0.04), transparent 58%),
     linear-gradient(180deg, #fdfbf8 0%, var(--background) 44%, #f4eee7 100%);
   color: var(--foreground);
@@ -193,12 +193,12 @@ h3 {
 .bb-breath-orb {
   background: radial-gradient(
     circle,
-    rgba(92, 174, 195, 0.26) 0%,
-    rgba(92, 174, 195, 0.14) 45%,
-    rgba(92, 174, 195, 0.04) 70%,
-    rgba(92, 174, 195, 0) 100%
+    rgba(102, 204, 204, 0.26) 0%,
+    rgba(102, 204, 204, 0.14) 45%,
+    rgba(102, 204, 204, 0.04) 70%,
+    rgba(102, 204, 204, 0) 100%
   );
-  box-shadow: 0 0 0 18px rgba(92, 174, 195, 0.08);
+  box-shadow: 0 0 0 18px rgba(102, 204, 204, 0.08);
   animation: brainBreakBreath 4s ease-in-out infinite;
 }
 

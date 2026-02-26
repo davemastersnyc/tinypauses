@@ -702,7 +702,7 @@ export default function DashboardPage() {
                   <span
                     className={`mb-1 h-3 w-3 rounded-full ${
                       day.practiced
-                        ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.2)]"
+                        ? "bg-[#66cccc] shadow-[0_0_0_4px_rgba(102,204,204,0.2)]"
                         : "bg-[color:var(--color-surface-soft)]"
                     }`}
                   />
@@ -711,7 +711,7 @@ export default function DashboardPage() {
               ))}
             </div>
             {brainBreaksThisWeek > 0 && (
-              <p className="mt-3 text-sm text-[#1f6f86]">
+              <p className="mt-3 text-sm text-[#66cccc]">
                 You also took {brainBreaksThisWeek} brain break
                 {brainBreaksThisWeek === 1 ? "" : "s"} this week.
               </p>
@@ -878,11 +878,11 @@ export default function DashboardPage() {
                           <p
                             className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
                               isBrainBreak
-                                ? "bg-[#d9f3f8] text-[#1f6f86]"
+                                ? "bg-[#66cccc]/20 text-[#66cccc]"
                                 : entry.row.special_type === "seasonal"
                                   ? "text-[#3a2d14]"
                                   : entry.row.special_type === "weekly"
-                                    ? "bg-[#ede7ff] text-[#4f3e85]"
+                                    ? "bg-[#66cccc]/20 text-[#66cccc]"
                                 : "bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
                             }`}
                             style={
