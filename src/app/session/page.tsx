@@ -1,6 +1,13 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -282,7 +289,7 @@ function BrainBreakStepVisual({ step }: { step: number }) {
   return <p className="text-6xl" aria-hidden="true">🌱</p>;
 }
 
-export default function SessionPage() {
+function SessionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<"choose" | "prompt" | "mood" | "done">(
@@ -499,6 +506,30 @@ export default function SessionPage() {
     return () => window.clearTimeout(timeout);
   }, [mode, step]);
 
+  const recordBrainBreakCompletion = useCallback(async () => {
+    if (brainBreakLogged) return;
+    setBrainBreakLogged(true);
+    if (!supabase || !userId) return;
+    try {
+      const completedAt = new Date().toISOString();
+      await supabase.from("sessions").insert({
+        user_id: userId,
+        mood_after: null,
+        completed_at: completedAt,
+      });
+      await supabase.from("moments").insert({
+        user_id: userId,
+        created_at: completedAt,
+        category: "brain-break",
+        prompt_name: "Brain Break",
+        mood_value: null,
+        card_type: "moment",
+      });
+    } catch (error) {
+      console.error("Error recording brain break", error);
+    }
+  }, [brainBreakLogged, userId]);
+
   useEffect(() => {
     if (mode !== "brain-break" || brainBreakStep !== 5) return;
     const timeout = window.setTimeout(() => {
@@ -622,30 +653,6 @@ export default function SessionPage() {
   function advanceBrainBreakStep() {
     setBrainBreakStep((prev) => Math.min(prev + 1, 5));
   }
-
-  const recordBrainBreakCompletion = useCallback(async () => {
-    if (brainBreakLogged) return;
-    setBrainBreakLogged(true);
-    if (!supabase || !userId) return;
-    try {
-      const completedAt = new Date().toISOString();
-      await supabase.from("sessions").insert({
-        user_id: userId,
-        mood_after: null,
-        completed_at: completedAt,
-      });
-      await supabase.from("moments").insert({
-        user_id: userId,
-        created_at: completedAt,
-        category: "brain-break",
-        prompt_name: "Brain Break",
-        mood_value: null,
-        card_type: "moment",
-      });
-    } catch (error) {
-      console.error("Error recording brain break", error);
-    }
-  }, [brainBreakLogged, userId]);
 
   function handleBrainBreakDoneAction() {
     stopBrainBreakTone();
@@ -1256,6 +1263,24 @@ export default function SessionPage() {
         )}
       </div>
     </PageShell>
+  );
+}
+
+export default function SessionPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageShell maxWidth="md">
+          <BrandCard tone="muted">
+            <p className="text-sm text-[color:var(--color-foreground)]/80">
+              Loading session...
+            </p>
+          </BrandCard>
+        </PageShell>
+      }
+    >
+      <SessionPageInner />
+    </Suspense>
   );
 }
 
