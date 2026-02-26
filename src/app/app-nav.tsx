@@ -25,11 +25,29 @@ export function AppNav() {
     async function getDisplayLabel(user: { id: string; email?: string | null }) {
       const { data: profile } = await client
         .from("profiles")
-        .select("nickname")
+        .select("adult_mode, display_name, child_name, nickname")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile?.nickname) return profile.nickname as string;
+      const adultMode = Boolean(profile?.adult_mode);
+      const displayName =
+        typeof profile?.display_name === "string" && profile.display_name.trim()
+          ? profile.display_name.trim()
+          : null;
+      const childName =
+        typeof profile?.child_name === "string" && profile.child_name.trim()
+          ? profile.child_name.trim()
+          : null;
+      const nickname =
+        typeof profile?.nickname === "string" && profile.nickname.trim()
+          ? profile.nickname.trim()
+          : null;
+
+      if (adultMode && displayName) return displayName;
+      if (!adultMode && childName) return childName;
+      if (displayName) return displayName;
+      if (childName) return childName;
+      if (nickname) return nickname;
       return user.email ?? "Signed in";
     }
 
