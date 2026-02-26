@@ -75,10 +75,11 @@ type FavoritePrompt = {
 };
 
 type BrainBreakSoundMode = "quiet" | "sound";
+type BrainBreakStep = { instruction: string };
 
 const brainBreakAccent = "#5caec3";
 
-const defaultBrainBreakSteps = [
+const defaultBrainBreakSteps: BrainBreakStep[] = [
   {
     instruction:
       "Shake your hands like you're flicking water off them. Arms too if you want.",
@@ -102,7 +103,7 @@ const defaultBrainBreakSteps = [
   {
     instruction: "Your brain slowed down. You did that.",
   },
-] as const;
+];
 
 const togetherBannerKey = "tinyPauses.showTogetherBanner";
 const togetherSessionKey = "tinyPauses.firstTogetherSession";
@@ -288,7 +289,7 @@ export default function SessionPage() {
   const [brainBreakSoundMode, setBrainBreakSoundMode] =
     useState<BrainBreakSoundMode>("quiet");
   const [brainBreakStep, setBrainBreakStep] = useState(-1);
-  const [brainBreakSteps, setBrainBreakSteps] = useState(
+  const [brainBreakSteps, setBrainBreakSteps] = useState<BrainBreakStep[]>(
     defaultBrainBreakSteps.map((item) => ({ instruction: item.instruction })),
   );
   const [brainBreakShowFinishActions, setBrainBreakShowFinishActions] =
