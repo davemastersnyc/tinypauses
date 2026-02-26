@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "../ui";
@@ -18,7 +18,7 @@ const onboardingSteps = 6;
 
 const anchorOptions: Array<{
   label: AnchorMoment;
-  icon: JSX.Element;
+  icon: ReactNode;
 }> = [
   {
     label: "After school",
