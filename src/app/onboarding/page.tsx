@@ -426,12 +426,12 @@ export default function OnboardingPage() {
           {view === "adult-welcome" && (
             <div className="space-y-6 text-center">
               <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
-                {pendingMomentSaved ? "Your tiny pause is saved." : "You&apos;re all set."}
+                {pendingMomentSaved ? "Your tiny pause is saved." : "You're all set."}
               </h1>
               <p className="mx-auto max-w-xl text-base text-[color:var(--color-foreground)]/84">
                 {pendingMomentSaved
-                  ? "It&apos;s the first one in your collection. Come back whenever you need another."
-                  : "Take a tiny pause any time you need one. We&apos;ll keep gentle track for you."}
+                  ? "It's the first one in your collection. Come back whenever you need another."
+                  : "Take a tiny pause any time you need one. We'll keep gentle track for you."}
               </p>
               <BrandButton
                 href={pendingMomentSaved ? "/dashboard" : "/session"}
