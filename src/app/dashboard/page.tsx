@@ -50,6 +50,10 @@ type TimelineEntry =
   | { kind: "moment"; id: string; createdAt: string; metadata: MomentCardMetadata; row: MomentRow }
   | { kind: "wrap_up"; id: string; createdAt: string; metadata: WrapUpCardMetadata; row: WrapUpRow };
 
+const togetherBannerKey = "tinyPauses.showTogetherBanner";
+const togetherSessionKey = "tinyPauses.firstTogetherSession";
+const dashboardNudgeKey = "tinyPauses.showTogetherNudge";
+
 function buildWeekSkeleton(): DayEntry[] {
   const today = new Date();
   const days: DayEntry[] = [];
@@ -225,7 +229,10 @@ function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [nickname, setNickname] = useState("Friend");
+  const [greetingName, setGreetingName] = useState<string | null>("Friend");
+  const [isAdultMode, setIsAdultMode] = useState(false);
+  const [showTogetherNudge, setShowTogetherNudge] = useState(false);
+  const [childNameForNudge, setChildNameForNudge] = useState<string | null>(null);
   const [moments, setMoments] = useState<MomentRow[]>([]);
   const [wrapUps, setWrapUps] = useState<WrapUpRow[]>([]);
   const [showFullHistory, setShowFullHistory] = useState(false);
@@ -235,6 +242,13 @@ export default function DashboardPage() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [activeTooltip, setActiveTooltip] = useState<{ x: number; y: number; dot: HistoryDot } | null>(null);
   const storyWrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem(dashboardNudgeKey) === "1") {
+      setShowTogetherNudge(true);
+    }
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -250,15 +264,30 @@ export default function DashboardPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("nickname")
+        .select("*")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (!profile?.nickname) {
+      const shouldOnboard = !Boolean(
+        profile?.onboarding_complete || profile?.adult_mode || profile?.nickname,
+      );
+      if (shouldOnboard) {
         router.replace("/onboarding");
         return;
       }
-      setNickname(profile.nickname);
+      const adultMode = Boolean(profile?.adult_mode);
+      setIsAdultMode(adultMode);
+      const nicknameValue =
+        typeof profile?.nickname === "string" ? profile.nickname : null;
+      const childNameValue =
+        typeof profile?.child_name === "string" ? profile.child_name : null;
+      if (adultMode) {
+        setGreetingName(nicknameValue || null);
+        setChildNameForNudge(null);
+      } else {
+        setGreetingName(childNameValue || nicknameValue || "Friend");
+        setChildNameForNudge(childNameValue);
+      }
 
       const { data: momentRows, error: momentsError } = await supabase
         .from("moments")
@@ -335,6 +364,19 @@ export default function DashboardPage() {
     });
   }, [latestMomentByDay]);
 
+  const brainBreaksThisWeek = useMemo(() => {
+    const today = startOfDay(new Date());
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    return moments.reduce((count, moment) => {
+      const category = resolveMomentCategory(moment).toLowerCase();
+      if (category !== "brain break") return count;
+      const day = startOfDay(new Date(moment.created_at));
+      if (day < sevenDaysAgo || day > today) return count;
+      return count + 1;
+    }, 0);
+  }, [moments]);
+
   const historyModel = useMemo(() => {
     const days = Array.from(latestMomentByDay.keys()).sort();
     const today = startOfDay(new Date());
@@ -408,7 +450,7 @@ export default function DashboardPage() {
 
   const visibleEntries = timelineEntries.slice(0, visibleTimelineCount);
   const hasAnyMomentThisWeek = week.some((d) => d.practiced);
-  const formattedNickname = toTitleCase(nickname);
+  const formattedGreetingName = greetingName ? toTitleCase(greetingName) : null;
 
   const cell = 14;
   const pad = 8;
@@ -454,11 +496,30 @@ export default function DashboardPage() {
     link.click();
   }
 
+  function dismissTogetherNudge() {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(dashboardNudgeKey);
+    }
+    setShowTogetherNudge(false);
+  }
+
+  function startTogetherFromNudge() {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(togetherBannerKey, "1");
+      window.sessionStorage.setItem(togetherSessionKey, "1");
+      window.localStorage.removeItem(dashboardNudgeKey);
+    }
+    setShowTogetherNudge(false);
+    router.push("/session");
+  }
+
   return (
     <PageShell maxWidth="lg">
       <header className="space-y-2">
         <BrandPill>Your calm corner</BrandPill>
-        <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">Hi, {formattedNickname}.</h1>
+        <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
+          {formattedGreetingName ? `Hi, ${formattedGreetingName}.` : "Hi there."}
+        </h1>
         <p className="text-sm text-[color:var(--color-foreground)]/80">
           You can take a tiny mindful moment any time you like. We'll keep gentle track for you.
         </p>
@@ -480,6 +541,32 @@ export default function DashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
         <div className="space-y-4">
+          {showTogetherNudge && !isAdultMode && (
+            <BrandCard tone="muted">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-[color:var(--color-primary)]/86">
+                    When you&apos;re ready, try a tiny pause with{" "}
+                    {childNameForNudge ?? "your kid"}. It&apos;s the best way to
+                    start.
+                  </p>
+                  <div className="mt-3">
+                    <BrandButton type="button" onClick={startTogetherFromNudge}>
+                      Try one together
+                    </BrandButton>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={dismissTogetherNudge}
+                  className="rounded-full px-2 py-1 text-xs text-[color:var(--color-primary)]/62 hover:bg-[color:var(--color-surface-soft)] hover:text-[color:var(--color-primary)]"
+                  aria-label="Dismiss nudge"
+                >
+                  ×
+                </button>
+              </div>
+            </BrandCard>
+          )}
           <BrandCard>
             <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">This week</p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">Every dot is a day you showed up for yourself.</p>
@@ -497,6 +584,12 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+            {brainBreaksThisWeek > 0 && (
+              <p className="mt-3 text-sm text-[#1f6f86]">
+                You also took {brainBreaksThisWeek} brain break
+                {brainBreaksThisWeek === 1 ? "" : "s"} this week.
+              </p>
+            )}
             {!hasAnyMomentThisWeek && (
               <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">Your first tiny pause will show up here.</p>
             )}

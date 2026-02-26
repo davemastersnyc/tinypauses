@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "./ui";
 
 function KidsIcon() {
@@ -70,6 +74,28 @@ function GentleTrackIcon() {
 }
 
 export default function Home() {
+  const [hideKidsLine, setHideKidsLine] = useState(false);
+
+  useEffect(() => {
+    async function checkAdultMode() {
+      if (!supabase) return;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setHideKidsLine(false);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+      setHideKidsLine(Boolean(profile?.adult_mode));
+    }
+    checkAdultMode();
+  }, []);
+
   return (
     <PageShell maxWidth="lg">
       <header className="relative overflow-hidden py-12 text-center sm:py-16">
@@ -89,9 +115,11 @@ export default function Home() {
             No writing. No talking. Just a tiny pause to help your brain and
             body reset, one gentle moment at a time.
           </p>
-          <p className="mx-auto max-w-xl text-balance text-sm text-[color:var(--color-foreground)]/62">
-            Designed for kids 9-12, with their grown-ups in mind.
-          </p>
+          {!hideKidsLine && (
+            <p className="mx-auto max-w-xl text-balance text-sm text-[color:var(--color-foreground)]/62">
+              Designed for kids 9-12, with their grown-ups in mind.
+            </p>
+          )}
         </div>
       </header>
 

@@ -107,10 +107,14 @@ as $$
 declare
   v_total_moments integer;
   v_total_days_with_moments integer;
+  v_brain_break_count integer;
   v_top_category text;
   v_mood_average numeric;
   v_mood_descriptor text;
   v_best_month text;
+  v_brain_break_day_name text;
+  v_brain_break_year_note text;
+  v_brain_break_month_counts jsonb;
   v_closing_line text;
   v_day_flags jsonb;
   v_month_day_flags jsonb;
@@ -123,6 +127,14 @@ begin
   where m.user_id = p_user_id
     and m.created_at >= p_period_start::timestamptz
     and m.created_at < (p_period_end + 1)::timestamptz;
+
+  select count(*)::int
+  into v_brain_break_count
+  from public.moments m
+  where m.user_id = p_user_id
+    and m.created_at >= p_period_start::timestamptz
+    and m.created_at < (p_period_end + 1)::timestamptz
+    and lower(trim(m.category)) in ('brain-break', 'brain break');
 
   if p_period_type = 'weekly' then
     v_threshold := 1;
@@ -149,6 +161,7 @@ begin
   where m.user_id = p_user_id
     and m.created_at >= p_period_start::timestamptz
     and m.created_at < (p_period_end + 1)::timestamptz
+    and lower(trim(m.category)) not in ('brain-break', 'brain break')
   group by m.category
   order by count(*) desc, min(m.created_at) asc
   limit 1;
@@ -176,6 +189,69 @@ begin
     group by date_trunc('month', m.created_at)
     order by count(*) desc, min(m.created_at) asc
     limit 1;
+  end if;
+
+  if p_period_type = 'monthly' and v_brain_break_count > 0 then
+    with weekday_counts as (
+      select
+        extract(isodow from m.created_at at time zone 'utc')::int as iso_dow,
+        count(*)::int as total
+      from public.moments m
+      where m.user_id = p_user_id
+        and m.created_at >= p_period_start::timestamptz
+        and m.created_at < (p_period_end + 1)::timestamptz
+        and lower(trim(m.category)) in ('brain-break', 'brain break')
+      group by 1
+      having count(*) > 2
+      order by total desc, iso_dow asc
+      limit 1
+    )
+    select case iso_dow
+      when 1 then 'Monday'
+      when 2 then 'Tuesday'
+      when 3 then 'Wednesday'
+      when 4 then 'Thursday'
+      when 5 then 'Friday'
+      when 6 then 'Saturday'
+      when 7 then 'Sunday'
+      else null
+    end
+    into v_brain_break_day_name
+    from weekday_counts;
+  end if;
+
+  if p_period_type = 'yearly' then
+    select coalesce(
+      jsonb_agg(
+        coalesce(month_counts.total, 0)
+        order by months.month_num
+      ),
+      '[]'::jsonb
+    )
+    into v_brain_break_month_counts
+    from (
+      select generate_series(1, 12) as month_num
+    ) months
+    left join (
+      select
+        extract(month from m.created_at at time zone 'utc')::int as month_num,
+        count(*)::int as total
+      from public.moments m
+      where m.user_id = p_user_id
+        and m.created_at >= p_period_start::timestamptz
+        and m.created_at < (p_period_end + 1)::timestamptz
+        and lower(trim(m.category)) in ('brain-break', 'brain break')
+      group by 1
+    ) month_counts
+      on month_counts.month_num = months.month_num;
+
+    if v_total_moments > 0 and (v_brain_break_count::numeric / v_total_moments::numeric) > 0.20 then
+      v_brain_break_year_note := 'Brain breaks were a big part of your year. You knew what you needed.';
+    elsif v_total_moments > 0 and (v_brain_break_count::numeric / v_total_moments::numeric) < 0.05 then
+      v_brain_break_year_note := format('You tried a brain break %s %s this year.', v_brain_break_count, case when v_brain_break_count = 1 then 'time' else 'times' end);
+    else
+      v_brain_break_year_note := format('You slowed your brain down %s %s this year.', v_brain_break_count, case when v_brain_break_count = 1 then 'time' else 'times' end);
+    end if;
   end if;
 
   if p_period_type = 'weekly' then
@@ -250,10 +326,14 @@ begin
     jsonb_build_object(
       'total_moments', v_total_moments,
       'total_days_with_moments', v_total_days_with_moments,
+      'brain_break_count', v_brain_break_count,
       'top_category', v_top_category,
       'mood_average', v_mood_average,
       'mood_descriptor', v_mood_descriptor,
       'best_month', v_best_month,
+      'brain_break_day_name', v_brain_break_day_name,
+      'brain_break_year_note', v_brain_break_year_note,
+      'brain_break_month_counts', v_brain_break_month_counts,
       'closing_line', v_closing_line,
       'day_flags', v_day_flags,
       'month_day_flags', v_month_day_flags,

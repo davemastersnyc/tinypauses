@@ -3,10 +3,14 @@ export type WrapUpPeriod = "weekly" | "monthly" | "yearly";
 export type WrapUpStats = {
   total_moments: number;
   total_days_with_moments: number;
+  brain_break_count?: number | null;
   top_category?: string | null;
   mood_average?: number | null;
   mood_descriptor?: string | null;
   best_month?: string | null;
+  brain_break_day_name?: string | null;
+  brain_break_year_note?: string | null;
+  brain_break_month_counts?: number[] | null;
   closing_line?: string | null;
   day_flags?: boolean[] | null;
   month_day_flags?: boolean[] | null;
@@ -158,6 +162,16 @@ function drawWrapUpCard(
     ctx.fillText("My week in tiny pauses", size / 2, 152);
 
     drawLargeCount(ctx, size / 2, 245, metadata.stats.total_moments);
+    if ((metadata.stats.brain_break_count ?? 0) > 0) {
+      ctx.fillStyle = "#1f6f86";
+      ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
+      const count = metadata.stats.brain_break_count ?? 0;
+      ctx.fillText(
+        `${count} brain break${count === 1 ? "" : "s"} taken.`,
+        size / 2,
+        304,
+      );
+    }
     drawCategoryBadge(ctx, size, metadata.stats.top_category ?? "Mindful moment");
     drawDayDotRow(ctx, size / 2, 520, metadata.stats.day_flags ?? []);
 
@@ -202,14 +216,33 @@ function drawWrapUpCard(
       size / 2,
       352,
     );
-    drawCategoryBadge(ctx, size, metadata.stats.top_category ?? "Mindful moment");
-    drawMonthGrid(ctx, size / 2, 570, metadata.stats.month_day_flags ?? []);
+    const brainBreakCount = metadata.stats.brain_break_count ?? 0;
+    if (brainBreakCount > 0) {
+      ctx.fillStyle = "#1f6f86";
+      ctx.font = "600 28px Inter, Avenir Next, Segoe UI, sans-serif";
+      ctx.fillText(
+        `Brain breaks: ${brainBreakCount}`,
+        size / 2,
+        392,
+      );
+    }
+    drawCategoryBadge(ctx, size, metadata.stats.top_category ?? "Mindful moment", 430);
+    drawMonthGrid(ctx, size / 2, 590, metadata.stats.month_day_flags ?? []);
+    if (metadata.stats.brain_break_day_name) {
+      ctx.fillStyle = "rgba(31,111,134,0.86)";
+      ctx.font = "500 26px Inter, Avenir Next, Segoe UI, sans-serif";
+      ctx.fillText(
+        `You often reached for a brain break on ${metadata.stats.brain_break_day_name}s.`,
+        size / 2,
+        750,
+      );
+    }
     ctx.fillStyle = "rgba(27,36,56,0.78)";
     ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
     ctx.fillText(
       metadata.stats.mood_descriptor ?? "A mixed time. That's honest.",
       size / 2,
-      772,
+      metadata.stats.brain_break_day_name ? 800 : 772,
     );
   } else {
     const year = new Date(`${metadata.periodStart}T00:00:00`).getFullYear();
@@ -233,10 +266,25 @@ function drawWrapUpCard(
       430,
     );
     drawWeekDotRow(ctx, size / 2, 560, metadata.stats.week_flags ?? []);
+    drawYearBrainBreakCallout(
+      ctx,
+      size / 2,
+      655,
+      metadata.stats.brain_break_year_note ??
+        `You slowed your brain down ${metadata.stats.brain_break_count ?? 0} ${
+          (metadata.stats.brain_break_count ?? 0) === 1 ? "time" : "times"
+        } this year.`,
+    );
+    drawBrainBreakMonthBars(
+      ctx,
+      size / 2,
+      752,
+      metadata.stats.brain_break_month_counts ?? [],
+    );
     ctx.fillText(
       metadata.stats.mood_descriptor ?? "A pretty good run overall.",
       size / 2,
-      760,
+      820,
     );
   }
 
@@ -264,17 +312,73 @@ function drawCategoryBadge(
   ctx: CanvasRenderingContext2D,
   size: number,
   category: string,
+  y = 390,
 ) {
   ctx.font = "500 34px Inter, Avenir Next, Segoe UI, sans-serif";
   const label = category || "Mindful moment";
   const width = Math.max(220, ctx.measureText(label).width + 76);
   const x = (size - width) / 2;
-  const y = 390;
   ctx.fillStyle = badgeColorForCategory(label);
   drawRoundedRect(ctx, x, y, width, 62, 31);
   ctx.fill();
   ctx.fillStyle = "#121826";
   ctx.fillText(label, size / 2, y + 32);
+}
+
+function drawYearBrainBreakCallout(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  text: string,
+) {
+  const width = 760;
+  const height = 92;
+  const x = cx - width / 2;
+  const y = cy - height / 2;
+  ctx.fillStyle = "rgba(92,174,195,0.17)";
+  drawRoundedRect(ctx, x, y, width, height, 28);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(92,174,195,0.45)";
+  ctx.lineWidth = 2;
+  drawRoundedRect(ctx, x, y, width, height, 28);
+  ctx.stroke();
+  ctx.fillStyle = "#1f6f86";
+  ctx.font = "600 28px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.fillText(text, cx, cy + 1);
+}
+
+function drawBrainBreakMonthBars(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  counts: number[],
+) {
+  const months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+  const values = counts.slice(0, 12);
+  while (values.length < 12) values.push(0);
+  const max = Math.max(1, ...values);
+  const gap = 20;
+  const barWidth = 10;
+  const chartWidth = months.length * gap;
+  const x0 = cx - chartWidth / 2;
+  const baseY = cy + 12;
+
+  ctx.fillStyle = "rgba(31,111,134,0.72)";
+  ctx.font = "500 20px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.fillText("Brain break months", cx, cy - 18);
+
+  for (let i = 0; i < months.length; i++) {
+    const h = Math.max(3, (values[i] / max) * 42);
+    const x = x0 + i * gap + (gap - barWidth) / 2;
+    const y = baseY - h;
+    ctx.fillStyle = "rgba(92,174,195,0.95)";
+    drawRoundedRect(ctx, x, y, barWidth, h, 4);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(27,36,56,0.55)";
+    ctx.font = "500 12px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText(months[i], x + barWidth / 2, baseY + 13);
+  }
 }
 
 function drawDayDotRow(

@@ -43,8 +43,27 @@ function AuthCallbackContent() {
           return;
         }
 
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!profile) {
+          await supabase.from("profiles").upsert(
+            {
+              id: user.id,
+            },
+            { onConflict: "id" },
+          );
+        }
+
+        const shouldSkipOnboarding = Boolean(
+          profile?.onboarding_complete || profile?.adult_mode || profile?.nickname,
+        );
+
         setStatus("Signed in. Redirecting...");
-        router.replace("/dashboard");
+        router.replace(shouldSkipOnboarding ? "/dashboard" : "/onboarding");
       } catch (error) {
         console.error("Auth callback error", error);
         setStatus("Could not complete sign-in. Please try again.");

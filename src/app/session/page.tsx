@@ -104,6 +104,9 @@ const brainBreakSteps = [
   },
 ] as const;
 
+const togetherBannerKey = "tinyPauses.showTogetherBanner";
+const togetherSessionKey = "tinyPauses.firstTogetherSession";
+
 function MoodFace({ level }: { level: number }) {
   const stroke = "currentColor";
   const face = (() => {
@@ -273,6 +276,7 @@ export default function SessionPage() {
   const [mode, setMode] = useState<"regular" | "brain-break">("regular");
   const [mood, setMood] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [childName, setChildName] = useState<string | null>(null);
   const [kind, setKind] = useState<PromptKind | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [loadingPrompt, setLoadingPrompt] = useState(false);
@@ -287,6 +291,9 @@ export default function SessionPage() {
   const [brainBreakShowFinishActions, setBrainBreakShowFinishActions] =
     useState(false);
   const [brainBreakLogged, setBrainBreakLogged] = useState(false);
+  const [showTogetherBanner, setShowTogetherBanner] = useState(false);
+  const [firstTogetherSession, setFirstTogetherSession] = useState(false);
+  const [showTogetherDoneCopy, setShowTogetherDoneCopy] = useState(false);
   const brainBreakAudioContextRef = useRef<AudioContext | null>(null);
   const brainBreakOscillatorRef = useRef<OscillatorNode | null>(null);
   const brainBreakGainRef = useRef<GainNode | null>(null);
@@ -344,8 +351,26 @@ export default function SessionPage() {
       if (!supabase) return;
       const { data } = await supabase.auth.getUser();
       setUserId(data.user?.id ?? null);
+      if (data.user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        if (typeof profile?.child_name === "string" && profile.child_name.trim()) {
+          setChildName(profile.child_name.trim());
+        }
+      }
     }
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setShowTogetherBanner(window.sessionStorage.getItem(togetherBannerKey) === "1");
+    setFirstTogetherSession(
+      window.sessionStorage.getItem(togetherSessionKey) === "1",
+    );
   }, []);
 
   useEffect(() => {
@@ -517,7 +542,27 @@ export default function SessionPage() {
     setPrompt(null);
     setLoadingPrompt(false);
     setIsPromptSaved(false);
+    setShowTogetherDoneCopy(false);
     setStep("choose");
+  }
+
+  function completeRegularSession(selectedMood: number | null) {
+    if (firstTogetherSession && typeof window !== "undefined") {
+      setShowTogetherDoneCopy(true);
+      setFirstTogetherSession(false);
+      setShowTogetherBanner(false);
+      window.sessionStorage.removeItem(togetherSessionKey);
+      window.sessionStorage.removeItem(togetherBannerKey);
+    }
+    recordSession(selectedMood);
+    setStep("done");
+  }
+
+  function dismissTogetherBanner() {
+    setShowTogetherBanner(false);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(togetherBannerKey);
+    }
   }
 
   function saveCurrentPrompt() {
@@ -655,7 +700,10 @@ export default function SessionPage() {
             {step === "choose" && "What do you want help with today?"}
             {step === "prompt" && "Try this tiny pause"}
             {step === "mood" && "How do you feel now?"}
-            {step === "done" && "You just took a tiny pause."}
+            {step === "done" &&
+              (showTogetherDoneCopy
+                ? "You just took a tiny pause together. That's a really good start."
+                : "You just took a tiny pause.")}
           </h1>
           <div className="mx-auto h-1 w-16 rounded-full bg-[color:var(--color-accent)]" />
           <div className="mx-auto mt-3 flex max-w-sm items-center justify-between gap-2">
@@ -683,6 +731,22 @@ export default function SessionPage() {
 
         {step === "choose" && (
           <BrandCard>
+          {showTogetherBanner && (
+            <div className="mb-3 flex items-start justify-between gap-3 rounded-xl bg-[#4ea6be] px-3 py-2 text-xs text-white">
+              <p>
+                This one&apos;s for you and {childName ?? "your kid"} together.
+                Pick whatever feels right.
+              </p>
+              <button
+                type="button"
+                onClick={dismissTogetherBanner}
+                className="rounded-full px-1 text-white/90 hover:bg-white/10"
+                aria-label="Dismiss together banner"
+              >
+                ×
+              </button>
+            </div>
+          )}
           <p className="text-sm text-[color:var(--color-foreground)]/85">
             Pick the kind of moment that would feel most helpful right now.
           </p>
@@ -826,8 +890,7 @@ export default function SessionPage() {
                 type="button"
                 onClick={() => {
                   setMood(option.value);
-                  recordSession(option.value);
-                  setStep("done");
+                  completeRegularSession(option.value);
                 }}
                 className={`flex flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition ${
                   mood === option.value
@@ -845,8 +908,7 @@ export default function SessionPage() {
             onClick={() => {
               const option = moodOptions[4];
               setMood(option.value);
-              recordSession(option.value);
-              setStep("done");
+              completeRegularSession(option.value);
             }}
             className={`mt-3 flex w-full flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition ${
               mood === moodOptions[4].value
@@ -869,8 +931,7 @@ export default function SessionPage() {
             variant="secondary"
             fullWidth
             onClick={() => {
-              recordSession(null);
-              setStep("done");
+              completeRegularSession(null);
             }}
           >
             Skip for now
