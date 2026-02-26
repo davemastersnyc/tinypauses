@@ -390,6 +390,7 @@ function badgeColorForCategory(category: string) {
   if (lower.includes("letting")) return "#ff2f92";
   if (lower.includes("reflect")) return "#ffd84a";
   if (lower.includes("kind")) return "#9f7fff";
+  if (lower.includes("brain")) return "#5caec3";
   if (lower.includes("pause")) return "#25e0c5";
   if (lower.includes("mindful")) return "#25e0c5";
   return "#f97316";

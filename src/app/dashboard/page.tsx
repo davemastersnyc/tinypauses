@@ -110,7 +110,13 @@ function categoryFromKind(kind: string | null | undefined) {
 }
 
 function resolveMomentCategory(row: MomentRow) {
-  return cleanText(row.category) ?? categoryFromKind(row.kind) ?? "Mindful moment";
+  const raw = cleanText(row.category);
+  if (raw) {
+    const lower = raw.toLowerCase();
+    if (lower === "brain-break" || lower === "brain break") return "Brain break";
+    return raw;
+  }
+  return categoryFromKind(row.kind) ?? "Mindful moment";
 }
 
 function resolveMomentPrompt(row: MomentRow) {
@@ -129,6 +135,10 @@ function toMomentMetadata(row: MomentRow): MomentCardMetadata {
     promptName: resolveMomentPrompt(row),
     moodValue: row.mood_value ?? null,
   };
+}
+
+function isBrainBreakMomentRow(row: MomentRow) {
+  return resolveMomentCategory(row).toLowerCase() === "brain break";
 }
 
 function toWrapUpMetadata(row: WrapUpRow): WrapUpCardMetadata {
@@ -406,6 +416,7 @@ export default function DashboardPage() {
   const svgHeight = pad * 2 + 7 * cell;
 
   async function shareSelectedCard(entry: TimelineEntry) {
+    if (entry.kind === "moment" && isBrainBreakMomentRow(entry.row)) return;
     setShareLoading(true);
     try {
       const blob = await renderCardBlob(entry.metadata, 1080);
@@ -585,19 +596,39 @@ export default function DashboardPage() {
               <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your check-ins</p>
               <div className="mt-3 space-y-3">
                 {visibleEntries.map((entry) => (
+                  (() => {
+                    const isBrainBreak =
+                      entry.kind === "moment" && isBrainBreakMomentRow(entry.row);
+                    const wrapperClass = `flex w-full items-start gap-3 rounded-2xl border border-[color:var(--color-border-subtle)] p-3 text-left transition ${
+                      entry.kind === "wrap_up"
+                        ? "bg-[color:var(--color-accent-soft)]/28"
+                        : "bg-[color:var(--color-surface)]"
+                    } ${
+                      isBrainBreak
+                        ? "cursor-default"
+                        : "hover:bg-[color:var(--color-surface-soft)]"
+                    }`;
+                    return (
                   <button
                     key={entry.id}
                     type="button"
-                    onClick={() => setSelectedCard(entry)}
-                    className={`flex w-full items-start gap-3 rounded-2xl border border-[color:var(--color-border-subtle)] p-3 text-left transition hover:bg-[color:var(--color-surface-soft)] ${
-                      entry.kind === "wrap_up" ? "bg-[color:var(--color-accent-soft)]/28" : "bg-[color:var(--color-surface)]"
-                    }`}
+                    onClick={() => {
+                      if (isBrainBreak) return;
+                      setSelectedCard(entry);
+                    }}
+                    className={wrapperClass}
                   >
                     <TimelineThumb metadata={entry.metadata} />
                     <div className="min-w-0 flex-1">
                       {entry.kind === "moment" ? (
                         <>
-                          <p className="inline-flex rounded-full bg-[color:var(--color-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-ink-on-accent-soft)]">
+                          <p
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              isBrainBreak
+                                ? "bg-[#d9f3f8] text-[#1f6f86]"
+                                : "bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
+                            }`}
+                          >
                             {resolveMomentCategory(entry.row)}
                           </p>
                           <p className="mt-1 truncate text-sm font-medium text-[color:var(--color-primary)]">
@@ -626,6 +657,8 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </button>
+                    );
+                  })()
                 ))}
               </div>
               {visibleTimelineCount < timelineEntries.length && (

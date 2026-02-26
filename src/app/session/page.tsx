@@ -1,6 +1,7 @@
 "use client";
 
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { type MomentCardMetadata, renderCardBlob } from "@/lib/cardRenderer";
 import { BrandButton, BrandCard, PageShell } from "../ui";
@@ -73,6 +74,36 @@ type FavoritePrompt = {
   savedAt: string;
 };
 
+type BrainBreakSoundMode = "quiet" | "sound";
+
+const brainBreakAccent = "#5caec3";
+
+const brainBreakSteps = [
+  {
+    instruction:
+      "Shake your hands like you're flicking water off them. Arms too if you want.",
+  },
+  {
+    instruction:
+      "Stomp your feet three times. Then press them flat into the floor and hold.",
+  },
+  {
+    instruction:
+      "Make your hands into fists. Squeeze hard for three seconds. Then let go completely.",
+  },
+  {
+    instruction:
+      "Touch something near you. Notice if it feels cool or warm. Just notice.",
+  },
+  {
+    instruction:
+      "Breathe in slowly through your nose. Out through your mouth. Do that three times.",
+  },
+  {
+    instruction: "Your brain slowed down. You did that.",
+  },
+] as const;
+
 function MoodFace({ level }: { level: number }) {
   const stroke = "currentColor";
   const face = (() => {
@@ -138,10 +169,96 @@ function MoodFace({ level }: { level: number }) {
   );
 }
 
+function BrainBreakStepVisual({ step }: { step: number }) {
+  if (step === 0) {
+    return (
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#5caec3]">
+        <path
+          className="bb-hand-wiggle-left"
+          d="M38 80c0-10 4-18 10-23V35c0-4 6-4 6 0v17h4V30c0-4 6-4 6 0v22h4V33c0-4 6-4 6 0v24h4V40c0-4 6-4 6 0v28c3 3 5 7 5 12 0 12-10 22-22 22H60c-12 0-22-10-22-22Z"
+          fill="currentColor"
+          fillOpacity="0.17"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path
+          className="bb-hand-wiggle-right"
+          d="M142 80c0-10-4-18-10-23V35c0-4-6-4-6 0v17h-4V30c0-4-6-4-6 0v22h-4V33c0-4-6-4-6 0v24h-4V40c0-4-6-4-6 0v28c-3 3-5 7-5 12 0 12 10 22 22 22h16c12 0 22-10 22-22Z"
+          fill="currentColor"
+          fillOpacity="0.17"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+      </svg>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#4f94ab]">
+        <rect x="18" y="92" width="144" height="8" rx="4" fill="currentColor" fillOpacity="0.22" />
+        <g className="bb-feet-pulse">
+          <path
+            d="M44 88c0-14 9-26 20-26 10 0 18 11 18 24v2H44Z"
+            fill="currentColor"
+            fillOpacity="0.2"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+          <path
+            d="M98 88c0-14 9-26 20-26 10 0 18 11 18 24v2H98Z"
+            fill="currentColor"
+            fillOpacity="0.2"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+        </g>
+      </svg>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#599fb4]">
+        <g className="bb-squeeze-left" transform="translate(42 25)">
+          <rect x="0" y="0" width="44" height="64" rx="20" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" />
+        </g>
+        <g className="bb-squeeze-right" transform="translate(94 25)">
+          <rect x="0" y="0" width="44" height="64" rx="20" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" />
+        </g>
+      </svg>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#5daabf]">
+        <rect x="24" y="74" width="132" height="12" rx="6" fill="currentColor" fillOpacity="0.25" />
+        <path
+          d="M70 76c0-14 7-31 18-31 9 0 13 11 13 22v9H70Z"
+          fill="currentColor"
+          fillOpacity="0.2"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path className="bb-warm-lines" d="M113 47v11m10-6v11m10-6v11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (step === 4) {
+    return <div aria-hidden="true" className="bb-breath-orb h-36 w-36 rounded-full" />;
+  }
+
+  return <p className="text-6xl" aria-hidden="true">🌱</p>;
+}
+
 export default function SessionPage() {
+  const router = useRouter();
   const [step, setStep] = useState<"choose" | "prompt" | "mood" | "done">(
     "choose",
   );
+  const [mode, setMode] = useState<"regular" | "brain-break">("regular");
   const [mood, setMood] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [kind, setKind] = useState<PromptKind | null>(null);
@@ -151,6 +268,16 @@ export default function SessionPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showBrainBreakNudge, setShowBrainBreakNudge] = useState(false);
+  const [brainBreakSoundMode, setBrainBreakSoundMode] =
+    useState<BrainBreakSoundMode>("quiet");
+  const [brainBreakStep, setBrainBreakStep] = useState(-1);
+  const [brainBreakShowFinishActions, setBrainBreakShowFinishActions] =
+    useState(false);
+  const [brainBreakLogged, setBrainBreakLogged] = useState(false);
+  const brainBreakAudioContextRef = useRef<AudioContext | null>(null);
+  const brainBreakOscillatorRef = useRef<OscillatorNode | null>(null);
+  const brainBreakGainRef = useRef<GainNode | null>(null);
 
   const accentByStep: Record<
     "choose" | "prompt" | "mood" | "done",
@@ -162,6 +289,44 @@ export default function SessionPage() {
     done: "#9f7fff", // purple
   };
 
+  function stopBrainBreakTone() {
+    try {
+      brainBreakOscillatorRef.current?.stop();
+    } catch {
+      // ignore stop errors for already-stopped nodes
+    }
+    brainBreakOscillatorRef.current?.disconnect();
+    brainBreakGainRef.current?.disconnect();
+    if (brainBreakAudioContextRef.current) {
+      void brainBreakAudioContextRef.current.close();
+    }
+    brainBreakOscillatorRef.current = null;
+    brainBreakGainRef.current = null;
+    brainBreakAudioContextRef.current = null;
+  }
+
+  function startBrainBreakTone() {
+    if (brainBreakAudioContextRef.current) return;
+    if (typeof window === "undefined") return;
+    const WebAudio =
+      window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!WebAudio) return;
+    const ctx = new WebAudio();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 56;
+    gain.gain.value = 0.016;
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start();
+    brainBreakAudioContextRef.current = ctx;
+    brainBreakOscillatorRef.current = oscillator;
+    brainBreakGainRef.current = gain;
+  }
+
   useEffect(() => {
     async function loadUser() {
       if (!supabase) return;
@@ -169,6 +334,30 @@ export default function SessionPage() {
       setUserId(data.user?.id ?? null);
     }
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "regular" || step !== "choose") {
+      setShowBrainBreakNudge(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      setShowBrainBreakNudge(true);
+    }, 10_000);
+    return () => window.clearTimeout(timeout);
+  }, [mode, step]);
+
+  useEffect(() => {
+    if (mode !== "brain-break" || brainBreakStep !== 5) return;
+    const timeout = window.setTimeout(() => {
+      setBrainBreakShowFinishActions(true);
+      void recordBrainBreakCompletion();
+    }, 3000);
+    return () => window.clearTimeout(timeout);
+  }, [mode, brainBreakStep]);
+
+  useEffect(() => {
+    return () => stopBrainBreakTone();
   }, []);
 
   async function loadPromptForKind(selectedKind: PromptKind) {
@@ -237,6 +426,77 @@ export default function SessionPage() {
 
   function goToStep(target: "choose" | "prompt" | "mood" | "done") {
     setStep(target);
+  }
+
+  function startBrainBreak() {
+    setMode("brain-break");
+    setBrainBreakStep(-1);
+    setBrainBreakShowFinishActions(false);
+    setBrainBreakLogged(false);
+    setShowBrainBreakNudge(false);
+  }
+
+  function exitBrainBreak() {
+    stopBrainBreakTone();
+    setMode("regular");
+    setStep("choose");
+    setBrainBreakStep(-1);
+    setBrainBreakShowFinishActions(false);
+  }
+
+  function beginBrainBreakSequence() {
+    setBrainBreakShowFinishActions(false);
+    setBrainBreakStep(0);
+    if (brainBreakSoundMode === "sound") {
+      startBrainBreakTone();
+    } else {
+      stopBrainBreakTone();
+    }
+  }
+
+  function advanceBrainBreakStep() {
+    setBrainBreakStep((prev) => Math.min(prev + 1, 5));
+  }
+
+  async function recordBrainBreakCompletion() {
+    if (brainBreakLogged) return;
+    setBrainBreakLogged(true);
+    if (!supabase || !userId) return;
+    try {
+      const completedAt = new Date().toISOString();
+      await supabase.from("sessions").insert({
+        user_id: userId,
+        mood_after: null,
+        completed_at: completedAt,
+      });
+      await supabase.from("moments").insert({
+        user_id: userId,
+        created_at: completedAt,
+        category: "brain-break",
+        prompt_name: "Brain Break",
+        mood_value: null,
+        card_type: "moment",
+      });
+    } catch (error) {
+      console.error("Error recording brain break", error);
+    }
+  }
+
+  function handleBrainBreakDoneAction() {
+    stopBrainBreakTone();
+    setMode("regular");
+    setStep("choose");
+    setBrainBreakStep(-1);
+    setBrainBreakShowFinishActions(false);
+  }
+
+  function handleBrainBreakExitAction() {
+    stopBrainBreakTone();
+    if (userId) {
+      router.push("/dashboard");
+      return;
+    }
+    router.push("/");
   }
 
   function startAnotherRound() {
@@ -365,11 +625,14 @@ export default function SessionPage() {
       <div
         style={
           {
-            "--color-accent": accentByStep[step],
+            "--color-accent":
+              mode === "brain-break" ? brainBreakAccent : accentByStep[step],
           } as CSSProperties
         }
         className="space-y-5"
       >
+        {mode === "regular" ? (
+          <>
         <header className="text-center space-y-1.5">
           {step !== "choose" && (
             <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium tracking-wide text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
@@ -461,6 +724,25 @@ export default function SessionPage() {
               Kindness
             </button>
           </div>
+          <button
+            type="button"
+            onClick={startBrainBreak}
+            className="mt-3 w-full rounded-2xl border border-[#8ac8d5] bg-[#eaf7fb] px-4 py-3 text-left transition hover:bg-[#dff1f6]"
+          >
+            <p className="text-sm font-semibold text-[#2c6e83]">Brain Break</p>
+            <p className="mt-0.5 text-xs text-[#2c6e83]/80">
+              Slow your brain down first.
+            </p>
+          </button>
+          {showBrainBreakNudge && (
+            <button
+              type="button"
+              onClick={startBrainBreak}
+              className="mt-3 inline-block text-xs text-[#2c6e83]/85 underline decoration-[#2c6e83]/45 underline-offset-2 hover:text-[#2c6e83]"
+            >
+              Need to slow down first?
+            </button>
+          )}
           <a
             href="/"
             className="mt-3 inline-block text-xs text-[color:var(--color-foreground)]/62 transition hover:text-[color:var(--color-foreground)]/86"
@@ -656,6 +938,108 @@ export default function SessionPage() {
               </div>
             </div>
           </div>
+        )}
+          </>
+        ) : (
+          <section className="relative rounded-[var(--radius-card)] border border-[#cfe8ef] bg-[linear-gradient(180deg,#eef8fb_0%,#e5f3f7_100%)] p-4 sm:p-6">
+            <button
+              type="button"
+              onClick={exitBrainBreak}
+              className="absolute right-4 top-3 text-xs text-[#285f72]/75 underline decoration-[#285f72]/35 underline-offset-2 hover:text-[#285f72]"
+            >
+              exit
+            </button>
+            <div className="mx-auto flex min-h-[66vh] max-w-md flex-col items-center justify-center text-center">
+              {brainBreakStep >= 0 && (
+                <div className="mb-5 w-full space-y-2">
+                  <p className="text-xs font-medium tracking-wide text-[#285f72]/80">
+                    Step {brainBreakStep + 1} of 6
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    {brainBreakSteps.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`h-2 flex-1 rounded-full ${
+                          idx <= brainBreakStep
+                            ? "bg-[#4ea6be]"
+                            : "bg-[#bfdde7]"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {brainBreakStep < 0 ? (
+                <div className="brain-break-fade space-y-5">
+                  <h2 className="text-3xl font-semibold text-[#1f4f60]">
+                    Brain Break
+                  </h2>
+                  <p className="text-lg text-[#1f4f60]/85">
+                    This takes about 90 seconds. Just follow along.
+                  </p>
+                  <div className="mx-auto grid max-w-xs grid-cols-2 gap-2 rounded-2xl bg-white/50 p-2">
+                    <button
+                      type="button"
+                      onClick={() => setBrainBreakSoundMode("quiet")}
+                      className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
+                        brainBreakSoundMode === "quiet"
+                          ? "bg-[#5caec3] text-white"
+                          : "text-[#285f72] hover:bg-white/70"
+                      }`}
+                    >
+                      Quiet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBrainBreakSoundMode("sound")}
+                      className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
+                        brainBreakSoundMode === "sound"
+                          ? "bg-[#5caec3] text-white"
+                          : "text-[#285f72] hover:bg-white/70"
+                      }`}
+                    >
+                      With sound
+                    </button>
+                  </div>
+                  <BrandButton type="button" onClick={beginBrainBreakSequence} fullWidth>
+                    Let&apos;s go
+                  </BrandButton>
+                </div>
+              ) : (
+                <div key={brainBreakStep} className="brain-break-fade space-y-5">
+                  <div className="mx-auto flex justify-center">
+                    <BrainBreakStepVisual step={brainBreakStep} />
+                  </div>
+                  <p className="text-balance text-2xl font-semibold leading-snug text-[#1f4f60]">
+                    {brainBreakSteps[brainBreakStep]?.instruction}
+                  </p>
+                  {brainBreakStep < 5 ? (
+                    <div className="pt-1">
+                      <BrandButton type="button" onClick={advanceBrainBreakStep} fullWidth>
+                        I did it
+                      </BrandButton>
+                    </div>
+                  ) : brainBreakShowFinishActions ? (
+                    <div className="space-y-3 pt-1">
+                      <BrandButton type="button" onClick={handleBrainBreakDoneAction} fullWidth>
+                        Take a tiny pause
+                      </BrandButton>
+                      <button
+                        type="button"
+                        onClick={handleBrainBreakExitAction}
+                        className="text-sm text-[#285f72]/80 underline decoration-[#285f72]/35 underline-offset-2 hover:text-[#285f72]"
+                      >
+                        I&apos;m good, thanks
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#285f72]/72">Nice work. Stay here for a moment.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
         )}
       </div>
     </PageShell>

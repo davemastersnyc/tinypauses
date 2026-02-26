@@ -82,8 +82,136 @@ h3 {
   animation: heroOrbBreath 5s ease-in-out infinite;
 }
 
+@keyframes brainBreakFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes brainBreakWiggleLeft {
+  0%,
+  100% {
+    transform: translateX(-1px) rotate(-2deg);
+  }
+  50% {
+    transform: translateX(3px) rotate(2deg);
+  }
+}
+
+@keyframes brainBreakWiggleRight {
+  0%,
+  100% {
+    transform: translateX(1px) rotate(2deg);
+  }
+  50% {
+    transform: translateX(-3px) rotate(-2deg);
+  }
+}
+
+@keyframes brainBreakFeetPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+@keyframes brainBreakSqueeze {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.9);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes brainBreakWarmLines {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes brainBreakBreath {
+  0%,
+  100% {
+    transform: scale(0.88);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+.brain-break-fade {
+  animation: brainBreakFadeIn 240ms ease-out both;
+}
+
+.bb-hand-wiggle-left {
+  transform-origin: 62px 84px;
+  animation: brainBreakWiggleLeft 0.9s ease-in-out infinite;
+}
+
+.bb-hand-wiggle-right {
+  transform-origin: 118px 84px;
+  animation: brainBreakWiggleRight 0.9s ease-in-out infinite;
+}
+
+.bb-feet-pulse {
+  animation: brainBreakFeetPulse 1.2s ease-in-out infinite;
+}
+
+.bb-squeeze-left,
+.bb-squeeze-right {
+  transform-origin: center;
+  animation: brainBreakSqueeze 1.5s ease-in-out infinite;
+}
+
+.bb-squeeze-right {
+  animation-delay: 0.18s;
+}
+
+.bb-warm-lines {
+  animation: brainBreakWarmLines 1.4s ease-in-out infinite;
+}
+
+.bb-breath-orb {
+  background: radial-gradient(
+    circle,
+    rgba(92, 174, 195, 0.26) 0%,
+    rgba(92, 174, 195, 0.14) 45%,
+    rgba(92, 174, 195, 0.04) 70%,
+    rgba(92, 174, 195, 0) 100%
+  );
+  box-shadow: 0 0 0 18px rgba(92, 174, 195, 0.08);
+  animation: brainBreakBreath 4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hero-orb {
+  .hero-orb,
+  .brain-break-fade,
+  .bb-hand-wiggle-left,
+  .bb-hand-wiggle-right,
+  .bb-feet-pulse,
+  .bb-squeeze-left,
+  .bb-squeeze-right,
+  .bb-warm-lines,
+  .bb-breath-orb {
     animation: none;
   }
 }
