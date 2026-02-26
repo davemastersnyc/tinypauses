@@ -14,6 +14,7 @@ export function AppNav() {
     label: null,
     signedIn: false,
   });
+  const [authResolved, setAuthResolved] = useState(!supabase);
 
   useEffect(() => {
     let isMounted = true;
@@ -43,6 +44,7 @@ export function AppNav() {
         label,
         signedIn: Boolean(user),
       });
+      setAuthResolved(true);
     }
 
     loadUser();
@@ -57,6 +59,7 @@ export function AppNav() {
             label,
             signedIn: Boolean(user),
           });
+          setAuthResolved(true);
         }
 
         syncSessionState();
@@ -117,7 +120,9 @@ export function AppNav() {
           >
             Dashboard
           </Link>
-          {authState.signedIn ? (
+          {!authResolved ? (
+            <span className="inline-flex h-[30px] w-[128px] animate-pulse rounded-full bg-[color:var(--color-surface-soft)]" />
+          ) : authState.signedIn ? (
             <>
               <span
                 title={authState.label ?? undefined}

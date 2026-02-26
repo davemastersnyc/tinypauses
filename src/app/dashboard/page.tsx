@@ -252,7 +252,8 @@ function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [greetingName, setGreetingName] = useState<string | null>("Friend");
+  const [greetingName, setGreetingName] = useState<string | null>(null);
+  const [profileResolved, setProfileResolved] = useState(false);
   const [isAdultMode, setIsAdultMode] = useState(false);
   const [showTogetherNudge, setShowTogetherNudge] = useState(false);
   const [childNameForNudge, setChildNameForNudge] = useState<string | null>(null);
@@ -320,6 +321,7 @@ export default function DashboardPage() {
         setGreetingName(childNameValue || nicknameValue || "Friend");
         setChildNameForNudge(childNameValue);
       }
+      setProfileResolved(true);
 
       const { data: momentRows, error: momentsError } = await supabase
         .from("moments")
@@ -644,9 +646,13 @@ export default function DashboardPage() {
         <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
           Your calm corner
         </p>
-        <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
-          {formattedGreetingName ? `Hi, ${formattedGreetingName}.` : "Hi there."}
-        </h1>
+        {profileResolved ? (
+          <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
+            {formattedGreetingName ? `Hi, ${formattedGreetingName}.` : "Hi there."}
+          </h1>
+        ) : (
+          <div className="h-9 w-44 animate-pulse rounded-xl bg-[color:var(--color-surface-soft)]" />
+        )}
         <p className="text-sm text-[color:var(--color-foreground)]/80">
           You can take a tiny mindful moment any time you like. We&apos;ll keep gentle track for you.
         </p>
