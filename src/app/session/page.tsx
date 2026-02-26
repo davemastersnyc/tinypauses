@@ -486,17 +486,17 @@ export default function SessionPage() {
                   {prompt.body}
                 </p>
               </div>
-              <div className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] p-4 text-sm text-[color:var(--color-ink-on-accent-soft)]">
-                <p className="font-medium">Your tiny step</p>
-                <p className="mt-1">{prompt.step}</p>
+              <div className="mt-4 rounded-2xl bg-[color:var(--color-accent-soft)] p-5 text-[color:var(--color-ink-on-accent-soft)] sm:p-6">
+                <p className="text-base font-semibold">Your tiny step</p>
+                <p className="mt-2 text-base leading-relaxed">{prompt.step}</p>
               </div>
-              <div className="mt-3">
+              <div className="mt-4">
                 <BrandButton
                   type="button"
                   onClick={() => setStep("mood")}
                   fullWidth
                 >
-                  I&apos;m ready
+                  I did it
                 </BrandButton>
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
