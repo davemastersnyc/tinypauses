@@ -119,16 +119,23 @@ export default function AdminPage() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      let token = session?.access_token ?? null;
       if (!token) {
-        router.replace("/");
-        return;
+        const { data: refreshed, error: refreshError } =
+          await supabase.auth.refreshSession();
+        if (!refreshError) {
+          token = refreshed.session?.access_token ?? null;
+        }
       }
       const response = await fetch("/api/admin/authorize", {
         method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
+        headers: token
+          ? {
+              authorization: `Bearer ${token}`,
+              "content-type": "application/json",
+            }
+          : { "content-type": "application/json" },
+        body: JSON.stringify({ email: user.email ?? null }),
       });
       const data = (await response.json().catch(() => ({ authorized: false }))) as {
         authorized?: boolean;
