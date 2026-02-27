@@ -1120,7 +1120,7 @@ function SessionPageInner() {
                 type="button"
                 onClick={handleShareMoment}
                 disabled={shareLoading}
-                className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[#66cccc] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(102,204,204,0.35)] transition hover:bg-[#66cccc]/90 disabled:cursor-not-allowed disabled:opacity-70"
+                className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[color:var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-[var(--shadow-soft)] transition hover:bg-[color:var(--color-accent)]/90 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <svg
                   viewBox="0 0 20 20"
