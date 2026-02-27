@@ -197,14 +197,25 @@ function MoodFace({ level }: { level: number }) {
 function BrainBreakStepVisual({ step }: { step: number }) {
   if (step === 0) {
     return (
-      <div className="bb-hand-wiggle-left">
-        <Image
-          src="/brain-break/shake.svg"
-          alt=""
-          width={200}
-          height={200}
-          className="h-32 w-32"
-        />
+      <div className="flex items-center justify-center gap-3">
+        <div className="bb-hand-wiggle-left">
+          <Image
+            src="/brain-break/shake.svg"
+            alt=""
+            width={200}
+            height={200}
+            className="h-28 w-28"
+          />
+        </div>
+        <div className="bb-hand-wiggle-right">
+          <Image
+            src="/brain-break/shake.svg"
+            alt=""
+            width={200}
+            height={200}
+            className="h-28 w-28 -scale-x-100"
+          />
+        </div>
       </div>
     );
   }
