@@ -197,89 +197,57 @@ function MoodFace({ level }: { level: number }) {
 function BrainBreakStepVisual({ step }: { step: number }) {
   if (step === 0) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
-        <path
-          className="bb-hand-wiggle-left"
-          d="M38 80c0-10 4-18 10-23V35c0-4 6-4 6 0v17h4V30c0-4 6-4 6 0v22h4V33c0-4 6-4 6 0v24h4V40c0-4 6-4 6 0v28c3 3 5 7 5 12 0 12-10 22-22 22H60c-12 0-22-10-22-22Z"
-          fill="currentColor"
-          fillOpacity="0.17"
-          stroke="currentColor"
-          strokeWidth="2"
+      <div className="bb-hand-wiggle-left">
+        <Image
+          src="/brain-break/shake.svg"
+          alt=""
+          width={200}
+          height={200}
+          className="h-32 w-32"
         />
-        <path
-          className="bb-hand-wiggle-right"
-          d="M142 80c0-10-4-18-10-23V35c0-4-6-4-6 0v17h-4V30c0-4-6-4-6 0v22h-4V33c0-4-6-4-6 0v24h-4V40c0-4-6-4-6 0v28c-3 3-5 7-5 12 0 12 10 22 22 22h16c12 0 22-10 22-22Z"
-          fill="currentColor"
-          fillOpacity="0.17"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-      </svg>
+      </div>
     );
   }
 
   if (step === 1) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
-        <rect x="18" y="92" width="144" height="8" rx="4" fill="currentColor" fillOpacity="0.22" />
-        <g className="bb-feet-pulse">
-          <path
-            d="M44 88c0-14 9-26 20-26 10 0 18 11 18 24v2H44Z"
-            fill="currentColor"
-            fillOpacity="0.2"
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-          <path
-            d="M98 88c0-14 9-26 20-26 10 0 18 11 18 24v2H98Z"
-            fill="currentColor"
-            fillOpacity="0.2"
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-        </g>
-      </svg>
+      <div className="bb-feet-pulse">
+        <Image
+          src="/brain-break/stomp.svg"
+          alt=""
+          width={200}
+          height={200}
+          className="h-32 w-32"
+        />
+      </div>
     );
   }
 
   if (step === 2) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
-        <g className="bb-squeeze-left" transform="translate(34 30)">
-          <path
-            d="M8 56c0-8 5-14 11-17v-10c0-4 5-4 5 0v8h4v-11c0-4 5-4 5 0v11h4v-10c0-4 5-4 5 0v12h4v-8c0-4 5-4 5 0v16c2 3 4 6 4 10 0 10-8 18-18 18H26C16 74 8 66 8 56Z"
-            fill="currentColor"
-            fillOpacity="0.18"
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-        </g>
-        <g className="bb-squeeze-right" transform="translate(90 30)">
-          <path
-            d="M8 56c0-8 5-14 11-17v-10c0-4 5-4 5 0v8h4v-11c0-4 5-4 5 0v11h4v-10c0-4 5-4 5 0v12h4v-8c0-4 5-4 5 0v16c2 3 4 6 4 10 0 10-8 18-18 18H26C16 74 8 66 8 56Z"
-            fill="currentColor"
-            fillOpacity="0.18"
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-        </g>
-      </svg>
+      <div className="bb-squeeze-left">
+        <Image
+          src="/brain-break/fist.svg"
+          alt=""
+          width={200}
+          height={200}
+          className="h-32 w-32"
+        />
+      </div>
     );
   }
 
   if (step === 3) {
     return (
-      <svg viewBox="0 0 180 120" aria-hidden="true" className="h-36 w-52 text-[#66cccc]">
-        <rect x="24" y="74" width="132" height="12" rx="6" fill="currentColor" fillOpacity="0.25" />
-        <path
-          d="M70 76c0-14 7-31 18-31 9 0 13 11 13 22v9H70Z"
-          fill="currentColor"
-          fillOpacity="0.2"
-          stroke="currentColor"
-          strokeWidth="2"
+      <div className="bb-warm-lines">
+        <Image
+          src="/brain-break/point.svg"
+          alt=""
+          width={200}
+          height={200}
+          className="h-32 w-32"
         />
-        <path className="bb-warm-lines" d="M113 47v11m10-6v11m10-6v11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
+      </div>
     );
   }
 
