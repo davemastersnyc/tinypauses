@@ -711,7 +711,7 @@ export default function DashboardPage() {
               ))}
             </div>
             {brainBreaksThisWeek > 0 && (
-              <p className="mt-3 text-sm text-[#66cccc]">
+              <p className="mt-3 text-sm text-[#006666]">
                 You also took {brainBreaksThisWeek} brain break
                 {brainBreaksThisWeek === 1 ? "" : "s"} this week.
               </p>
