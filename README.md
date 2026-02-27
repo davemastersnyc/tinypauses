@@ -1,8 +1,61 @@
 # Tiny Pauses
 
-Tiny Pauses is a Next.js app for short guided mindful moments with optional sign-in, progress tracking, and shareable cards.
+A mindfulness app for kids 9-12. And honestly, for their grown-ups too.
 
-## Local development
+[tinypauses.com](https://tinypauses.com)
+
+---
+
+Two minutes. No writing. No talking. No streaks. No guilt.
+
+Just a tiny pause -- a single prompt, one small action, and a moment to notice how you feel. That's it. The app is designed to end. There's no next video, no suggested content, nothing pulling you back in.
+
+---
+
+## Why it exists
+
+Honestly? I needed it too.
+
+I wanted something that would help my son and me actually slow down -- not a full meditation practice, not a journaling habit, just a genuine moment to pause and reset. Everything I found was either too much commitment, too childish, or too focused on adults. Nothing felt right for both of us.
+
+So I built it.
+
+My son is my best collaborator. Brain Break mode came directly from him -- he described what he does at school to help himself feel grounded when things get overwhelming. Movement first, pressure, then breath. I built what he described, looked it up, and found out it aligns closely with occupational therapy best practices. That felt like confirmation we were onto something real.
+
+He still helps with feature ideas. The product is better for it.
+
+---
+
+## What's in it
+
+- 44 prompts across 4 categories -- Just a Pause, Letting Go, Reflecting on Today, Kindness
+- Brain Break -- a 6-step somatic regulation sequence for kids who aren't calm yet
+- Mood check-in after each session
+- A dashboard that keeps gentle track without pressure or streaks
+- Seasonal and weekly special prompts
+- Shareable moment cards
+- Works for adults too -- the "I'm here for myself" path is real and intentional
+
+---
+
+## On privacy
+
+No ads. No data selling. No engagement manipulation. Ever. The business model will never depend on any of those things. That's not a feature, it's just the only way this product makes sense to build.
+
+---
+
+## Built with
+
+Next.js · Supabase · Tailwind · TypeScript · Vercel
+
+Built by [Dave Masters](https://quietbrancheslabs.com)
+
+---
+---
+
+## Developer docs
+
+### Local development
 
 1. Install dependencies:
    - `npm install`
@@ -11,67 +64,49 @@ Tiny Pauses is a Next.js app for short guided mindful moments with optional sign
 3. Open:
    - `http://localhost:3000`
 
-Core app code lives in:
-- `src/app`
-- `src/lib`
+Core app code lives in `src/app` and `src/lib`
 
-## Environment variables
+### Environment variables
 
 Set these in your local env and deployment env:
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ADMIN_EMAIL` (for `/admin` access check)
 
-## Supabase setup
+### Supabase setup
 
-Run these SQL files in Supabase SQL Editor:
+Run these SQL files in Supabase SQL Editor in order:
 
-1. Prompt seed data:
-   - `sql/seed_prompts_40.sql`
-2. Prompt admin fields + brain break steps:
-   - `sql/admin_prompt_management.sql`
-3. Profile onboarding fields:
-   - `sql/profile_onboarding_fields.sql`
-4. Moments + wrap-ups schema/functions/cron:
-   - `sql/moments_and_wrapups.sql`
-5. Seasonal + weekly special prompts:
-   - `sql/special_prompts_system.sql`
+1. `sql/seed_prompts_40.sql` -- prompt seed data
+2. `sql/admin_prompt_management.sql` -- prompt admin fields and brain break steps
+3. `sql/profile_onboarding_fields.sql` -- profile onboarding fields
+4. `sql/moments_and_wrapups.sql` -- moments, wrap-ups schema, functions, cron
+5. `sql/special_prompts_system.sql` -- seasonal and weekly special prompts
 
-Prompt seed behavior (`sql/seed_prompts_40.sql`):
-- Idempotent (safe to re-run).
-- Upserts the curated prompt set (44 active prompts total: 11 per kind).
-- Deactivates retired/non-curated prompts for `pause`, `letting-go`, `reflect`, and `kindness`.
+### Prompt seed behavior
 
-Special prompts behavior (`sql/special_prompts_system.sql`):
-- Idempotent (safe to re-run).
-- Adds `moments.special_type` and `moments.special_key` for special-session tracking.
-- Creates `seasonal_windows` and `special_prompts`.
-- Seeds:
-  - Seasonal windows: back-to-school, halloween, thanksgiving-week, holiday-season, valentines-day, end-of-school-year.
-  - Weekly windows: sunday-evening and monday-morning prompt pools.
+- Idempotent (safe to re-run)
+- Upserts the curated prompt set (44 active prompts: 11 per category)
+- Deactivates retired prompts for pause, letting-go, reflect, and kindness
 
-## Special prompts runtime
+### Special prompts runtime
 
-- Dashboard computes one active special nudge at a time:
-  - Seasonal first (if currently in an active window).
-  - Weekly fallback:
-    - Sunday evening: 5pm to 11:59pm local time.
-    - Monday morning: 5am to 11:59am local time.
-- Nudge dismissal is stored in local storage for 24 hours per special key.
-- Session supports deep links from dashboard (`/session?specialType=...&specialKey=...&promptId=...`).
-- Completing a special session writes `special_type` and `special_key` to `moments`.
-- Sharing rules:
-  - Seasonal special moments are shareable.
-  - Weekly special moments are intentionally non-shareable.
+- Dashboard computes one active special nudge at a time
+- Seasonal takes priority over weekly
+- Weekly windows: Sunday evening 5pm-11:59pm, Monday morning 5am-11:59am local time
+- Nudge dismissal stored in localStorage for 24 hours per special key
+- Session supports deep links from dashboard (`/session?specialType=...&specialKey=...&promptId=...`)
+- Seasonal special moments are shareable. Weekly are intentionally not.
 
-## Admin panel
+### Admin panel
 
-`/admin` now includes:
-- `Prompts` (base prompt library)
-- `Seasonal Prompts` (window activation + seasonal prompt management)
-- `Weekly Prompts` (weekly prompt management + rotation order)
-- `Brain Break Steps`
-- `Stats`
+`/admin` includes:
+- Prompts (base prompt library)
+- Seasonal Prompts (window activation and management)
+- Weekly Prompts (management and rotation order)
+- Brain Break Steps
+- Stats
 
 ### Quick verification
 
@@ -83,10 +118,6 @@ select
   to_regclass('public.wrap_ups') as wrapups_table;
 ```
 
-Expected:
-- `public.moments`
-- `public.wrap_ups`
-
 After running special prompts SQL:
 
 ```sql
@@ -95,10 +126,6 @@ select
   to_regclass('public.special_prompts') as special_prompts_table;
 ```
 
-Expected:
-- `public.seasonal_windows`
-- `public.special_prompts`
-
 ```sql
 select special_type, special_key, count(*) as prompt_count
 from public.special_prompts
@@ -106,10 +133,6 @@ where status = 'active'
 group by special_type, special_key
 order by special_type, special_key;
 ```
-
-Expected:
-- Seasonal keys each have active prompts.
-- Weekly keys include `sunday-evening` and `monday-morning`.
 
 After running prompt seed SQL:
 
@@ -121,14 +144,10 @@ group by kind
 order by kind;
 ```
 
-Expected:
-- `pause`: 11
-- `letting-go`: 11
-- `reflect`: 11
-- `kindness`: 11
+Expected: 11 active prompts per category.
 
-## Notes
+### Notes
 
-- Card images are generated client-side with Canvas and are **not** stored in Supabase Storage.
-- Dashboard supports fallback from `moments` metadata to legacy `sessions` if needed during rollout.
-- The app is currently forced to light mode (system dark mode is intentionally ignored).
+- Card images are generated client-side with Canvas and are not stored in Supabase Storage
+- Dashboard supports fallback from `moments` metadata to legacy `sessions` if needed during rollout
+- The app is currently forced to light mode (system dark mode is intentionally ignored)
