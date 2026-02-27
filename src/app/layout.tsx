@@ -21,12 +21,21 @@ export const metadata: Metadata = {
     url: "https://tinypauses.com",
     siteName: "Tiny Pauses",
     type: "website",
+    images: [
+      {
+        url: "https://tinypauses.com/brand/LogoLockUp.png",
+        width: 1200,
+        height: 630,
+        alt: "Tiny Pauses",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Tiny Pauses · Tiny mindful moments",
     description:
       "Tiny Pauses offers 2–3 minute, kid-friendly mindful prompts to help 9–12 year olds (and their grown‑ups) pause, notice, and reset. Learn more at tinypauses.com.",
+    images: ["https://tinypauses.com/brand/LogoLockUp.png"],
   },
 };
 
