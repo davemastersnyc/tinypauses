@@ -35,6 +35,8 @@ export type WrapUpCardMetadata = {
 
 export type CardMetadata = MomentCardMetadata | WrapUpCardMetadata;
 
+let smileIconImage: HTMLImageElement | null = null;
+
 export function renderCardCanvas(metadata: CardMetadata, size = 1080) {
   if (typeof document === "undefined") return null;
   const baseSize = 1080;
@@ -117,6 +119,7 @@ function drawMomentCard(
 
   const badgeLabel = metadata.category || "Mindful moment";
   const badgeColor = badgeColorForCategory(metadata.category);
+  drawMomentBrandIcon(ctx, size, 36);
   ctx.font = "500 42px Inter, Avenir Next, Segoe UI, sans-serif";
   const badgeWidth = Math.max(260, ctx.measureText(badgeLabel).width + 90);
   const badgeX = (size - badgeWidth) / 2;
@@ -147,6 +150,53 @@ function drawMomentCard(
   ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
   ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
   ctx.fillText("tinypauses.com", size / 2, 952);
+}
+
+function drawMomentBrandIcon(ctx: CanvasRenderingContext2D, size: number, iconSize: number) {
+  const icon = ensureSmileIcon();
+  const x = size / 2 - iconSize / 2;
+  const y = 118;
+  if (icon && icon.complete && icon.naturalWidth > 0) {
+    ctx.drawImage(icon, x, y, iconSize, iconSize);
+    return;
+  }
+  drawFallbackSmileIcon(ctx, size / 2, y + iconSize / 2, iconSize / 2);
+}
+
+function ensureSmileIcon() {
+  if (typeof window === "undefined") return null;
+  if (!smileIconImage) {
+    smileIconImage = new Image();
+    smileIconImage.decoding = "async";
+    smileIconImage.src = "/brand/SmileCircle.png";
+  }
+  return smileIconImage;
+}
+
+function drawFallbackSmileIcon(
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  radius: number,
+) {
+  ctx.save();
+  ctx.fillStyle = "#ffd84a";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#1b2438";
+  ctx.lineWidth = Math.max(1.8, radius * 0.11);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(centerX - radius * 0.32, centerY - radius * 0.2, radius * 0.08, 0, Math.PI * 2);
+  ctx.arc(centerX + radius * 0.32, centerY - radius * 0.2, radius * 0.08, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY + radius * 0.06, radius * 0.42, 0.16 * Math.PI, 0.84 * Math.PI);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawWrapUpCard(
