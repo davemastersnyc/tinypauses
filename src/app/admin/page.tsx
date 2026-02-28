@@ -65,6 +65,15 @@ type StatsModel = {
   leastUsedActivePrompt: { name: string; category: string; count: number } | null;
 };
 
+type GrowthSnapshot = {
+  signups24h: number;
+  signups7d: number;
+  pauses24h: number;
+  pauses7d: number;
+  totalSignups: number;
+  totalPauses: number;
+};
+
 const categoryLabels: Record<PromptKind, string> = {
   pause: "Just a pause",
   "letting-go": "Letting go",
@@ -137,6 +146,25 @@ export default function AdminPage() {
   const [stats, setStats] = useState<StatsModel | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [growth, setGrowth] = useState<GrowthSnapshot | null>(null);
+  const [growthLoading, setGrowthLoading] = useState(false);
+  const [growthError, setGrowthError] = useState<string | null>(null);
+
+  async function getAccessToken() {
+    if (!supabase) return null;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    let token = session?.access_token ?? null;
+    if (!token) {
+      const { data: refreshed, error: refreshError } =
+        await supabase.auth.refreshSession();
+      if (!refreshError) {
+        token = refreshed.session?.access_token ?? null;
+      }
+    }
+    return token;
+  }
 
   useEffect(() => {
     async function checkAccess() {
@@ -516,12 +544,43 @@ export default function AdminPage() {
     }
   }
 
+  async function loadGrowthSnapshot() {
+    setGrowthLoading(true);
+    setGrowthError(null);
+    try {
+      const token = await getAccessToken();
+      if (!token) throw new Error("Missing access token.");
+
+      const response = await fetch("/api/admin/growth-snapshot", {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { ok?: boolean; message?: string; metrics?: GrowthSnapshot }
+        | null;
+      if (!response.ok || !data?.ok || !data.metrics) {
+        throw new Error(data?.message || "Could not load growth snapshot.");
+      }
+      setGrowth(data.metrics);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unknown error loading growth snapshot.";
+      setGrowthError(`Could not load growth snapshot: ${message}`);
+    } finally {
+      setGrowthLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (!authorized) return;
     if (view === "prompts") void loadPrompts();
     if (view === "seasonal" || view === "weekly") void loadSpecialPrompts();
     if (view === "brain-break") void loadBrainBreakSteps();
-    if (view === "stats") void loadStats();
+    if (view === "stats") {
+      void loadStats();
+      void loadGrowthSnapshot();
+    }
   }, [authorized, view]);
 
   const filteredPrompts = useMemo(() => {
@@ -1278,7 +1337,63 @@ export default function AdminPage() {
                   Loading stats...
                 </p>
               ) : (
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-xl border border-[color:var(--color-border-subtle)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/65">
+                      Growth snapshot
+                    </p>
+                    {growthError && (
+                      <p className="mt-2 rounded-lg bg-rose-50 px-2.5 py-2 text-xs text-rose-700">
+                        {growthError}
+                      </p>
+                    )}
+                    {growthLoading || !growth ? (
+                      <p className="mt-2 text-sm text-[color:var(--color-foreground)]/70">
+                        Loading growth metrics...
+                      </p>
+                    ) : (
+                      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                        <div className="rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-2.5">
+                          <p className="text-[11px] uppercase tracking-wide text-[color:var(--color-primary)]/65">
+                            Email signups
+                          </p>
+                          <p className="mt-1 text-sm">
+                            <span className="font-semibold">{growth.signups24h}</span> in 24h
+                          </p>
+                          <p className="text-sm">
+                            <span className="font-semibold">{growth.signups7d}</span> in 7d
+                          </p>
+                          <p className="text-xs text-[color:var(--color-foreground)]/65">
+                            Total {growth.totalSignups}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-2.5">
+                          <p className="text-[11px] uppercase tracking-wide text-[color:var(--color-primary)]/65">
+                            Pauses completed
+                          </p>
+                          <p className="mt-1 text-sm">
+                            <span className="font-semibold">{growth.pauses24h}</span> in 24h
+                          </p>
+                          <p className="text-sm">
+                            <span className="font-semibold">{growth.pauses7d}</span> in 7d
+                          </p>
+                          <p className="text-xs text-[color:var(--color-foreground)]/65">
+                            Total {growth.totalPauses}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-2.5">
+                          <p className="text-[11px] uppercase tracking-wide text-[color:var(--color-primary)]/65">
+                            Quick read
+                          </p>
+                          <p className="mt-1 text-xs text-[color:var(--color-foreground)]/80">
+                            Use this to compare spikes after posts, launches, and newsletter sends.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-[color:var(--color-border-subtle)] bg-white p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/65">
                       Active prompts by category
@@ -1358,6 +1473,7 @@ export default function AdminPage() {
                       </p>
                     )}
                   </div>
+                </div>
                 </div>
               )}
             </BrandCard>
