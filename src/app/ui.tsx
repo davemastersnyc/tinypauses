@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppNav } from "./app-nav";
+import { FeedbackTrigger } from "./feedback-trigger";
 
 type PageShellProps = {
   children: ReactNode;
@@ -35,6 +36,7 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
             Privacy
           </Link>{" "}
           ·{" "}
+          <FeedbackTrigger /> ·{" "}
           <a
             href="https://quietbranches.com"
             target="_blank"
