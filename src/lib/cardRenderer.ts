@@ -119,7 +119,6 @@ function drawMomentCard(
 
   const badgeLabel = metadata.category || "Mindful moment";
   const badgeColor = badgeColorForCategory(metadata.category);
-  drawMomentBrandIcon(ctx, size, 36);
   ctx.font = "500 42px Inter, Avenir Next, Segoe UI, sans-serif";
   const badgeWidth = Math.max(260, ctx.measureText(badgeLabel).width + 90);
   const badgeX = (size - badgeWidth) / 2;
@@ -147,6 +146,8 @@ function drawMomentCard(
   ctx.font = "500 38px Inter, Avenir Next, Segoe UI, sans-serif";
   ctx.fillText(metadata.promptName || "Tiny pause", size / 2, 768);
 
+  drawMomentBrandIcon(ctx, size, 26);
+
   ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
   ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
   ctx.fillText("tinypauses.com", size / 2, 952);
@@ -155,7 +156,7 @@ function drawMomentCard(
 function drawMomentBrandIcon(ctx: CanvasRenderingContext2D, size: number, iconSize: number) {
   const icon = ensureSmileIcon();
   const x = size / 2 - iconSize / 2;
-  const y = 118;
+  const y = 892;
   if (icon && icon.complete && icon.naturalWidth > 0) {
     ctx.drawImage(icon, x, y, iconSize, iconSize);
     return;
