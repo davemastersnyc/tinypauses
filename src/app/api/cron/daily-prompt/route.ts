@@ -86,6 +86,16 @@ function buildEmailHtml(prompt: PromptRow) {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #ece7dc;border-radius:18px;overflow:hidden;">
             <tr>
               <td style="padding:24px 24px 10px;">
+                <p style="margin:0 0 14px;text-align:center;">
+                  <a href="https://tinypauses.com" style="text-decoration:none;">
+                    <img
+                      src="https://tinypauses.com/brand/LogoLockUp.png"
+                      alt="Tiny Pauses"
+                      width="160"
+                      style="display:inline-block;max-width:160px;height:auto;border:0;outline:none;text-decoration:none;"
+                    />
+                  </a>
+                </p>
                 <h1 style="margin:0 0 14px;font-size:22px;line-height:1.25;color:#0f172a;">Today's tiny pause ✨</h1>
                 <p style="margin:0;color:#11756a;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">${kindName}</p>
                 <h2 style="margin:8px 0 14px;font-size:26px;line-height:1.2;color:#0f172a;">${prompt.title}</h2>
@@ -99,8 +109,13 @@ function buildEmailHtml(prompt: PromptRow) {
               </td>
             </tr>
             <tr>
-              <td style="padding:14px 24px 24px;color:#6b7280;font-size:12px;line-height:1.5;">
-                To unsubscribe reply STOP or click here: {{ unsubscribe }}
+              <td style="padding:14px 24px 24px;color:#6b7280;font-size:12px;line-height:1.5;text-align:center;">
+                <p style="margin:0 0 8px;">
+                  <a href="https://tinypauses.com/dashboard" style="color:#0b6f64;text-decoration:underline;">Go to my dashboard</a>
+                </p>
+                <p style="margin:0;">
+                  <a href="{{ unsubscribe }}" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a>
+                </p>
               </td>
             </tr>
           </table>
