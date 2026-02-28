@@ -193,7 +193,7 @@ export default function Home() {
         </BrandCard>
       </section>
 
-      <BrandCard tone="muted">
+      <BrandCard>
         <div className="flex flex-col items-stretch gap-4 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           <div className="space-y-1 text-sm text-[color:var(--color-foreground)]/75">
             <p className="font-medium text-[color:var(--color-primary)]/85">
