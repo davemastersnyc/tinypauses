@@ -6,23 +6,29 @@ export default function AboutPage() {
       <article className="mx-auto w-full max-w-2xl space-y-12 py-4 sm:py-8">
         <section className="space-y-5">
           <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--color-primary)] sm:text-4xl">
-            Why we built this
+            About Tiny Pauses
           </h1>
+        </section>
+
+        <section className="space-y-5">
+          <h2 className="text-2xl font-semibold tracking-tight text-[color:var(--color-primary)]">
+            Why we built this
+          </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            My son and I both needed to get better at pausing.
+            We kept looking for something that would help kids actually slow down.
           </p>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            Not meditating. Not journaling. Not committing to a daily practice. Just stopping
-            for a moment. Noticing how we felt. Taking a breath before moving on to the next
-            thing.
+            Not a full meditation practice. Not journaling. Not a daily commitment. Just a genuine
+            moment to pause and reset -- something short enough to actually do, simple enough to
+            not feel like homework.
           </p>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            Everything we tried was either too much -- too long, too guided, too much to set up
-            -- or designed for a completely different age group. My son is in that in-between
-            zone where little-kid apps feel insulting and adult apps feel irrelevant.
+            Everything we found was either too much, or designed for a completely different age
+            group. Kids 9-12 are in a funny in-between zone -- too old for little-kid apps, not
+            quite ready for adult wellness tools. Nobody was really building for them.
           </p>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            So I built something for both of us.
+            So we did.
           </p>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
             Tiny Pauses is two minutes. One prompt. One small action. No writing, no talking, no
@@ -35,11 +41,10 @@ export default function AboutPage() {
             Brain Break
           </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            Brain Break mode came directly from my son. He described what he does at school when
-            things feel like too much -- movement first, pressure, then breath. I built what he
-            described. Turns out it closely mirrors what occupational therapists have known for
-            years about somatic regulation. He is, genuinely, the best product collaborator I have
-            ever worked with.
+            Brain Break mode came from watching what actually helps kids regulate when things feel
+            like too much -- movement and pressure before breath work. It turns out this closely
+            mirrors what occupational therapists have known for years about somatic regulation.
+            Kids helped design it. The product is better for it.
           </p>
         </section>
 
@@ -83,8 +88,16 @@ export default function AboutPage() {
             Who made it
           </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            Tiny Pauses is built and maintained by Dave Masters at Quiet Branches Labs, a small
-            product studio based in New York.
+            Tiny Pauses is built and maintained by Dave Masters at{" "}
+            <a
+              href="https://quietbrancheslabs.com"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-[color:var(--color-primary)] hover:text-[color:var(--color-accent)]"
+            >
+              Quiet Branches Labs
+            </a>
+            , a small product studio based in New York.
           </p>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
             Questions, feedback, or just want to say hi --{" "}
