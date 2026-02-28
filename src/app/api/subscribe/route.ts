@@ -2,6 +2,9 @@ import { BrevoClient } from "@getbrevo/brevo";
 import { createClient } from "@supabase/supabase-js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LOGO_URL = "https://tinypauses.com/brand/LogoLockUp.png";
+const UNSUBSCRIBE_MAILTO =
+  "mailto:hello@tinypauses.com?subject=Unsubscribe%20Tiny%20Pauses";
 
 const WELCOME_EMAIL_TEXT = `Hey, welcome.
 
@@ -29,7 +32,7 @@ account at tinypauses.com.
 Talk soon.
 Tiny Pauses
 
-Unsubscribe: [unsubscribe link]
+Unsubscribe: ${UNSUBSCRIBE_MAILTO}
 `;
 
 const WELCOME_EMAIL_HTML = `
@@ -47,6 +50,14 @@ const WELCOME_EMAIL_HTML = `
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #ece7dc;border-radius:18px;overflow:hidden;">
             <tr>
               <td style="padding:28px 28px 8px;">
+                <p style="margin:0 0 18px;text-align:center;">
+                  <img
+                    src="${LOGO_URL}"
+                    alt="Tiny Pauses"
+                    width="180"
+                    style="display:inline-block;height:auto;border:0;outline:none;text-decoration:none;"
+                  />
+                </p>
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.6;">Hey, welcome.</p>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.6;">Here&apos;s your first tiny pause -- no waiting required.</p>
 
@@ -71,7 +82,7 @@ const WELCOME_EMAIL_HTML = `
             </tr>
             <tr>
               <td style="padding:18px 28px 24px;color:#6b7280;font-size:12px;line-height:1.5;">
-                Unsubscribe: [unsubscribe link]
+                <a href="${UNSUBSCRIBE_MAILTO}" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a>
               </td>
             </tr>
           </table>
