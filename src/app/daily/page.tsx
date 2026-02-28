@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, PageShell } from "../ui";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -9,6 +11,7 @@ export default function DailyPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [subscribedWhileSignedIn, setSubscribedWhileSignedIn] = useState<boolean | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,6 +37,19 @@ export default function DailyPage() {
         throw new Error("Subscription failed");
       }
 
+      const {
+        data: { user },
+      } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+      if (user && supabase) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ daily_email_subscriber: true })
+          .eq("id", user.id);
+        if (error) {
+          console.error("Could not update profile subscriber flag", error);
+        }
+      }
+      setSubscribedWhileSignedIn(Boolean(user));
       setStatus("success");
     } catch {
       setStatus("error");
@@ -59,9 +75,22 @@ export default function DailyPage() {
 
           <BrandCard>
             {status === "success" ? (
-              <p className="rounded-2xl bg-[color:var(--color-accent-soft)] px-4 py-4 text-sm font-medium text-[color:var(--color-ink-on-accent-soft)]">
-                You&apos;re in. Check your inbox for your first tiny pause. 🌱
-              </p>
+              <div className="space-y-3">
+                <p className="rounded-2xl bg-[color:var(--color-accent-soft)] px-4 py-4 text-sm font-medium text-[color:var(--color-ink-on-accent-soft)]">
+                  You&apos;re in. Check your inbox for your first tiny pause. 🌱
+                </p>
+                {subscribedWhileSignedIn === false && (
+                  <p className="text-center text-xs text-[color:var(--color-foreground)]/62">
+                    Want to save your moments too?{" "}
+                    <Link
+                      href="/signup"
+                      className="underline decoration-[color:var(--color-foreground)]/38 underline-offset-2 hover:text-[color:var(--color-foreground)]/85"
+                    >
+                      Create a free account.
+                    </Link>
+                  </p>
+                )}
+              </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4 text-left">
                 <label

@@ -1157,6 +1157,17 @@ function SessionPageInner() {
                 </>
               )}
             </div>
+            <div className="mt-1 border-t border-[color:var(--color-border-subtle)]/55 pt-3">
+              <p className="text-center text-xs text-[color:var(--color-foreground)]/62">
+                Get a tiny pause in your inbox every morning.{" "}
+                <Link
+                  href="/daily"
+                  className="underline decoration-[color:var(--color-foreground)]/38 underline-offset-2 hover:text-[color:var(--color-foreground)]/86"
+                >
+                  Sign up free
+                </Link>
+              </p>
+            </div>
           </div>
           </BrandCard>
         )}
