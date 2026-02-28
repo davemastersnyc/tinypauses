@@ -146,7 +146,7 @@ function drawMomentCard(
   ctx.font = "500 38px Inter, Avenir Next, Segoe UI, sans-serif";
   ctx.fillText(metadata.promptName || "Tiny pause", size / 2, 768);
 
-  drawMomentBrandIcon(ctx, size, 26);
+  drawMomentBrandIcon(ctx, size, 48);
 
   ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
   ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
@@ -156,7 +156,7 @@ function drawMomentCard(
 function drawMomentBrandIcon(ctx: CanvasRenderingContext2D, size: number, iconSize: number) {
   const icon = ensureSmileIcon();
   const x = size / 2 - iconSize / 2;
-  const y = 892;
+  const y = 844;
   if (icon && icon.complete && icon.naturalWidth > 0) {
     ctx.drawImage(icon, x, y, iconSize, iconSize);
     return;
