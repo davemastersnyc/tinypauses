@@ -23,6 +23,10 @@ export function PageShell({ children, maxWidth = "lg" }: PageShellProps) {
       </main>
       <footer className="border-t border-[color:var(--color-border-subtle)] py-3 text-center text-xs text-[color:var(--color-foreground)]/55">
         <p className="mb-1">
+          <Link href="/daily" className="hover:text-[color:var(--color-primary)]">
+            Get daily pauses by email
+          </Link>{" "}
+          ·{" "}
           <Link href="/about" className="hover:text-[color:var(--color-primary)]">
             About
           </Link>{" "}
