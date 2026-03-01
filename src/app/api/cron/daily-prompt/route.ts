@@ -210,18 +210,17 @@ async function runDailyPrompt(request: Request, options: { override: boolean; pr
   }
 
   const recipientEmails = await getListRecipientEmails(brevo, brevoListId);
-  const recipientBatches = chunk(recipientEmails, 99);
 
   let sendError: unknown = null;
   try {
-    for (const recipients of recipientBatches) {
+    for (const recipient of recipientEmails) {
       await brevo.transactionalEmails.sendTransacEmail({
         sender: { email: "hello@tinypauses.com", name: "Tiny Pauses" },
         replyTo: { email: "hello@tinypauses.com", name: "Tiny Pauses" },
         subject: "Today's tiny pause ✨",
         textContent: buildEmailText(prompt),
         htmlContent: buildEmailHtml(prompt),
-        to: recipients.map((email) => ({ email })),
+        to: [{ email: recipient }],
       });
     }
   } catch (error) {
