@@ -94,8 +94,10 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Could not load growth snapshot.";
-    return Response.json({ ok: false, message }, { status: 500 });
+    console.error("Growth snapshot error", error);
+    return Response.json(
+      { ok: false, message: "Could not load growth snapshot." },
+      { status: 500 },
+    );
   }
 }

@@ -1,5 +1,6 @@
 import { BrevoClient } from "@getbrevo/brevo";
 import { createClient } from "@supabase/supabase-js";
+import { applyRateLimit, getClientIp, isTrustedOrigin } from "@/lib/apiSecurity";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LOGO_URL = "https://tinypauses.com/brand/LogoLockUp.png";
@@ -103,6 +104,25 @@ function requireEnv(name: string) {
 
 export async function POST(request: Request) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return Response.json({ ok: false, message: "Forbidden" }, { status: 403 });
+    }
+
+    const ip = getClientIp(request);
+    const rateLimit = applyRateLimit(`subscribe:${ip}`, {
+      maxRequests: 8,
+      windowMs: 10 * 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return Response.json(
+        { ok: false, message: "Too many requests. Please try again shortly." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      );
+    }
+
     const body = (await request.json().catch(() => null)) as { email?: string } | null;
     const email = body?.email?.trim().toLowerCase() ?? "";
 

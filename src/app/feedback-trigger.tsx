@@ -20,15 +20,18 @@ export function FeedbackTrigger() {
     setStatus("sending");
     try {
       const {
-        data: { user },
-      } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+        data: { session },
+      } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+      const token = session?.access_token ?? null;
 
       const response = await fetch("/api/feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           message,
-          userEmail: user?.email ?? null,
         }),
       });
       if (!response.ok) throw new Error("Failed to send feedback");
