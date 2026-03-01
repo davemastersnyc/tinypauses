@@ -16,8 +16,15 @@ type PromptSendLogRow = {
   prompt_id: string;
 };
 
+type DailyPromptOptions = {
+  override: boolean;
+  promptId?: string;
+  dryRun?: boolean;
+};
+
 const DAILY_SEND_TYPE = "daily_email";
 const ALLOWED_KINDS: PromptKind[] = ["pause", "letting-go", "reflect", "kindness"];
+const DEFAULT_MAX_RECIPIENTS = 250;
 
 const KIND_LABELS: Record<PromptKind, string> = {
   pause: "Just a pause",
@@ -184,9 +191,26 @@ async function getListRecipientEmails(brevo: BrevoClient, listId: number) {
   return Array.from(recipients);
 }
 
-async function runDailyPrompt(request: Request, options: { override: boolean; promptId?: string }) {
+function getMaxRecipients() {
+  const raw = process.env.DAILY_PROMPT_MAX_RECIPIENTS?.trim();
+  if (!raw) return DEFAULT_MAX_RECIPIENTS;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_MAX_RECIPIENTS;
+  }
+  return Math.floor(parsed);
+}
+
+async function runDailyPrompt(request: Request, options: DailyPromptOptions) {
   if (!isAuthorized(request)) {
     return Response.json({ ok: false, message: "Unauthorized" }, { status: 401 });
+  }
+
+  if (process.env.DAILY_PROMPT_ENABLED?.trim().toLowerCase() === "false") {
+    return Response.json(
+      { ok: false, message: "Daily prompt sending is disabled." },
+      { status: 503 },
+    );
   }
 
   const supabaseUrl = requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
@@ -210,6 +234,34 @@ async function runDailyPrompt(request: Request, options: { override: boolean; pr
   }
 
   const recipientEmails = await getListRecipientEmails(brevo, brevoListId);
+  const maxRecipients = getMaxRecipients();
+  if (recipientEmails.length > maxRecipients) {
+    console.error("Daily prompt send blocked by recipient cap", {
+      recipientCount: recipientEmails.length,
+      maxRecipients,
+    });
+    return Response.json(
+      {
+        ok: false,
+        message: "Recipient cap exceeded; send blocked.",
+        recipientCount: recipientEmails.length,
+        maxRecipients,
+        promptName: prompt.title,
+      },
+      { status: 500 },
+    );
+  }
+
+  if (options.dryRun) {
+    return Response.json({
+      ok: true,
+      dryRun: true,
+      promptName: prompt.title,
+      recipientCount: recipientEmails.length,
+      maxRecipients,
+      logged: false,
+    });
+  }
 
   let sendError: unknown = null;
   try {
@@ -264,9 +316,11 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     override?: boolean;
     promptId?: string;
+    dryRun?: boolean;
   };
   return runDailyPrompt(request, {
     override: Boolean(body.override),
     promptId: body.promptId?.trim(),
+    dryRun: Boolean(body.dryRun),
   });
 }
