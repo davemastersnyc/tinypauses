@@ -20,6 +20,7 @@ type DailyPromptOptions = {
   override: boolean;
   promptId?: string;
   dryRun?: boolean;
+  useTestList?: boolean;
 };
 
 const DAILY_SEND_TYPE = "daily_email";
@@ -216,7 +217,28 @@ async function runDailyPrompt(request: Request, options: DailyPromptOptions) {
   const supabaseUrl = requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
   const supabaseServiceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
   const brevoApiKey = requiredEnv("BREVO_API_KEY");
-  const brevoListId = Number(requiredEnv("BREVO_DAILY_LIST_ID"));
+  const brevoDailyListId = Number(requiredEnv("BREVO_DAILY_LIST_ID"));
+  let brevoListId = brevoDailyListId;
+  let listMode: "daily" | "test" = "daily";
+
+  if (options.override && options.useTestList) {
+    const testListRaw = process.env.BREVO_TEST_LIST_ID?.trim();
+    if (!testListRaw) {
+      return Response.json(
+        { ok: false, message: "Missing BREVO_TEST_LIST_ID for test-list run." },
+        { status: 500 },
+      );
+    }
+    const parsedTestListId = Number(testListRaw);
+    if (!Number.isFinite(parsedTestListId) || parsedTestListId <= 0) {
+      return Response.json(
+        { ok: false, message: "Invalid BREVO_TEST_LIST_ID." },
+        { status: 500 },
+      );
+    }
+    brevoListId = parsedTestListId;
+    listMode = "test";
+  }
 
   if (!Number.isFinite(brevoListId) || brevoListId <= 0) {
     return Response.json({ ok: false, message: "Invalid Brevo list ID" }, { status: 500 });
@@ -256,6 +278,7 @@ async function runDailyPrompt(request: Request, options: DailyPromptOptions) {
     return Response.json({
       ok: true,
       dryRun: true,
+      listMode,
       promptName: prompt.title,
       recipientCount: recipientEmails.length,
       maxRecipients,
@@ -292,6 +315,7 @@ async function runDailyPrompt(request: Request, options: DailyPromptOptions) {
     return Response.json(
       {
         ok: false,
+        listMode,
         promptName: prompt.title,
         recipientCount: recipientEmails.length,
         logged: !logError,
@@ -302,6 +326,7 @@ async function runDailyPrompt(request: Request, options: DailyPromptOptions) {
 
   return Response.json({
     ok: true,
+    listMode,
     promptName: prompt.title,
     recipientCount: recipientEmails.length,
     logged: !logError,
@@ -317,10 +342,12 @@ export async function POST(request: Request) {
     override?: boolean;
     promptId?: string;
     dryRun?: boolean;
+    useTestList?: boolean;
   };
   return runDailyPrompt(request, {
     override: Boolean(body.override),
     promptId: body.promptId?.trim(),
     dryRun: Boolean(body.dryRun),
+    useTestList: Boolean(body.useTestList),
   });
 }
