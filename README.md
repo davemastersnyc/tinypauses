@@ -73,6 +73,13 @@ Set these in your local env and deployment env:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ADMIN_EMAIL` (for `/admin` access check)
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `BREVO_API_KEY`
+- `BREVO_DAILY_LIST_ID`
+- `BREVO_TEST_LIST_ID` (safe manual test list)
+- `CRON_SECRET`
+- `DAILY_PROMPT_ENABLED` (`true`/`false` kill switch)
+- `DAILY_PROMPT_MAX_RECIPIENTS` (hard cap per run, e.g. `50` or `250`)
 
 ### Supabase setup
 
@@ -98,6 +105,47 @@ Run these SQL files in Supabase SQL Editor in order:
 - Nudge dismissal stored in localStorage for 24 hours per special key
 - Session supports deep links from dashboard (`/session?specialType=...&specialKey=...&promptId=...`)
 - Seasonal special moments are shareable. Weekly are intentionally not.
+
+### Daily prompt email safety harness
+
+`/api/cron/daily-prompt` includes guardrails:
+
+- One-recipient transactional sends only (no shared recipient list in a single send)
+- `DAILY_PROMPT_ENABLED=false` disables all sends
+- `DAILY_PROMPT_MAX_RECIPIENTS` blocks sends above a cap
+- `dryRun` mode validates prompt and audience without sending
+- `useTestList` mode sends manual override runs to `BREVO_TEST_LIST_ID`
+
+Manual checks before production sends:
+
+1. Dry run against test list (no email sent):
+
+```bash
+curl -L -sS -X POST "https://www.tinypauses.com/api/cron/daily-prompt" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"override": true, "dryRun": true, "useTestList": true}'
+```
+
+Expected response includes:
+- `ok: true`
+- `dryRun: true`
+- `listMode: "test"`
+
+2. Real send to test list only:
+
+```bash
+curl -L -sS -X POST "https://www.tinypauses.com/api/cron/daily-prompt" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"override": true, "useTestList": true}'
+```
+
+3. Scheduled production send:
+
+- Vercel cron calls `GET /api/cron/daily-prompt`
+- Always uses `BREVO_DAILY_LIST_ID` (production list)
+- `useTestList` is only available through manual `POST` calls
 
 ### Admin panel
 
