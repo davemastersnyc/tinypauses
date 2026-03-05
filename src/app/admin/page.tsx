@@ -425,116 +425,22 @@ export default function AdminPage() {
   }
 
   async function loadStats() {
-    if (!supabase) return;
     setStatsLoading(true);
     setStatsError(null);
     try {
-      const [{ data: promptsRows, error: promptsError }, { data: momentsRows, error: momentsError }, { count: usersCount, error: usersError }] =
-        await Promise.all([
-          supabase.from("prompts").select("kind,title,status,is_active"),
-          supabase.from("moments").select("prompt_name,category"),
-          supabase.from("profiles").select("id", { count: "exact", head: true }),
-        ]);
+      const token = await getAccessToken();
+      if (!token) throw new Error("Missing access token.");
 
-      if (promptsError) throw promptsError;
-      if (momentsError) throw momentsError;
-      if (usersError) throw usersError;
-
-      const promptsNormalized = ((promptsRows ?? []) as Array<Record<string, unknown>>)
-        .map((row) => {
-          const statusRaw = String(row.status ?? "").toLowerCase();
-          const status: PromptStatus =
-            statusRaw === "active" || statusRaw === "inactive" || statusRaw === "draft"
-              ? (statusRaw as PromptStatus)
-              : row.is_active === false
-                ? "inactive"
-                : "active";
-          return {
-            kind: String(row.kind ?? ""),
-            title: String(row.title ?? ""),
-            status,
-          };
-        });
-
-      const activeByCategory = Object.entries(categoryLabels).map(([kind, label]) => ({
-        label,
-        count: promptsNormalized.filter(
-          (prompt) => prompt.kind === kind && prompt.status === "active",
-        ).length,
-      }));
-
-      const byStatus: Array<{ label: string; count: number }> = [
-        {
-          label: "Active",
-          count: promptsNormalized.filter((prompt) => prompt.status === "active")
-            .length,
-        },
-        {
-          label: "Inactive",
-          count: promptsNormalized.filter((prompt) => prompt.status === "inactive")
-            .length,
-        },
-        {
-          label: "Draft",
-          count: promptsNormalized.filter((prompt) => prompt.status === "draft")
-            .length,
-        },
-      ];
-
-      const usageMap = new Map<string, { name: string; category: string; count: number }>();
-      const moments = (momentsRows ?? []) as Array<Record<string, unknown>>;
-      let totalBrainBreaks = 0;
-      for (const row of moments) {
-        const category = String(row.category ?? "");
-        const promptName = String(row.prompt_name ?? "Tiny pause");
-        const lowerCategory = category.trim().toLowerCase();
-        if (lowerCategory === "brain-break" || lowerCategory === "brain break") {
-          totalBrainBreaks += 1;
-          continue;
-        }
-        const key = `${category}::${promptName}`;
-        const current = usageMap.get(key);
-        if (current) {
-          current.count += 1;
-        } else {
-          usageMap.set(key, { name: promptName, category, count: 1 });
-        }
-      }
-
-      const usageList = Array.from(usageMap.values()).sort(
-        (a, b) => b.count - a.count,
-      );
-      const mostUsedPrompt = usageList[0] ?? null;
-
-      const activePrompts = promptsNormalized.filter(
-        (prompt) => prompt.status === "active",
-      );
-      let leastUsedActivePrompt: {
-        name: string;
-        category: string;
-        count: number;
-      } | null = null;
-      for (const prompt of activePrompts) {
-        const key = `${categoryLabels[prompt.kind as PromptKind] ?? prompt.kind}::${prompt.title}`;
-        const usage = usageMap.get(key)?.count ?? 0;
-        if (!leastUsedActivePrompt || usage < leastUsedActivePrompt.count) {
-          leastUsedActivePrompt = {
-            name: prompt.title,
-            category: categoryLabels[prompt.kind as PromptKind] ?? prompt.kind,
-            count: usage,
-          };
-        }
-      }
-
-      setStats({
-        activeByCategory,
-        byStatus,
-        totalMoments: moments.length,
-        totalBrainBreaks,
-        totalUsers: usersCount ?? 0,
-        mostUsedPrompt,
-        leastUsedActivePrompt,
+      const response = await fetch("/api/admin/stats-summary", {
+        headers: { authorization: `Bearer ${token}` },
       });
+      const data = (await response.json().catch(() => null)) as
+        | { ok?: boolean; message?: string; metrics?: StatsModel }
+        | null;
+      if (!response.ok || !data?.ok || !data.metrics) {
+        throw new Error(data?.message || "Could not load stats.");
+      }
+      setStats(data.metrics);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown error loading stats.";
