@@ -13,6 +13,7 @@ export default function LoginPage() {
     "idle",
   );
   const [message, setMessage] = useState<string | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   useEffect(() => {
     async function checkExistingSession() {
@@ -33,19 +34,30 @@ export default function LoginPage() {
     checkExistingSession();
   }, [router]);
 
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const interval = window.setInterval(() => {
+      setCooldownSeconds((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [cooldownSeconds]);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setStatus("sending");
     setMessage(null);
 
     try {
+      if (!supabase) {
+        throw new Error("Supabase client is not configured.");
+      }
       const redirectTo =
         typeof window !== "undefined"
           ? `${window.location.origin}/auth/callback`
           : undefined;
 
-      const { error } = await supabase!.auth.signInWithOtp({
-        email,
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
         options: {
           emailRedirectTo: redirectTo,
           data: {
@@ -59,15 +71,25 @@ export default function LoginPage() {
       }
 
       setStatus("sent");
+      setCooldownSeconds(35);
       setMessage(
-        "Check your email for a sign‑in link. After you click it, we’ll bring you back here to your dashboard.",
+        "Magic link sent. Check your inbox (and promotions/spam) for a Tiny Pauses sign‑in link.",
       );
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setMessage(
-        "Something went wrong sending the link. Please double‑check your email and try again.",
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Could not send sign-in link.";
+      if (errorMessage.includes("after")) {
+        setCooldownSeconds(35);
+        setMessage(
+          "Please wait about 35 seconds before requesting another sign-in link.",
+        );
+      } else {
+        setMessage(
+          "Something went wrong sending the link. Please double-check your email and try again.",
+        );
+      }
     }
   }
 
@@ -124,9 +146,15 @@ export default function LoginPage() {
           <BrandButton
             type="submit"
             fullWidth
-            disabled={!email || !isParent || status === "sending"}
+            disabled={!email || !isParent || status === "sending" || cooldownSeconds > 0}
           >
-            {status === "sending" ? "Sending link..." : "Send me a sign‑in link"}
+            {status === "sending"
+              ? "Sending link..."
+              : cooldownSeconds > 0
+                ? `Wait ${cooldownSeconds}s`
+                : status === "sent"
+                  ? "Send another sign‑in link"
+                  : "Send me a sign‑in link"}
           </BrandButton>
         </form>
 
