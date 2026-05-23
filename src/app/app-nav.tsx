@@ -68,7 +68,7 @@ export function AppNav() {
             href="/session"
             className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
           >
-            Try now
+            {authResolved && signedIn ? "Take a pause" : "Try now"}
           </Link>
           {!authResolved ? (
             <span className="inline-flex h-[30px] w-[128px] animate-pulse rounded-full bg-[color:var(--color-surface-soft)]" />
