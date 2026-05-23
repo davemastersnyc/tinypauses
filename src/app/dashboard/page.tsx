@@ -284,6 +284,12 @@ export default function DashboardPage() {
   const [specialNudge, setSpecialNudge] = useState<SpecialContext | null>(null);
   const [favorites, setFavorites] = useState<FavoritePrompt[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [childName, setChildName] = useState("");
+  const [dailyEmailOn, setDailyEmailOn] = useState<boolean | null>(null);
+  const [accountState, setAccountState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [emailState, setEmailState] = useState<"idle" | "saving" | "error">("idle");
+  const [exporting, setExporting] = useState(false);
   const storyWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -326,6 +332,8 @@ export default function DashboardPage() {
         typeof profile?.nickname === "string" ? profile.nickname : null;
       const childNameValue =
         typeof profile?.child_name === "string" ? profile.child_name : null;
+      setDisplayName(displayNameValue ?? "");
+      setChildName(childNameValue ?? nicknameValue ?? "");
       if (adultMode) {
         setGreetingName(displayNameValue || null);
         setChildNameForNudge(null);
@@ -383,6 +391,19 @@ export default function DashboardPage() {
         setFavorites(await listFavorites(supabase, user.id));
       } catch (error) {
         console.error("Could not load favorites", error);
+      }
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const response = await fetch("/api/subscription-status", {
+          headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+        });
+        const result = (await response.json()) as { subscribed?: boolean };
+        setDailyEmailOn(Boolean(result.subscribed));
+      } catch {
+        setDailyEmailOn(false);
       }
 
       const now = new Date();
@@ -674,6 +695,90 @@ export default function DashboardPage() {
       setFavorites((prev) => prev.filter((favorite) => favorite.id !== id));
     } catch (error) {
       console.error("Could not remove favorite", error);
+    }
+  }
+
+  async function saveAccount() {
+    if (!supabase || !userId) return;
+    setAccountState("saving");
+    const trimmed = (isAdultMode ? displayName : childName).trim();
+    const patch = isAdultMode
+      ? { adult_mode: true, display_name: trimmed || null }
+      : { adult_mode: false, child_name: trimmed || null };
+    const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
+    if (error) {
+      setAccountState("error");
+      return;
+    }
+    setGreetingName(trimmed || (isAdultMode ? null : "Friend"));
+    setAccountState("saved");
+  }
+
+  async function setDailyEmailEnabled(enabled: boolean) {
+    if (!supabase || !userId) return;
+    setEmailState("saving");
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token ?? "";
+      if (enabled) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const response = await fetch("/api/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user?.email }),
+        });
+        if (!response.ok) throw new Error("subscribe failed");
+      } else {
+        const response = await fetch("/api/unsubscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("unsubscribe failed");
+      }
+      await supabase
+        .from("profiles")
+        .update({ daily_email_subscriber: enabled })
+        .eq("id", userId);
+      setDailyEmailOn(enabled);
+      setEmailState("idle");
+    } catch {
+      setEmailState("error");
+    }
+  }
+
+  async function exportData() {
+    if (!supabase || !userId) return;
+    setExporting(true);
+    try {
+      const [moments, favorites, wrapUpRows] = await Promise.all([
+        supabase.from("moments").select("*").eq("user_id", userId),
+        supabase.from("favorite_prompts").select("*").eq("user_id", userId),
+        supabase.from("wrap_ups").select("*").eq("user_id", userId),
+      ]);
+      const payload = {
+        exported_at: new Date().toISOString(),
+        moments: moments.data ?? [],
+        favorites: favorites.data ?? [],
+        wrap_ups: wrapUpRows.data ?? [],
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "tiny-pauses-data.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -1045,6 +1150,124 @@ export default function DashboardPage() {
           </p>
         </BrandCard>
       </section>
+
+      <BrandCard>
+        <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your account</p>
+        <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+          Small things, your way. Nothing here is required.
+        </p>
+
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdultMode(false);
+              setAccountState("idle");
+            }}
+            className={`rounded-2xl border px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
+              !isAdultMode
+                ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
+                : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:bg-[color:var(--color-surface-soft)]"
+            }`}
+          >
+            For my child
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdultMode(true);
+              setAccountState("idle");
+            }}
+            className={`rounded-2xl border px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
+              isAdultMode
+                ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
+                : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:bg-[color:var(--color-surface-soft)]"
+            }`}
+          >
+            For me
+          </button>
+        </div>
+        <label
+          htmlFor="account-name"
+          className="mt-4 block text-sm font-medium text-[color:var(--color-primary)]"
+        >
+          {isAdultMode ? "Your name" : "Your child's name"}
+        </label>
+        <input
+          id="account-name"
+          type="text"
+          value={isAdultMode ? displayName : childName}
+          onChange={(event) => {
+            if (isAdultMode) setDisplayName(event.target.value);
+            else setChildName(event.target.value);
+            setAccountState("idle");
+          }}
+          placeholder={isAdultMode ? "What should we call you?" : "What should we call them?"}
+          className="mt-1 w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[color:var(--color-accent)] focus:ring-2 focus:ring-[color:var(--color-accent-soft)]"
+        />
+        <div className="mt-3 flex items-center gap-3">
+          <BrandButton type="button" onClick={saveAccount} disabled={accountState === "saving"}>
+            {accountState === "saving" ? "Saving..." : "Save"}
+          </BrandButton>
+          {accountState === "saved" && (
+            <span className="text-sm text-[color:var(--color-foreground)]/70">Saved 🌱</span>
+          )}
+          {accountState === "error" && (
+            <span className="text-sm text-red-600">Could not save. Try again.</span>
+          )}
+        </div>
+
+        <div className="mt-6 border-t border-[color:var(--color-border-subtle)]/55 pt-4">
+          <p className="text-sm font-medium text-[color:var(--color-primary)]">Daily pause email</p>
+          <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+            {dailyEmailOn === null
+              ? "Checking your subscription..."
+              : dailyEmailOn
+                ? "On. One tiny pause lands in your inbox each morning."
+                : "Off. Turn it on for one tiny pause each morning."}
+          </p>
+          <div className="mt-3 flex items-center gap-3">
+            {dailyEmailOn ? (
+              <BrandButton
+                type="button"
+                variant="secondary"
+                onClick={() => setDailyEmailEnabled(false)}
+                disabled={emailState === "saving"}
+              >
+                {emailState === "saving" ? "Updating..." : "Turn off"}
+              </BrandButton>
+            ) : (
+              <BrandButton
+                type="button"
+                onClick={() => setDailyEmailEnabled(true)}
+                disabled={emailState === "saving" || dailyEmailOn === null}
+              >
+                {emailState === "saving" ? "Updating..." : "Turn on"}
+              </BrandButton>
+            )}
+            {emailState === "error" && (
+              <span className="text-sm text-red-600">Could not update. Try again.</span>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 border-t border-[color:var(--color-border-subtle)]/55 pt-4">
+          <p className="text-sm font-medium text-[color:var(--color-primary)]">Your data</p>
+          <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+            Everything Tiny Pauses keeps for you, in one file. Yours any time.
+          </p>
+          <div className="mt-3">
+            <BrandButton
+              type="button"
+              variant="outlineAccent"
+              onClick={exportData}
+              disabled={exporting}
+            >
+              {exporting ? "Preparing..." : "Export my data"}
+            </BrandButton>
+          </div>
+        </div>
+      </BrandCard>
 
       <footer className="mt-2 flex items-center justify-between text-xs text-[color:var(--color-foreground)]/70">
         <Link href="/" className="underline-offset-2 hover:underline text-[color:var(--color-primary)]/80">

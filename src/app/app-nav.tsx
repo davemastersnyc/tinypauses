@@ -164,13 +164,13 @@ export function AppNav() {
           ) : authState.signedIn ? (
             <>
               <Link
-                href="/settings"
-                title="Open your settings"
+                href="/dashboard"
+                title="Go to your dashboard"
                 className="max-w-[16rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)] transition hover:bg-[color:var(--color-accent-soft)]/70"
               >
                 {authState.label
                   ? formatDisplayName(authState.label)
-                  : "Settings"}
+                  : "Dashboard"}
               </Link>
               <button
                 type="button"

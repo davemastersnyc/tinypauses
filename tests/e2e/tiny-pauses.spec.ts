@@ -387,8 +387,8 @@ test.describe("Tiny Pauses critical E2E flows", () => {
     }
   });
 
-  test("TEST 12 -- Settings: edit profile and export data", async ({ page }) => {
-    const email = makeUniqueEmail("settings-flow");
+  test("TEST 12 -- Dashboard account: prefill, edit, persist, export", async ({ page }) => {
+    const email = makeUniqueEmail("account-flow");
     let userId: string | null = null;
     try {
       const user = await ensureUser(email);
@@ -401,14 +401,16 @@ test.describe("Tiny Pauses critical E2E flows", () => {
 
       await signInWithMagicLink(page, email);
 
-      await page.goto("/settings");
-      await expect(page.getByRole("heading", { name: /A few small things/i })).toBeVisible();
+      await page.goto("/dashboard");
 
-      // Edit and persist the name.
+      // The current name pre-fills (the bug we fixed).
       const nameField = page.getByLabel("Your child's name");
       await expect(nameField).toBeVisible();
+      await expect(nameField).toHaveValue("Riley");
+
+      // Edit and persist.
       await nameField.fill("Sky");
-      await page.getByRole("button", { name: "Save" }).click();
+      await page.getByRole("button", { name: "Save", exact: true }).click();
       await expect(page.getByText("Saved 🌱")).toBeVisible();
 
       await page.reload();
