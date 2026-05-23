@@ -25,6 +25,7 @@ import {
   resolveCardTheme,
   drawCardIllustration,
 } from "../src/lib/cardIllustrations.ts";
+import { getSeasonalPalette } from "../src/lib/cardStyles.ts";
 
 dotenv.config({ path: ".env.local" });
 
@@ -287,6 +288,7 @@ async function renderCards(cards: Card[], outputDir: string) {
   // Serialize the shared illustration drawer so the headless cards stay
   // identical to the in-app share card.
   const illustrationSource = drawCardIllustration.toString();
+  const palette = getSeasonalPalette(new Date());
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1080, height: 1080 } });
@@ -297,7 +299,7 @@ async function renderCards(cards: Card[], outputDir: string) {
   for (const card of cards) {
     const cardTheme = resolveCardTheme(card.label, card.specialKey);
     await page.evaluate(
-      async ({ cardData, icon, illustrationSource, cardTheme }) => {
+      async ({ cardData, icon, illustrationSource, cardTheme, palette }) => {
         const canvas = document.getElementById("card") as HTMLCanvasElement | null;
         if (!canvas) throw new Error("Card canvas element is missing.");
         const ctx = canvas.getContext("2d");
@@ -352,54 +354,83 @@ async function renderCards(cards: Card[], outputDir: string) {
           context.restore();
         }
 
+        // Seasonal background
         const gradient = ctx.createLinearGradient(0, 0, 0, size);
-        if (cardData.specialType === "milestone") {
-          gradient.addColorStop(0, "#fff0c9");
-          gradient.addColorStop(1, "#ffd84a");
-        } else if (cardData.specialType === "seasonal") {
-          gradient.addColorStop(0, "#ffe8d6");
-          gradient.addColorStop(1, "#ffd7bb");
-        } else if (cardData.specialType === "weekly") {
-          gradient.addColorStop(0, "#7ed4d4");
-          gradient.addColorStop(1, "#66cccc");
-        } else {
-          gradient.addColorStop(0, "#ffedd8");
-          gradient.addColorStop(1, "#ffe3c1");
-        }
+        gradient.addColorStop(0, palette.bgFrom);
+        gradient.addColorStop(1, palette.bgTo);
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, size, size);
 
-        ctx.fillStyle = "rgba(255,255,255,0.34)";
-        drawRoundedRect(ctx, 86, 86, size - 172, size - 172, 48);
+        // Soft seasonal motif: two faint blooms drifting off the corners.
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = palette.motif;
+        ctx.beginPath();
+        ctx.arc(size * 0.02, size * 0.1, 150, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(size * 0.98, size * 0.92, 200, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = palette.panel;
+        drawRoundedRect(ctx, 76, 76, size - 152, size - 152, 52);
         ctx.fill();
 
-        const badgeLabel = cardData.label || "Mindful moment";
-        const badgeColor = badgeColorForCategory(badgeLabel);
-        ctx.font = "500 42px Inter, Avenir Next, Segoe UI, sans-serif";
-        const badgeWidth = Math.max(260, ctx.measureText(badgeLabel).width + 90);
-        const badgeX = (size - badgeWidth) / 2;
-        const badgeY = 170;
-        ctx.fillStyle = badgeColor;
-        drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 78, 39);
-        ctx.fill();
-        ctx.fillStyle = "#121826";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(badgeLabel, size / 2, badgeY + 40);
 
-        drawCardIllustration(ctx, size / 2, 520, cardTheme);
+        // Wordmark
+        ctx.save();
+        ctx.fillStyle = palette.inkSoft;
+        ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
+        ctx.letterSpacing = "6px";
+        ctx.fillText("TINY PAUSES", size / 2, 150);
+        ctx.restore();
 
-        ctx.fillStyle = "#1b2438";
-        ctx.font = "600 58px Inter, Avenir Next, Segoe UI, sans-serif";
-        ctx.fillText(cardData.headline || "I took a tiny pause today.", size / 2, 700);
+        // Category badge
+        const badgeLabel = cardData.label || "Mindful moment";
+        const badgeColor = badgeColorForCategory(badgeLabel);
+        ctx.font = "500 40px Inter, Avenir Next, Segoe UI, sans-serif";
+        const badgeWidth = Math.max(240, ctx.measureText(badgeLabel).width + 86);
+        const badgeX = (size - badgeWidth) / 2;
+        const badgeY = 196;
+        ctx.fillStyle = badgeColor;
+        drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 74, 37);
+        ctx.fill();
+        ctx.fillStyle = "#121826";
+        ctx.fillText(badgeLabel, size / 2, badgeY + 38);
 
-        ctx.fillStyle = "rgba(27, 36, 56, 0.82)";
-        ctx.font = "500 38px Inter, Avenir Next, Segoe UI, sans-serif";
-        ctx.fillText(cardData.title || "Tiny pause", size / 2, 768);
+        // Illustration, scaled up to anchor the card
+        ctx.save();
+        ctx.translate(size / 2, 460);
+        ctx.scale(1.3, 1.3);
+        ctx.translate(-(size / 2), -460);
+        drawCardIllustration(ctx, size / 2, 460, cardTheme);
+        ctx.restore();
 
-        const iconSize = 48;
+        // Hierarchy: the specific moment leads, the brand line supports.
+        const isMilestone = cardData.specialType === "milestone";
+        const heroText = isMilestone
+          ? cardData.headline || "Tiny pause"
+          : cardData.title || "Tiny pause";
+        const subText = isMilestone
+          ? cardData.title || ""
+          : "I took a tiny pause today.";
+
+        ctx.fillStyle = palette.ink;
+        ctx.font = "700 62px Inter, Avenir Next, Segoe UI, sans-serif";
+        ctx.fillText(heroText, size / 2, 668);
+
+        if (subText) {
+          ctx.fillStyle = palette.inkSoft;
+          ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
+          ctx.fillText(subText, size / 2, 736);
+        }
+
+        const iconSize = 56;
         const iconX = size / 2 - iconSize / 2;
-        const iconY = 844;
+        const iconY = 828;
         const image = new Image();
         const imageLoaded = await new Promise<boolean>((resolve) => {
           image.onload = () => resolve(true);
@@ -412,11 +443,11 @@ async function renderCards(cards: Card[], outputDir: string) {
           drawFallbackSmileIcon(ctx, size / 2, iconY + iconSize / 2, iconSize / 2);
         }
 
-        ctx.fillStyle = "rgba(27, 36, 56, 0.6)";
-        ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
-        ctx.fillText("tinypauses.com", size / 2, 952);
+        ctx.fillStyle = palette.inkSoft;
+        ctx.font = "500 28px Inter, Avenir Next, Segoe UI, sans-serif";
+        ctx.fillText("tinypauses.com", size / 2, 940);
       },
-      { cardData: card, icon: iconDataUrl, illustrationSource, cardTheme },
+      { cardData: card, icon: iconDataUrl, illustrationSource, cardTheme, palette },
     );
 
     await page.screenshot({

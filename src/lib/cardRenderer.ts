@@ -1,4 +1,5 @@
 import { drawCardIllustration, resolveCardTheme } from "./cardIllustrations";
+import { getSeasonalPalette, resolveCardStyleName } from "./cardStyles";
 
 export type WrapUpPeriod = "weekly" | "monthly" | "yearly";
 
@@ -101,6 +102,95 @@ function drawMomentCard(
   size: number,
   metadata: MomentCardMetadata,
 ) {
+  if (resolveCardStyleName() === "legacy") {
+    drawMomentCardLegacy(ctx, size, metadata);
+  } else {
+    drawMomentCardSeason(ctx, size, metadata);
+  }
+}
+
+function drawMomentCardSeason(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  metadata: MomentCardMetadata,
+) {
+  const palette = getSeasonalPalette(new Date());
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, size);
+  gradient.addColorStop(0, palette.bgFrom);
+  gradient.addColorStop(1, palette.bgTo);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = palette.motif;
+  ctx.beginPath();
+  ctx.arc(size * 0.02, size * 0.1, 150, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.98, size * 0.92, 200, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = palette.panel;
+  drawRoundedRect(ctx, 76, 76, size - 152, size - 152, 52);
+  ctx.fill();
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.save();
+  ctx.fillStyle = palette.inkSoft;
+  ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.letterSpacing = "6px";
+  ctx.fillText("TINY PAUSES", size / 2, 150);
+  ctx.restore();
+
+  const badgeLabel = metadata.category || "Mindful moment";
+  const badgeColor = badgeColorForCategory(metadata.category);
+  ctx.font = "500 40px Inter, Avenir Next, Segoe UI, sans-serif";
+  const badgeWidth = Math.max(240, ctx.measureText(badgeLabel).width + 86);
+  const badgeX = (size - badgeWidth) / 2;
+  const badgeY = 196;
+  ctx.fillStyle = badgeColor;
+  drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 74, 37);
+  ctx.fill();
+  ctx.fillStyle = "#121826";
+  ctx.fillText(badgeLabel, size / 2, badgeY + 38);
+
+  ctx.save();
+  ctx.translate(size / 2, 460);
+  ctx.scale(1.3, 1.3);
+  ctx.translate(-(size / 2), -460);
+  drawCardIllustration(
+    ctx,
+    size / 2,
+    460,
+    resolveCardTheme(metadata.category, metadata.specialKey),
+  );
+  ctx.restore();
+
+  ctx.fillStyle = palette.ink;
+  ctx.font = "700 62px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.fillText(metadata.promptName || "Tiny pause", size / 2, 668);
+
+  ctx.fillStyle = palette.inkSoft;
+  ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.fillText("I took a tiny pause today.", size / 2, 736);
+
+  drawMomentBrandIcon(ctx, size, 56, 828);
+
+  ctx.fillStyle = palette.inkSoft;
+  ctx.font = "500 28px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.fillText("tinypauses.com", size / 2, 940);
+}
+
+function drawMomentCardLegacy(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  metadata: MomentCardMetadata,
+) {
   const gradient = ctx.createLinearGradient(0, 0, 0, size);
   if (metadata.specialType === "seasonal") {
     gradient.addColorStop(0, "#ffe8d6");
@@ -160,10 +250,14 @@ function drawMomentCard(
   ctx.fillText("tinypauses.com", size / 2, 952);
 }
 
-function drawMomentBrandIcon(ctx: CanvasRenderingContext2D, size: number, iconSize: number) {
+function drawMomentBrandIcon(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  iconSize: number,
+  y = 844,
+) {
   const icon = ensureSmileIcon();
   const x = size / 2 - iconSize / 2;
-  const y = 844;
   if (icon && icon.complete && icon.naturalWidth > 0) {
     ctx.drawImage(icon, x, y, iconSize, iconSize);
     return;

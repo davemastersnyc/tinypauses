@@ -39,8 +39,9 @@ export function drawCardIllustration(
     theme !== "kindness" &&
     theme !== "pause"
   ) {
-    // Default: the sprout.
+    // Default: the sprout (shifted so its visual mass is centered on cy).
     ctx.save();
+    ctx.translate(0, 54);
     ctx.strokeStyle = "#2f7e58";
     ctx.fillStyle = "#2f7e58";
     ctx.lineWidth = 14;
