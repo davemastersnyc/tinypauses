@@ -338,4 +338,52 @@ test.describe("Tiny Pauses critical E2E flows", () => {
       await deletePromptByTitle(promptTitle);
     }
   });
+
+  test("TEST 11 -- Save, replay, and remove a favorite", async ({ page }) => {
+    const email = makeUniqueEmail("favorites-flow");
+    let userId: string | null = null;
+    try {
+      const user = await ensureUser(email);
+      userId = user.id;
+      await upsertProfile(user.id, {
+        adult_mode: false,
+        onboarding_complete: true,
+        child_name: "Riley",
+      });
+
+      await signInWithMagicLink(page, email);
+
+      // Complete a session and capture the prompt that gets saved.
+      await page.goto("/session");
+      await page.getByRole("button", { name: "Just a pause" }).click();
+      await expect(page.getByRole("heading", { name: "Try this tiny pause" })).toBeVisible();
+      const promptTitle = (await page.locator("h2").first().textContent())?.trim() ?? "";
+      await page.getByRole("button", { name: "I did it" }).click();
+      await page.getByRole("button", { name: "Okay" }).click();
+      await expect(page.getByRole("heading", { name: /You just took a tiny pause/i })).toBeVisible();
+
+      await page.getByRole("button", { name: "Save this prompt" }).click();
+      await expect(page.getByRole("button", { name: "Saved to favorites" })).toBeVisible();
+
+      // It shows up on the dashboard and can be re-done.
+      await page.goto("/dashboard");
+      await expect(page.getByText("Saved prompts")).toBeVisible();
+      const doItAgain = page.getByRole("button", { name: "Do it again" }).first();
+      await expect(doItAgain).toBeVisible();
+      await doItAgain.click();
+      await expect(page).toHaveURL(/favorite=/);
+      await expect(page.getByRole("heading", { name: "Try this tiny pause" })).toBeVisible();
+      if (promptTitle) {
+        await expect(page.getByRole("heading", { level: 2, name: promptTitle })).toBeVisible();
+      }
+
+      // It can be removed.
+      await page.goto("/dashboard");
+      await expect(page.getByText("Saved prompts")).toBeVisible();
+      await page.getByRole("button", { name: "Remove" }).first().click();
+      await expect(page.getByText("Saved prompts")).toHaveCount(0);
+    } finally {
+      if (userId) await deleteUserById(userId);
+    }
+  });
 });

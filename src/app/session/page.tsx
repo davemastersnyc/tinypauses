@@ -14,6 +14,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { type MomentCardMetadata, renderCardBlob } from "@/lib/cardRenderer";
 import {
+  getFavorite,
+  migrateLocalFavorites,
+  saveFavorite,
+} from "@/lib/favorites";
+import {
   buildSeasonalContext,
   buildWeeklyContext,
   getActiveSeasonalWindow,
@@ -559,6 +564,48 @@ function SessionPageInner() {
     void loadSpecialPromptFromRoute();
   }, [loadSpecialPromptFromRoute]);
 
+  const loadFavoriteFromRoute = useCallback(async () => {
+    if (!supabase) return;
+    const favoriteId = searchParams.get("favorite");
+    if (!favoriteId || !userId) return;
+    setLoadingPrompt(true);
+    try {
+      const favorite = await getFavorite(supabase, userId, favoriteId);
+      if (!favorite) return;
+      const validKinds: PromptKind[] = [
+        "pause",
+        "letting-go",
+        "reflect",
+        "kindness",
+      ];
+      const resolvedKind =
+        favorite.kind && validKinds.includes(favorite.kind as PromptKind)
+          ? (favorite.kind as PromptKind)
+          : null;
+      setSpecialContext(null);
+      setKind(resolvedKind);
+      setPrompt({
+        id: favorite.sourceId ?? favorite.id,
+        title: favorite.title,
+        body: favorite.body,
+        step: favorite.step,
+      });
+      setIsPromptSaved(true);
+      setStep("prompt");
+    } finally {
+      setLoadingPrompt(false);
+    }
+  }, [searchParams, userId]);
+
+  useEffect(() => {
+    void loadFavoriteFromRoute();
+  }, [loadFavoriteFromRoute]);
+
+  useEffect(() => {
+    if (!supabase || !userId) return;
+    void migrateLocalFavorites(supabase, userId);
+  }, [userId]);
+
   useEffect(() => {
     if (mode !== "regular" || step !== "choose") {
       setShowBrainBreakNudge(false);
@@ -785,9 +832,26 @@ function SessionPageInner() {
     }
   }
 
-  function saveCurrentPrompt() {
+  async function saveCurrentPrompt() {
     if (!prompt) return;
 
+    if (supabase && userId) {
+      try {
+        await saveFavorite(supabase, userId, {
+          id: prompt.id,
+          kind,
+          title: prompt.title,
+          body: prompt.body,
+          step: prompt.step,
+        });
+        setIsPromptSaved(true);
+      } catch (error) {
+        console.error("Could not save favorite prompt", error);
+      }
+      return;
+    }
+
+    // Defensive fallback if there is no session (Save is normally signed-in only).
     try {
       const current: FavoritePrompt[] = JSON.parse(
         window.localStorage.getItem("tinyPause.favoritePrompts") ??
@@ -795,8 +859,7 @@ function SessionPageInner() {
           "[]",
       ) as FavoritePrompt[];
 
-      const exists = current.some((p) => p.id === prompt.id);
-      if (exists) {
+      if (current.some((p) => p.id === prompt.id)) {
         setIsPromptSaved(true);
         return;
       }

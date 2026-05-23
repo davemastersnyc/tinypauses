@@ -27,7 +27,24 @@ import {
   renderCardBlob,
   renderCardCanvas,
 } from "@/lib/cardRenderer";
+import {
+  listFavorites,
+  migrateLocalFavorites,
+  removeFavorite,
+  type FavoritePrompt,
+} from "@/lib/favorites";
 import { BrandButton, BrandCard, PageShell } from "../ui";
+
+const FAVORITE_KIND_LABELS: Record<string, string> = {
+  pause: "Just a pause",
+  "letting-go": "Letting go",
+  reflect: "Reflecting on today",
+  kindness: "Kindness",
+};
+
+function favoriteKindLabel(kind: string) {
+  return FAVORITE_KIND_LABELS[kind] ?? "Saved";
+}
 
 type DayEntry = { dateLabel: string; practiced: boolean };
 type MomentRow = {
@@ -265,6 +282,8 @@ export default function DashboardPage() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [activeTooltip, setActiveTooltip] = useState<{ x: number; y: number; dot: HistoryDot } | null>(null);
   const [specialNudge, setSpecialNudge] = useState<SpecialContext | null>(null);
+  const [favorites, setFavorites] = useState<FavoritePrompt[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const storyWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -356,6 +375,14 @@ export default function DashboardPage() {
         setWrapUps((wrapUpRows ?? []) as WrapUpRow[]);
       } else {
         setWrapUps([]);
+      }
+
+      setUserId(user.id);
+      await migrateLocalFavorites(supabase, user.id);
+      try {
+        setFavorites(await listFavorites(supabase, user.id));
+      } catch (error) {
+        console.error("Could not load favorites", error);
       }
 
       const now = new Date();
@@ -633,6 +660,16 @@ export default function DashboardPage() {
     router.push(`/session?${query.toString()}`);
   }
 
+  async function removeSavedPrompt(id: string) {
+    if (!supabase || !userId) return;
+    try {
+      await removeFavorite(supabase, userId, id);
+      setFavorites((prev) => prev.filter((favorite) => favorite.id !== id));
+    } catch (error) {
+      console.error("Could not remove favorite", error);
+    }
+  }
+
   return (
     <PageShell maxWidth="lg">
       <header className="space-y-2">
@@ -720,6 +757,53 @@ export default function DashboardPage() {
               <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">Your first tiny pause will show up here.</p>
             )}
           </BrandCard>
+
+          {favorites.length > 0 && (
+            <BrandCard>
+              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Saved prompts</p>
+              <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+                Prompts you kept to come back to.
+              </p>
+              <div className="mt-3 space-y-3">
+                {favorites.map((favorite) => (
+                  <div
+                    key={favorite.id}
+                    className="flex items-start gap-3 rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] p-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      {favorite.kind && (
+                        <p className="inline-flex rounded-full bg-[color:var(--color-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-ink-on-accent-soft)]">
+                          {favoriteKindLabel(favorite.kind)}
+                        </p>
+                      )}
+                      <p className="mt-1 truncate text-sm font-medium text-[color:var(--color-primary)]">
+                        {favorite.title}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-xs text-[color:var(--color-foreground)]/72">
+                        {favorite.body}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/session?favorite=${favorite.id}`)}
+                        className="rounded-[var(--radius-pill)] bg-[color:var(--color-accent)] px-4 py-2 text-xs font-semibold text-slate-900 transition hover:bg-[color:var(--color-accent)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
+                      >
+                        Do it again
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSavedPrompt(favorite.id)}
+                        className="text-xs text-[color:var(--color-foreground)]/55 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </BrandCard>
+          )}
 
           {specialNudge && (
             <BrandCard tone="muted">
