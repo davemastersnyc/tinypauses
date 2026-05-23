@@ -139,12 +139,14 @@ export function AppNav() {
           >
             Try now
           </Link>
-          <Link
-            href="/dashboard"
-            className="hidden rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] sm:inline-flex"
-          >
-            Dashboard
-          </Link>
+          {authResolved && authState.signedIn && (
+            <Link
+              href="/dashboard"
+              className="hidden rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] sm:inline-flex"
+            >
+              Dashboard
+            </Link>
+          )}
           <Link
             href="/about"
             className="hidden rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] sm:inline-flex"
@@ -161,14 +163,15 @@ export function AppNav() {
             <span className="inline-flex h-[30px] w-[128px] animate-pulse rounded-full bg-[color:var(--color-surface-soft)]" />
           ) : authState.signedIn ? (
             <>
-              <span
-                title={authState.label ?? undefined}
-                className="max-w-[16rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)]"
+              <Link
+                href="/settings"
+                title="Open your settings"
+                className="max-w-[16rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)] transition hover:bg-[color:var(--color-accent-soft)]/70"
               >
                 {authState.label
-                  ? `Signed in: ${formatDisplayName(authState.label)}`
-                  : "Signed in"}
-              </span>
+                  ? formatDisplayName(authState.label)
+                  : "Settings"}
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}

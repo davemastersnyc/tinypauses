@@ -570,6 +570,13 @@ export default function DashboardPage() {
   const visibleEntries = timelineEntries.slice(0, visibleTimelineCount);
   const hasAnyMomentThisWeek = week.some((d) => d.practiced);
   const formattedGreetingName = greetingName ? toTitleCase(greetingName) : null;
+  const greetingHour = new Date().getHours();
+  const timeGreeting =
+    greetingHour < 12
+      ? "Good morning"
+      : greetingHour < 18
+        ? "Good afternoon"
+        : "Good evening";
   const selectedCardSharingDisabled =
     selectedCard?.kind === "moment" &&
     (isBrainBreakMomentRow(selectedCard.row) ||
@@ -678,7 +685,9 @@ export default function DashboardPage() {
         </p>
         {profileResolved ? (
           <h1 className="text-3xl font-semibold text-[color:var(--color-primary)]">
-            {formattedGreetingName ? `Hi, ${formattedGreetingName}.` : "Hi there."}
+            {formattedGreetingName
+              ? `${timeGreeting}, ${formattedGreetingName}.`
+              : `${timeGreeting}.`}
           </h1>
         ) : (
           <div className="h-9 w-44 animate-pulse rounded-xl bg-[color:var(--color-surface-soft)]" />

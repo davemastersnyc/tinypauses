@@ -386,4 +386,41 @@ test.describe("Tiny Pauses critical E2E flows", () => {
       if (userId) await deleteUserById(userId);
     }
   });
+
+  test("TEST 12 -- Settings: edit profile and export data", async ({ page }) => {
+    const email = makeUniqueEmail("settings-flow");
+    let userId: string | null = null;
+    try {
+      const user = await ensureUser(email);
+      userId = user.id;
+      await upsertProfile(user.id, {
+        adult_mode: false,
+        onboarding_complete: true,
+        child_name: "Riley",
+      });
+
+      await signInWithMagicLink(page, email);
+
+      await page.goto("/settings");
+      await expect(page.getByRole("heading", { name: /A few small things/i })).toBeVisible();
+
+      // Edit and persist the name.
+      const nameField = page.getByLabel("Your child's name");
+      await expect(nameField).toBeVisible();
+      await nameField.fill("Sky");
+      await page.getByRole("button", { name: "Save" }).click();
+      await expect(page.getByText("Saved 🌱")).toBeVisible();
+
+      await page.reload();
+      await expect(page.getByLabel("Your child's name")).toHaveValue("Sky");
+
+      // Export downloads a JSON file.
+      const downloadPromise = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Export my data" }).click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toBe("tiny-pauses-data.json");
+    } finally {
+      if (userId) await deleteUserById(userId);
+    }
+  });
 });
