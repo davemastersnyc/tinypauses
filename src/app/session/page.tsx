@@ -3,6 +3,7 @@
 import {
   Suspense,
   type CSSProperties,
+  type ReactNode,
   useCallback,
   useEffect,
   useRef,
@@ -115,13 +116,26 @@ function moodLabel(value: number) {
 
 // A gentle one-liner describing the before/after mood shift. Never makes a kid
 // feel bad when the number does not go up.
-function moodShiftMessage(before: number | null, after: number | null) {
+function moodShiftMessage(
+  before: number | null,
+  after: number | null,
+): ReactNode | null {
   if (before === null || after === null) return null;
   if (after > before) {
-    return `You went from ${moodLabel(before).toLowerCase()} to ${moodLabel(after).toLowerCase()}.`;
+    return (
+      <>
+        You went from <em>{moodLabel(before).toLowerCase()}</em> to{" "}
+        <em>{moodLabel(after).toLowerCase()}</em>.
+      </>
+    );
   }
   if (after === before) {
-    return `You came in feeling ${moodLabel(after).toLowerCase()} and stayed steady. That is okay.`;
+    return (
+      <>
+        You came in feeling <em>{moodLabel(after).toLowerCase()}</em> and stayed
+        steady. That is okay.
+      </>
+    );
   }
   return "Checking in honestly is the brave part. Be extra gentle with yourself.";
 }
