@@ -4,6 +4,8 @@ A mindfulness app for kids 9-12. And honestly, for their grown-ups too.
 
 [tinypauses.com](https://tinypauses.com)
 
+> **Status: live in production with real users.** This is not a demo. Tiny Pauses serves actual kids and grown-ups at [tinypauses.com](https://tinypauses.com). Pushing to `main` deploys straight to production via Vercel, and changes reach real people. Treat anything touching auth, user data, emails, or database migrations with care: verify the build, run any new `sql/` migration before (or with) the deploy, and prefer a pull request for non-trivial changes.
+
 ---
 
 Two minutes. No writing. No talking. No streaks. No guilt.
@@ -33,7 +35,9 @@ He still helps with feature ideas. The product is better for it.
 - Mood check-in after each session
 - A dashboard that keeps gentle track without pressure or streaks
 - Seasonal and weekly special prompts
+- Saved prompts you can come back to, plus account controls right on the dashboard
 - Shareable moment cards
+- Installable to the home screen and usable offline (PWA)
 - Works for adults too -- the "I'm here for myself" path is real and intentional
 
 ---
@@ -77,6 +81,7 @@ Set these in your local env and deployment env:
 - `BREVO_API_KEY`
 - `BREVO_DAILY_LIST_ID`
 - `BREVO_TEST_LIST_ID` (safe manual test list)
+- `BREVO_FROM_EMAIL` (sender address; defaults to `hello@tinypauses.com`)
 - `CRON_SECRET`
 - `DAILY_PROMPT_ENABLED` (`true`/`false` kill switch)
 - `DAILY_PROMPT_MAX_RECIPIENTS` (hard cap per run, e.g. `50` or `250`)
@@ -88,8 +93,15 @@ Run these SQL files in Supabase SQL Editor in order:
 1. `sql/seed_prompts_40.sql` -- prompt seed data
 2. `sql/admin_prompt_management.sql` -- prompt admin fields and brain break steps
 3. `sql/profile_onboarding_fields.sql` -- profile onboarding fields
-4. `sql/moments_and_wrapups.sql` -- moments, wrap-ups schema, functions, cron
-5. `sql/special_prompts_system.sql` -- seasonal and weekly special prompts
+4. `sql/profile_daily_email_subscriber.sql` -- daily-email subscriber flag on profiles
+5. `sql/daily_subscribers.sql` -- daily email subscriber list
+6. `sql/moments_and_wrapups.sql` -- moments, wrap-ups schema, functions, cron
+7. `sql/prompt_send_log.sql` -- daily prompt send log (rotation/dedupe)
+8. `sql/special_prompts_system.sql` -- seasonal and weekly special prompts
+9. `sql/favorite_prompts.sql` -- account-backed saved prompts (with RLS)
+10. `sql/social_milestone_log.sql` -- ledger so milestone social posts fire once
+
+All migrations are idempotent and safe to re-run.
 
 ### Prompt seed behavior
 
