@@ -109,6 +109,33 @@ const moodFinishMessages: Record<number, { headline: string; body: string }> = {
   },
 };
 
+function moodLabel(value: number) {
+  return moodOptions.find((option) => option.value === value)?.label ?? "";
+}
+
+// A gentle one-liner describing the before/after mood shift. Never makes a kid
+// feel bad when the number does not go up.
+function moodShiftMessage(before: number | null, after: number | null) {
+  if (before === null || after === null) return null;
+  if (after > before) {
+    return `You went from ${moodLabel(before).toLowerCase()} to ${moodLabel(after).toLowerCase()}.`;
+  }
+  if (after === before) {
+    return `You came in feeling ${moodLabel(after).toLowerCase()} and stayed steady. That is okay.`;
+  }
+  return "Checking in honestly is the brave part. Be extra gentle with yourself.";
+}
+
+const sessionKinds: { kind: PromptKind; label: string }[] = [
+  { kind: "pause", label: "Just a pause" },
+  { kind: "letting-go", label: "Letting go" },
+  { kind: "reflect", label: "Reflecting on today" },
+  { kind: "kindness", label: "Kindness" },
+];
+
+// When a kid arrives feeling low, gently steer toward releasing or kindness.
+const lowMoodKinds: PromptKind[] = ["letting-go", "kindness"];
+
 // Soft seasonal flecks that drift up behind the done-screen card. Purely
 // decorative; hidden under prefers-reduced-motion (see globals.css).
 const driftMotifs = [
@@ -177,6 +204,44 @@ const defaultBrainBreakSteps: BrainBreakStep[] = [
 const togetherBannerKey = "tinyPauses.showTogetherBanner";
 const togetherSessionKey = "tinyPauses.firstTogetherSession";
 const pendingMomentKey = "pending_moment";
+const firstVisitKey = "tinyPauses.hasVisited";
+
+// Recently-shown prompt ids, kept locally so a kid does not see the same
+// prompt twice in a row now that the library is large. Global across kinds.
+const recentPromptsKey = "tinyPauses.recentPromptIds";
+const recentPromptsMax = 10;
+
+function readRecentPromptIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(recentPromptsKey) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberPromptId(id: string) {
+  if (typeof window === "undefined") return;
+  const next = [id, ...readRecentPromptIds().filter((x) => x !== id)].slice(
+    0,
+    recentPromptsMax,
+  );
+  try {
+    window.localStorage.setItem(recentPromptsKey, JSON.stringify(next));
+  } catch {
+    // ignore storage failures (private mode, quota)
+  }
+}
+
+// Pick a prompt the kid has not seen recently; fall back to the full set once
+// they have worked through everything.
+function pickFreshPrompt<T extends { id: string }>(rows: T[]): T {
+  const recent = new Set(readRecentPromptIds());
+  const fresh = rows.filter((row) => !recent.has(row.id));
+  const pool = fresh.length > 0 ? fresh : rows;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 function MoodFace({ level }: { level: number }) {
   const stroke = "currentColor";
@@ -380,6 +445,8 @@ function SessionPageInner() {
   );
   const [mode, setMode] = useState<"regular" | "brain-break">("regular");
   const [mood, setMood] = useState<number | null>(null);
+  const [moodBefore, setMoodBefore] = useState<number | null>(null);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [childName, setChildName] = useState<string | null>(null);
   const [kind, setKind] = useState<PromptKind | null>(null);
@@ -624,6 +691,14 @@ function SessionPageInner() {
   }, [userId]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.localStorage.getItem(firstVisitKey)) {
+      setIsFirstVisit(true);
+      window.localStorage.setItem(firstVisitKey, "1");
+    }
+  }, []);
+
+  useEffect(() => {
     if (mode !== "regular" || step !== "choose") {
       setShowBrainBreakNudge(false);
       return;
@@ -682,17 +757,16 @@ function SessionPageInner() {
           .select("id, title, body, step")
           .eq("kind", selectedKind)
           .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(20);
+          .limit(200);
 
         if (!error && data && data.length > 0) {
-          const random =
-            data[Math.floor(Math.random() * Math.min(data.length, 20))];
+          const choice = pickFreshPrompt(data);
+          rememberPromptId(choice.id);
           setPrompt({
-            id: random.id,
-            title: random.title,
-            body: random.body,
-            step: random.step,
+            id: choice.id,
+            title: choice.title,
+            body: choice.body,
+            step: choice.step,
           });
           setIsPromptSaved(false);
           return;
@@ -715,13 +789,11 @@ function SessionPageInner() {
     if (!supabase) return;
     if (!userId) return;
 
+    const momentCreatedAt = new Date().toISOString();
+
+    // Save the moment (the timeline card) first and on its own, so it is never
+    // blocked by an issue with the sessions write.
     try {
-      const momentCreatedAt = new Date().toISOString();
-      await supabase.from("sessions").insert({
-        user_id: userId,
-        mood_after: selectedMood,
-        completed_at: momentCreatedAt,
-      });
       await supabase.from("moments").insert({
         user_id: userId,
         created_at: momentCreatedAt,
@@ -735,6 +807,17 @@ function SessionPageInner() {
         card_type: "moment",
         special_type: specialContext?.type ?? null,
         special_key: specialContext?.key ?? null,
+      });
+    } catch (error) {
+      console.error("Error recording moment", error);
+    }
+
+    try {
+      await supabase.from("sessions").insert({
+        user_id: userId,
+        mood_before: moodBefore,
+        mood_after: selectedMood,
+        completed_at: momentCreatedAt,
       });
     } catch (error) {
       console.error("Error recording session", error);
@@ -801,6 +884,7 @@ function SessionPageInner() {
 
   function startAnotherRound() {
     setMood(null);
+    setMoodBefore(null);
     setKind(null);
     setPrompt(null);
     setLoadingPrompt(false);
@@ -1009,6 +1093,7 @@ function SessionPageInner() {
   }
 
   const seasonMotifColor = getSeasonalPalette(new Date()).motif;
+  const moodShift = moodShiftMessage(moodBefore, mood);
 
   return (
     <PageShell maxWidth="md">
@@ -1090,38 +1175,70 @@ function SessionPageInner() {
               </button>
             </div>
           )}
+          {isFirstVisit && (
+            <p className="mb-3 rounded-xl bg-[color:var(--color-surface-soft)] px-3 py-2 text-xs text-[color:var(--color-foreground)]/80">
+              New here? A tiny pause takes about two minutes. There is no wrong
+              way to do it.
+            </p>
+          )}
+          <div className="mb-4">
+            <p className="text-sm text-[color:var(--color-foreground)]/85">
+              How are you feeling right now?{" "}
+              <span className="text-[color:var(--color-foreground)]/55">
+                (optional)
+              </span>
+            </p>
+            <div className="mt-2 flex items-stretch justify-between gap-1.5">
+              {moodOptions.map((option) => {
+                const selected = moodBefore === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-label={option.label}
+                    aria-pressed={selected}
+                    title={option.label}
+                    onClick={() =>
+                      setMoodBefore(selected ? null : option.value)
+                    }
+                    className={`flex flex-1 items-center justify-center rounded-xl border px-1 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] ${
+                      selected
+                        ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
+                        : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/70 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+                    }`}
+                  >
+                    <MoodFace level={option.value} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <p className="text-sm text-[color:var(--color-foreground)]/85">
-            Pick the kind of moment that would feel most helpful right now.
+            {moodBefore !== null && moodBefore <= 2
+              ? "Pick what feels right. These two are gentle when things feel heavy:"
+              : "Pick the kind of moment that would feel most helpful right now."}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => selectPromptKind("pause")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
-            >
-              Just a pause
-            </button>
-            <button
-              type="button"
-              onClick={() => selectPromptKind("letting-go")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
-            >
-              Letting go
-            </button>
-            <button
-              type="button"
-              onClick={() => selectPromptKind("reflect")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
-            >
-              Reflecting on today
-            </button>
-            <button
-              type="button"
-              onClick={() => selectPromptKind("kindness")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
-            >
-              Kindness
-            </button>
+            {sessionKinds.map((item) => {
+              const suggested =
+                moodBefore !== null &&
+                moodBefore <= 2 &&
+                lowMoodKinds.includes(item.kind);
+              return (
+                <button
+                  key={item.kind}
+                  type="button"
+                  onClick={() => selectPromptKind(item.kind)}
+                  className={`rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
+                    suggested
+                      ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)] ring-1 ring-[color:var(--color-accent)]/40"
+                      : "border-[color:var(--color-border-subtle)]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
           <button
             type="button"
@@ -1319,6 +1436,11 @@ function SessionPageInner() {
               {(mood !== null ? moodFinishMessages[mood] : defaultFinishMessage)
                 .body}
             </p>
+            {moodShift && (
+              <p className="mx-auto flex w-fit items-center rounded-[var(--radius-pill)] bg-[color:var(--color-surface)] px-4 py-1.5 text-xs font-medium text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30">
+                {moodShift}
+              </p>
+            )}
             {(isSignedIn ? specialContext?.shareable !== false : true) && (
               <button
                 type="button"
