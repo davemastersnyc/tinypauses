@@ -1451,7 +1451,7 @@ function SessionPageInner() {
                 .body}
             </p>
             {moodShift && (
-              <p className="mx-auto flex w-fit items-center rounded-[var(--radius-pill)] bg-[color:var(--color-surface)] px-4 py-1.5 text-xs font-medium text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30">
+              <p className="mx-auto block w-fit rounded-[var(--radius-pill)] bg-[color:var(--color-surface)] px-4 py-1.5 text-xs font-medium text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30">
                 {moodShift}
               </p>
             )}
