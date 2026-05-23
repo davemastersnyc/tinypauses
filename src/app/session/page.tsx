@@ -36,6 +36,7 @@ import {
   type SpecialContext,
   type SpecialPromptRow,
 } from "@/lib/specialPrompts";
+import { personalMilestoneForCount } from "@/lib/social";
 import { BrandButton, BrandCard, PageShell } from "../ui";
 
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
@@ -473,6 +474,9 @@ function SessionPageInner() {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [doneCardUrl, setDoneCardUrl] = useState<string | null>(null);
+  const [milestoneThreshold, setMilestoneThreshold] = useState<number | null>(
+    null,
+  );
   const [showBrainBreakNudge, setShowBrainBreakNudge] = useState(false);
   const [brainBreakSoundMode, setBrainBreakSoundMode] =
     useState<BrainBreakSoundMode>("quiet");
@@ -828,6 +832,20 @@ function SessionPageInner() {
       console.error("Error recording moment", error);
     }
 
+    // Personal milestone check: count this user's pauses (brain breaks excluded)
+    // and celebrate when the total lands exactly on a threshold.
+    try {
+      const { count } = await supabase
+        .from("moments")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .neq("category", "brain-break");
+      const hit = personalMilestoneForCount(count ?? 0);
+      if (hit) setMilestoneThreshold(hit);
+    } catch (error) {
+      console.error("Error checking milestone", error);
+    }
+
     try {
       await supabase.from("sessions").insert({
         user_id: userId,
@@ -907,6 +925,7 @@ function SessionPageInner() {
     setIsPromptSaved(false);
     setShowTogetherDoneCopy(false);
     setSpecialContext(null);
+    setMilestoneThreshold(null);
     setStep("choose");
   }
 
@@ -937,6 +956,7 @@ function SessionPageInner() {
       window.sessionStorage.removeItem(togetherSessionKey);
       window.sessionStorage.removeItem(togetherBannerKey);
     }
+    setMilestoneThreshold(null);
     storePendingMoment(selectedMood);
     recordSession(selectedMood);
     setStep("done");
@@ -1010,19 +1030,32 @@ function SessionPageInner() {
   }
 
   const buildCurrentMomentMetadata = useCallback(
-    (): MomentCardMetadata => ({
-      type: "moment",
-      category: specialContext
-        ? specialContext.badgeLabel
-        : kind
-          ? kindLabels[kind]
-          : "Mindful moment",
-      promptName: prompt?.title ?? "Tiny pause",
-      moodValue: mood,
-      specialType: specialContext?.type ?? null,
-      specialKey: specialContext?.key ?? null,
-    }),
-    [specialContext, kind, prompt, mood],
+    (): MomentCardMetadata =>
+      milestoneThreshold
+        ? {
+            type: "moment",
+            category: "Milestone",
+            promptName: prompt?.title ?? "Tiny pause",
+            moodValue: mood,
+            specialType: "milestone",
+            specialKey: null,
+            illustrationKey: "star",
+            milestoneCount: milestoneThreshold,
+          }
+        : {
+            type: "moment",
+            category: specialContext
+              ? specialContext.badgeLabel
+              : kind
+                ? kindLabels[kind]
+                : "Mindful moment",
+            promptName: prompt?.title ?? "Tiny pause",
+            moodValue: mood,
+            specialType: specialContext?.type ?? null,
+            specialKey: specialContext?.key ?? null,
+            illustrationKey: specialContext?.illustrationKey ?? null,
+          },
+    [specialContext, kind, prompt, mood, milestoneThreshold],
   );
 
   useEffect(() => {
@@ -1047,7 +1080,7 @@ function SessionPageInner() {
     setShareLoading(true);
     try {
       let metadata: MomentCardMetadata = buildCurrentMomentMetadata();
-      if (supabase && userId) {
+      if (supabase && userId && !milestoneThreshold) {
         const { data: latestMoment } = await supabase
           .from("moments")
           .select("category, prompt_name, mood_value, special_type, special_key")
@@ -1063,6 +1096,7 @@ function SessionPageInner() {
             moodValue: latestMoment.mood_value ?? metadata.moodValue ?? null,
             specialType: latestMoment.special_type ?? metadata.specialType ?? null,
             specialKey: latestMoment.special_key ?? metadata.specialKey ?? null,
+            illustrationKey: specialContext?.illustrationKey ?? null,
           };
         }
       }
@@ -1110,7 +1144,11 @@ function SessionPageInner() {
 
   const seasonMotifColor = getSeasonalPalette(new Date()).motif;
   const moodShift = moodShiftMessage(moodBefore, mood);
-  const canShareMoment = isSignedIn ? specialContext?.shareable !== false : true;
+  const canShareMoment = milestoneThreshold
+    ? true
+    : isSignedIn
+      ? specialContext?.shareable !== false
+      : true;
 
   return (
     <PageShell maxWidth="md">
@@ -1146,9 +1184,13 @@ function SessionPageInner() {
             {step === "done" &&
               (showTogetherDoneCopy
                 ? "You just took a tiny pause together. That's a really good start."
-                : specialContext
-                  ? `You just took a ${specialContext.name.toLowerCase()} pause.`
-                  : "You just took a tiny pause.")}
+                : milestoneThreshold
+                  ? milestoneThreshold === 1
+                    ? "You just took your very first tiny pause."
+                    : `That's ${milestoneThreshold.toLocaleString()} tiny pauses. Look at you go.`
+                  : specialContext
+                    ? `You just took a ${specialContext.name.toLowerCase()} pause.`
+                    : "You just took a tiny pause.")}
           </h1>
           <div className="mx-auto h-1 w-16 rounded-full bg-[color:var(--color-accent)]" />
           <div className="mx-auto mt-3 flex max-w-sm items-center justify-between gap-2">

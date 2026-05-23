@@ -25,8 +25,14 @@ export type MomentCardMetadata = {
   category: string;
   promptName: string;
   moodValue: number | null;
-  specialType?: "seasonal" | "weekly" | null;
+  specialType?: "seasonal" | "weekly" | "milestone" | null;
   specialKey?: string | null;
+  // Optional special illustration name (pencil, ghost, moon, sunrise, etc.).
+  // When set, it overrides the category-derived theme so seasonal and weekly
+  // moments get their own art instead of the default sprout.
+  illustrationKey?: string | null;
+  // For specialType "milestone": the personal pause count being celebrated.
+  milestoneCount?: number | null;
 };
 
 export type WrapUpCardMetadata = {
@@ -154,8 +160,14 @@ function drawMomentCardSeason(
     ctx.restore();
   }
 
-  const badgeLabel = metadata.category || "Mindful moment";
-  const badgeColor = badgeColorForCategory(metadata.category);
+  const isMilestone = metadata.specialType === "milestone";
+  const milestoneCount = metadata.milestoneCount ?? 0;
+  const badgeLabel = isMilestone
+    ? "Milestone"
+    : metadata.category || "Mindful moment";
+  const badgeColor = isMilestone
+    ? "#f97316"
+    : badgeColorForCategory(metadata.category);
   ctx.font = "500 40px Inter, Avenir Next, Segoe UI, sans-serif";
   const badgeWidth = Math.max(240, ctx.measureText(badgeLabel).width + 86);
   const badgeX = (size - badgeWidth) / 2;
@@ -174,17 +186,29 @@ function drawMomentCardSeason(
     ctx,
     size / 2,
     500,
-    resolveCardTheme(metadata.category, metadata.specialKey),
+    isMilestone
+      ? "star"
+      : metadata.illustrationKey ||
+          resolveCardTheme(metadata.category, metadata.specialKey),
   );
   ctx.restore();
 
+  const heroText = isMilestone
+    ? milestoneCount === 1
+      ? "My first tiny pause"
+      : `${milestoneCount.toLocaleString()} tiny pauses`
+    : metadata.promptName || "Tiny pause";
+  const subText = isMilestone
+    ? "Look how many moments I have made."
+    : "I took a tiny pause today.";
+
   ctx.fillStyle = palette.ink;
   ctx.font = "700 62px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText(metadata.promptName || "Tiny pause", size / 2, 700);
+  ctx.fillText(heroText, size / 2, 700);
 
   ctx.fillStyle = palette.inkSoft;
   ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText("I took a tiny pause today.", size / 2, 760);
+  ctx.fillText(subText, size / 2, 760);
 
   ctx.fillStyle = palette.inkSoft;
   ctx.font = "500 28px Inter, Avenir Next, Segoe UI, sans-serif";

@@ -74,6 +74,7 @@ type Card = {
   step: string;
   specialType: "seasonal" | "weekly" | "milestone" | null;
   specialKey: string | null;
+  illustrationKey: string | null;
 };
 
 const BRAND_HEADLINE = "I took a tiny pause today.";
@@ -193,6 +194,7 @@ function buildDailyCards(
         step: calendarSpecial.step,
         specialType: "seasonal",
         specialKey: calendarSpecial.key,
+        illustrationKey: null,
       });
       continue;
     }
@@ -212,6 +214,7 @@ function buildDailyCards(
           step: prompt.tiny_step,
           specialType: "seasonal",
           specialKey: window.key,
+          illustrationKey: context.illustrationKey,
         });
         continue;
       }
@@ -232,6 +235,7 @@ function buildDailyCards(
           step: prompt.tiny_step,
           specialType: "weekly",
           specialKey: key,
+          illustrationKey: context.illustrationKey,
         });
         continue;
       }
@@ -248,6 +252,7 @@ function buildDailyCards(
       step: prompt?.step ?? "Take three slow breaths.",
       specialType: null,
       specialKey: null,
+      illustrationKey: null,
     });
   }
 
@@ -267,6 +272,7 @@ function buildMilestoneCards(hits: MilestoneHit[]): Card[] {
       step: copy.step,
       specialType: "milestone" as const,
       specialKey: null,
+      illustrationKey: null,
     };
   });
 }
@@ -296,7 +302,8 @@ async function renderCards(cards: Card[], outputDir: string) {
   );
 
   for (const card of cards) {
-    const cardTheme = resolveCardTheme(card.label, card.specialKey);
+    const cardTheme =
+      card.illustrationKey || resolveCardTheme(card.label, card.specialKey);
     await page.evaluate(
       async ({ cardData, logo, illustrationSource, cardTheme, palette }) => {
         const canvas = document.getElementById("card") as HTMLCanvasElement | null;

@@ -103,6 +103,19 @@ export function newlyCrossedMilestones(
   return hits;
 }
 
+// Personal milestones celebrate an individual's own pause count in-app. They
+// are smaller and more frequent than the global growth thresholds above, which
+// drive the Instagram celebration posts. Because each completed pause adds
+// exactly one moment, an exact-equality check fires a milestone once, on the
+// pause that lands on the threshold (no ledger needed).
+export const personalPauseThresholds: readonly number[] = [
+  1, 5, 10, 25, 50, 100, 250, 500, 1000,
+];
+
+export function personalMilestoneForCount(total: number): number | null {
+  return personalPauseThresholds.includes(total) ? total : null;
+}
+
 export function milestoneCardCopy(hit: MilestoneHit) {
   if (hit.kind === "pauses") {
     return {

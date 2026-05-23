@@ -3,6 +3,14 @@ export type CardTheme =
   | "letting-go"
   | "reflect"
   | "kindness"
+  | "pencil"
+  | "ghost"
+  | "leaf"
+  | "star"
+  | "heart"
+  | "sun"
+  | "moon"
+  | "sunrise"
   | "default";
 
 // Map a moment's category label (and optional special key) to a theme.
@@ -33,12 +41,21 @@ export function drawCardIllustration(
   centerY: number,
   theme: string,
 ) {
-  if (
-    theme !== "letting-go" &&
-    theme !== "reflect" &&
-    theme !== "kindness" &&
-    theme !== "pause"
-  ) {
+  const isThemed =
+    theme === "letting-go" ||
+    theme === "reflect" ||
+    theme === "kindness" ||
+    theme === "pause" ||
+    theme === "pencil" ||
+    theme === "ghost" ||
+    theme === "leaf" ||
+    theme === "star" ||
+    theme === "heart" ||
+    theme === "sun" ||
+    theme === "moon" ||
+    theme === "sunrise";
+
+  if (!isThemed) {
     // Default: the sprout (shifted so its visual mass is centered on cy).
     ctx.save();
     ctx.translate(0, 54);
@@ -97,6 +114,156 @@ export function drawCardIllustration(
         "M32 51S11 39 11 24.5C11 17 16.5 13 22 13c4 0 7.5 2.2 10 6 2.5-3.8 6-6 10-6 5.5 0 11 4 11 11.5C53 39 32 51 32 51z",
       ),
     );
+  } else if (theme === "pencil") {
+    // back-to-school: a pencil on the diagonal
+    ctx.save();
+    ctx.translate(32, 32);
+    ctx.rotate(-Math.PI / 4);
+    ctx.fillStyle = "#f4c447";
+    ctx.fillRect(-6, -2, 12, 20);
+    ctx.fillStyle = "#e0a800";
+    ctx.fillRect(-6, 18, 12, 4);
+    ctx.fillStyle = "#ef9a9a";
+    ctx.fillRect(-6, 22, 12, 6);
+    ctx.fillStyle = "#e8b06a";
+    ctx.beginPath();
+    ctx.moveTo(-6, -2);
+    ctx.lineTo(6, -2);
+    ctx.lineTo(0, -16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#3a3a3a";
+    ctx.beginPath();
+    ctx.moveTo(-2.4, -11);
+    ctx.lineTo(2.4, -11);
+    ctx.lineTo(0, -16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  } else if (theme === "ghost") {
+    // halloween: a friendly ghost
+    ctx.fillStyle = "#b9a7e6";
+    ctx.beginPath();
+    ctx.arc(32, 28, 15, Math.PI, 0);
+    ctx.lineTo(47, 46);
+    ctx.quadraticCurveTo(42.5, 40, 38, 46);
+    ctx.quadraticCurveTo(33.5, 52, 29, 46);
+    ctx.quadraticCurveTo(24.5, 40, 20, 46);
+    ctx.lineTo(17, 46);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#3a2f5a";
+    ctx.beginPath();
+    ctx.arc(27, 27, 2.6, 0, Math.PI * 2);
+    ctx.arc(37, 27, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (theme === "leaf") {
+    // thanksgiving: a single autumn leaf
+    ctx.save();
+    ctx.translate(32, 32);
+    ctx.rotate(-0.4);
+    ctx.fillStyle = "#e08a3c";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#a85e22";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, -18);
+    ctx.lineTo(0, 20);
+    ctx.moveTo(0, -6);
+    ctx.lineTo(7, -12);
+    ctx.moveTo(0, -6);
+    ctx.lineTo(-7, -12);
+    ctx.moveTo(0, 4);
+    ctx.lineTo(8, -1);
+    ctx.moveTo(0, 4);
+    ctx.lineTo(-8, -1);
+    ctx.stroke();
+    ctx.restore();
+  } else if (theme === "star") {
+    // holiday: a five-point star
+    ctx.fillStyle = "#f5c542";
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const radius = i % 2 === 0 ? 18 : 8;
+      const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+      const x = 32 + Math.cos(angle) * radius;
+      const y = 32 + Math.sin(angle) * radius;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  } else if (theme === "heart") {
+    // valentines: a heart
+    ctx.fillStyle = "#ef5d8f";
+    const hx = 32;
+    const hy = 30;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy + 16);
+    ctx.bezierCurveTo(hx - 22, hy - 3, hx - 16, hy - 20, hx, hy - 8);
+    ctx.bezierCurveTo(hx + 16, hy - 20, hx + 22, hy - 3, hx, hy + 16);
+    ctx.closePath();
+    ctx.fill();
+  } else if (theme === "sun") {
+    // end-of-school: a sun with rays
+    ctx.fillStyle = "#f6b73c";
+    ctx.beginPath();
+    ctx.arc(32, 32, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#f6b73c";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * Math.PI) / 4;
+      ctx.beginPath();
+      ctx.moveTo(32 + Math.cos(angle) * 16, 32 + Math.sin(angle) * 16);
+      ctx.lineTo(32 + Math.cos(angle) * 22, 32 + Math.sin(angle) * 22);
+      ctx.stroke();
+    }
+  } else if (theme === "moon") {
+    // sunday evening: a crescent moon with two stars
+    ctx.fillStyle = "#e9c84a";
+    ctx.beginPath();
+    ctx.arc(30, 30, 16, Math.PI * 0.35, Math.PI * 1.65, false);
+    ctx.arc(36, 30, 13, Math.PI * 1.55, Math.PI * 0.45, true);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#cdb4f0";
+    ctx.beginPath();
+    ctx.arc(47, 19, 2, 0, Math.PI * 2);
+    ctx.arc(45, 40, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (theme === "sunrise") {
+    // monday morning: a sunrise over the horizon
+    ctx.strokeStyle = "#e8b96a";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(12, 42);
+    ctx.lineTo(52, 42);
+    ctx.stroke();
+    ctx.fillStyle = "#f6a63c";
+    ctx.beginPath();
+    ctx.arc(32, 42, 12, Math.PI, 0, false);
+    ctx.fill();
+    ctx.strokeStyle = "#f6a63c";
+    ctx.lineWidth = 2.6;
+    const rays = [
+      -Math.PI * 0.85,
+      -Math.PI * 0.65,
+      -Math.PI * 0.5,
+      -Math.PI * 0.35,
+      -Math.PI * 0.15,
+    ];
+    for (const angle of rays) {
+      ctx.beginPath();
+      ctx.moveTo(32 + Math.cos(angle) * 15, 42 + Math.sin(angle) * 15);
+      ctx.lineTo(32 + Math.cos(angle) * 21, 42 + Math.sin(angle) * 21);
+      ctx.stroke();
+    }
   } else {
     // pause: concentric ripples
     ctx.fillStyle = "#66cccc";
