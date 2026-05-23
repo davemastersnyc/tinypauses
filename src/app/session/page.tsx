@@ -124,16 +124,18 @@ function moodShiftMessage(
   if (after > before) {
     return (
       <>
-        You went from <em>{moodLabel(before).toLowerCase()}</em> to{" "}
-        <em>{moodLabel(after).toLowerCase()}</em>.
+        You went from{" "}
+        <em className="text-[#006666]">{moodLabel(before).toLowerCase()}</em> to{" "}
+        <em className="text-[#006666]">{moodLabel(after).toLowerCase()}</em>.
       </>
     );
   }
   if (after === before) {
     return (
       <>
-        You came in feeling <em>{moodLabel(after).toLowerCase()}</em> and stayed
-        steady. That is okay.
+        You came in feeling{" "}
+        <em className="text-[#006666]">{moodLabel(after).toLowerCase()}</em> and
+        stayed steady. That is okay.
       </>
     );
   }
