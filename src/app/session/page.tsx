@@ -12,7 +12,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { type MomentCardMetadata, renderCardBlob } from "@/lib/cardRenderer";
+import {
+  type MomentCardMetadata,
+  renderCardBlob,
+  renderCardCanvas,
+  preloadCardAssets,
+} from "@/lib/cardRenderer";
 import {
   getFavorite,
   migrateLocalFavorites,
@@ -373,6 +378,7 @@ function SessionPageInner() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [doneCardUrl, setDoneCardUrl] = useState<string | null>(null);
   const [showBrainBreakNudge, setShowBrainBreakNudge] = useState(false);
   const [brainBreakSoundMode, setBrainBreakSoundMode] =
     useState<BrainBreakSoundMode>("quiet");
@@ -892,22 +898,44 @@ function SessionPageInner() {
     setShowShareModal(false);
   }
 
+  const buildCurrentMomentMetadata = useCallback(
+    (): MomentCardMetadata => ({
+      type: "moment",
+      category: specialContext
+        ? specialContext.badgeLabel
+        : kind
+          ? kindLabels[kind]
+          : "Mindful moment",
+      promptName: prompt?.title ?? "Tiny pause",
+      moodValue: mood,
+      specialType: specialContext?.type ?? null,
+      specialKey: specialContext?.key ?? null,
+    }),
+    [specialContext, kind, prompt, mood],
+  );
+
+  useEffect(() => {
+    if (step !== "done") {
+      setDoneCardUrl(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      await preloadCardAssets();
+      if (cancelled) return;
+      const canvas = renderCardCanvas(buildCurrentMomentMetadata(), 720);
+      setDoneCardUrl(canvas ? canvas.toDataURL("image/png") : null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, buildCurrentMomentMetadata]);
+
   async function handleShareMoment() {
     if (shareLoading) return;
     setShareLoading(true);
     try {
-      let metadata: MomentCardMetadata = {
-        type: "moment",
-        category: specialContext
-          ? specialContext.badgeLabel
-          : kind
-            ? kindLabels[kind]
-            : "Mindful moment",
-        promptName: prompt?.title ?? "Tiny pause",
-        moodValue: mood,
-        specialType: specialContext?.type ?? null,
-        specialKey: specialContext?.key ?? null,
-      };
+      let metadata: MomentCardMetadata = buildCurrentMomentMetadata();
       if (supabase && userId) {
         const { data: latestMoment } = await supabase
           .from("moments")
@@ -1235,9 +1263,22 @@ function SessionPageInner() {
         {step === "done" && (
           <BrandCard tone="accent">
           <div className="space-y-4 text-center">
-            <p className="text-4xl">
-              <span className="sprout-pop">🌱</span>
-            </p>
+            {doneCardUrl ? (
+              <div className="mx-auto w-full max-w-[244px]">
+                <Image
+                  src={doneCardUrl}
+                  alt="Your tiny pause card"
+                  width={720}
+                  height={720}
+                  unoptimized
+                  className="sprout-pop w-full rounded-2xl border border-[color:var(--color-border-subtle)] shadow-[var(--shadow-soft)]"
+                />
+              </div>
+            ) : (
+              <p className="text-4xl">
+                <span className="sprout-pop">🌱</span>
+              </p>
+            )}
             <p className="text-base font-medium text-[color:var(--color-ink-on-accent-soft)]">
               {(mood !== null ? moodFinishMessages[mood] : defaultFinishMessage)
                 .headline}

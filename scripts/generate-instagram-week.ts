@@ -35,7 +35,6 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 const BREVO_API_KEY = process.env.BREVO_API_KEY?.trim();
 const BREVO_FROM_EMAIL = process.env.BREVO_FROM_EMAIL?.trim() || "hello@tinypauses.com";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim();
-const BRAND_ICON_PATH = path.resolve("public/brand/SmileCircle.png");
 
 const SHOULD_SEND = process.argv.includes("--send");
 const FORCE_MILESTONE = process.env.SOCIAL_FORCE_MILESTONE?.trim();
@@ -283,8 +282,8 @@ function parseForcedMilestone(raw: string | undefined): MilestoneHit | null {
 }
 
 async function renderCards(cards: Card[], outputDir: string) {
-  const iconBuffer = fs.readFileSync(BRAND_ICON_PATH);
-  const iconDataUrl = `data:image/png;base64,${iconBuffer.toString("base64")}`;
+  const logoBuffer = fs.readFileSync(path.resolve("public/brand/LogoLockUp.png"));
+  const logoDataUrl = `data:image/png;base64,${logoBuffer.toString("base64")}`;
   // Serialize the shared illustration drawer so the headless cards stay
   // identical to the in-app share card.
   const illustrationSource = drawCardIllustration.toString();
@@ -299,7 +298,7 @@ async function renderCards(cards: Card[], outputDir: string) {
   for (const card of cards) {
     const cardTheme = resolveCardTheme(card.label, card.specialKey);
     await page.evaluate(
-      async ({ cardData, icon, illustrationSource, cardTheme, palette }) => {
+      async ({ cardData, logo, illustrationSource, cardTheme, palette }) => {
         const canvas = document.getElementById("card") as HTMLCanvasElement | null;
         if (!canvas) throw new Error("Card canvas element is missing.");
         const ctx = canvas.getContext("2d");
@@ -340,20 +339,6 @@ async function renderCards(cards: Card[], outputDir: string) {
           return "#f97316";
         }
 
-        function drawFallbackSmileIcon(
-          context: CanvasRenderingContext2D,
-          centerX: number,
-          centerY: number,
-          radius: number,
-        ) {
-          context.save();
-          context.fillStyle = "#ffd84a";
-          context.beginPath();
-          context.arc(centerX, centerY, radius, 0, Math.PI * 2);
-          context.fill();
-          context.restore();
-        }
-
         // Seasonal background
         const gradient = ctx.createLinearGradient(0, 0, 0, size);
         gradient.addColorStop(0, palette.bgFrom);
@@ -380,13 +365,25 @@ async function renderCards(cards: Card[], outputDir: string) {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
-        // Wordmark
-        ctx.save();
-        ctx.fillStyle = palette.inkSoft;
-        ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
-        ctx.letterSpacing = "6px";
-        ctx.fillText("TINY PAUSES", size / 2, 150);
-        ctx.restore();
+        // Real brand logo at the top
+        const logoImage = new Image();
+        const logoLoaded = await new Promise<boolean>((resolve) => {
+          logoImage.onload = () => resolve(true);
+          logoImage.onerror = () => resolve(false);
+          logoImage.src = logo;
+        });
+        if (logoLoaded && logoImage.naturalWidth > 0) {
+          const logoH = 150;
+          const logoW = logoH * (logoImage.naturalWidth / logoImage.naturalHeight);
+          ctx.drawImage(logoImage, size / 2 - logoW / 2, 84, logoW, logoH);
+        } else {
+          ctx.save();
+          ctx.fillStyle = palette.inkSoft;
+          ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
+          ctx.letterSpacing = "6px";
+          ctx.fillText("TINY PAUSES", size / 2, 150);
+          ctx.restore();
+        }
 
         // Category badge
         const badgeLabel = cardData.label || "Mindful moment";
@@ -394,19 +391,19 @@ async function renderCards(cards: Card[], outputDir: string) {
         ctx.font = "500 40px Inter, Avenir Next, Segoe UI, sans-serif";
         const badgeWidth = Math.max(240, ctx.measureText(badgeLabel).width + 86);
         const badgeX = (size - badgeWidth) / 2;
-        const badgeY = 196;
+        const badgeY = 270;
         ctx.fillStyle = badgeColor;
         drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 74, 37);
         ctx.fill();
         ctx.fillStyle = "#121826";
         ctx.fillText(badgeLabel, size / 2, badgeY + 38);
 
-        // Illustration, scaled up to anchor the card
+        // Illustration, scaled to anchor the card
         ctx.save();
-        ctx.translate(size / 2, 460);
-        ctx.scale(1.3, 1.3);
-        ctx.translate(-(size / 2), -460);
-        drawCardIllustration(ctx, size / 2, 460, cardTheme);
+        ctx.translate(size / 2, 500);
+        ctx.scale(1.25, 1.25);
+        ctx.translate(-(size / 2), -500);
+        drawCardIllustration(ctx, size / 2, 500, cardTheme);
         ctx.restore();
 
         // Hierarchy: the specific moment leads, the brand line supports.
@@ -420,34 +417,19 @@ async function renderCards(cards: Card[], outputDir: string) {
 
         ctx.fillStyle = palette.ink;
         ctx.font = "700 62px Inter, Avenir Next, Segoe UI, sans-serif";
-        ctx.fillText(heroText, size / 2, 668);
+        ctx.fillText(heroText, size / 2, 700);
 
         if (subText) {
           ctx.fillStyle = palette.inkSoft;
           ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
-          ctx.fillText(subText, size / 2, 736);
-        }
-
-        const iconSize = 56;
-        const iconX = size / 2 - iconSize / 2;
-        const iconY = 828;
-        const image = new Image();
-        const imageLoaded = await new Promise<boolean>((resolve) => {
-          image.onload = () => resolve(true);
-          image.onerror = () => resolve(false);
-          image.src = icon;
-        });
-        if (imageLoaded && image.naturalWidth > 0) {
-          ctx.drawImage(image, iconX, iconY, iconSize, iconSize);
-        } else {
-          drawFallbackSmileIcon(ctx, size / 2, iconY + iconSize / 2, iconSize / 2);
+          ctx.fillText(subText, size / 2, 760);
         }
 
         ctx.fillStyle = palette.inkSoft;
         ctx.font = "500 28px Inter, Avenir Next, Segoe UI, sans-serif";
-        ctx.fillText("tinypauses.com", size / 2, 940);
+        ctx.fillText("tinypauses.com", size / 2, 952);
       },
-      { cardData: card, icon: iconDataUrl, illustrationSource, cardTheme, palette },
+      { cardData: card, logo: logoDataUrl, illustrationSource, cardTheme, palette },
     );
 
     await page.screenshot({

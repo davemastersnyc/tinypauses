@@ -140,19 +140,26 @@ function drawMomentCardSeason(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  ctx.save();
-  ctx.fillStyle = palette.inkSoft;
-  ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.letterSpacing = "6px";
-  ctx.fillText("TINY PAUSES", size / 2, 150);
-  ctx.restore();
+  const logo = ensureLogoImage();
+  if (logo && logo.complete && logo.naturalWidth > 0) {
+    const logoH = 150;
+    const logoW = (logoH * logo.naturalWidth) / logo.naturalHeight;
+    ctx.drawImage(logo, size / 2 - logoW / 2, 84, logoW, logoH);
+  } else {
+    ctx.save();
+    ctx.fillStyle = palette.inkSoft;
+    ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.letterSpacing = "6px";
+    ctx.fillText("TINY PAUSES", size / 2, 150);
+    ctx.restore();
+  }
 
   const badgeLabel = metadata.category || "Mindful moment";
   const badgeColor = badgeColorForCategory(metadata.category);
   ctx.font = "500 40px Inter, Avenir Next, Segoe UI, sans-serif";
   const badgeWidth = Math.max(240, ctx.measureText(badgeLabel).width + 86);
   const badgeX = (size - badgeWidth) / 2;
-  const badgeY = 196;
+  const badgeY = 270;
   ctx.fillStyle = badgeColor;
   drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 74, 37);
   ctx.fill();
@@ -160,30 +167,28 @@ function drawMomentCardSeason(
   ctx.fillText(badgeLabel, size / 2, badgeY + 38);
 
   ctx.save();
-  ctx.translate(size / 2, 460);
-  ctx.scale(1.3, 1.3);
-  ctx.translate(-(size / 2), -460);
+  ctx.translate(size / 2, 500);
+  ctx.scale(1.25, 1.25);
+  ctx.translate(-(size / 2), -500);
   drawCardIllustration(
     ctx,
     size / 2,
-    460,
+    500,
     resolveCardTheme(metadata.category, metadata.specialKey),
   );
   ctx.restore();
 
   ctx.fillStyle = palette.ink;
   ctx.font = "700 62px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText(metadata.promptName || "Tiny pause", size / 2, 668);
+  ctx.fillText(metadata.promptName || "Tiny pause", size / 2, 700);
 
   ctx.fillStyle = palette.inkSoft;
   ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText("I took a tiny pause today.", size / 2, 736);
-
-  drawMomentBrandIcon(ctx, size, 56, 828);
+  ctx.fillText("I took a tiny pause today.", size / 2, 760);
 
   ctx.fillStyle = palette.inkSoft;
   ctx.font = "500 28px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText("tinypauses.com", size / 2, 940);
+  ctx.fillText("tinypauses.com", size / 2, 952);
 }
 
 function drawMomentCardLegacy(
@@ -273,6 +278,36 @@ function ensureSmileIcon() {
     smileIconImage.src = "/brand/SmileCircle.png";
   }
   return smileIconImage;
+}
+
+let logoImage: HTMLImageElement | null = null;
+
+function ensureLogoImage() {
+  if (typeof window === "undefined") return null;
+  if (!logoImage) {
+    logoImage = new Image();
+    logoImage.decoding = "async";
+    logoImage.src = "/brand/LogoLockUp.png";
+  }
+  return logoImage;
+}
+
+// Resolves once the brand images a card needs are loaded, so a freshly
+// rendered card (e.g. the done-screen preview) shows the real logo.
+export function preloadCardAssets(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  const images = [ensureLogoImage(), ensureSmileIcon()];
+  const waits = images
+    .filter((img): img is HTMLImageElement => Boolean(img))
+    .filter((img) => !(img.complete && img.naturalWidth > 0))
+    .map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          img.addEventListener("load", () => resolve(), { once: true });
+          img.addEventListener("error", () => resolve(), { once: true });
+        }),
+    );
+  return Promise.all(waits).then(() => undefined);
 }
 
 function drawFallbackSmileIcon(
