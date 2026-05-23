@@ -297,6 +297,60 @@ function BrainBreakStepVisual({ step }: { step: number }) {
   return <p className="text-6xl" aria-hidden="true">🌱</p>;
 }
 
+function ThemeIllustration({ kind }: { kind: PromptKind | null }) {
+  const className = "theme-illustration h-16 w-16";
+
+  if (kind === "pause") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true" className={className} fill="none">
+        <circle cx="32" cy="32" r="6" fill="#66cccc" />
+        <circle cx="32" cy="32" r="14" stroke="#66cccc" strokeWidth="2.5" opacity="0.6" />
+        <circle cx="32" cy="32" r="22" stroke="#66cccc" strokeWidth="2.5" opacity="0.3" />
+      </svg>
+    );
+  }
+
+  if (kind === "letting-go") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true" className={className} fill="none">
+        <ellipse cx="32" cy="22" rx="13" ry="15" fill="#7edfaa" />
+        <path d="M29 36h6l-3 4z" fill="#3aa66f" />
+        <path
+          d="M32 40c0 4 2.5 5 2.5 8.5S32 53 32 56"
+          stroke="#3aa66f"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
+  if (kind === "reflect") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true" className={className} fill="none">
+        <path d="M38 12a22 22 0 1 0 14 38A18 18 0 0 1 38 12z" fill="#ffd84a" />
+        <path
+          d="M47 13l1.5 3.8 3.8 1.5-3.8 1.5L47 25l-1.5-3.7-3.8-1.5 3.8-1.5z"
+          fill="#f5b400"
+        />
+      </svg>
+    );
+  }
+
+  if (kind === "kindness") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true" className={className} fill="none">
+        <path
+          d="M32 51S11 39 11 24.5C11 17 16.5 13 22 13c4 0 7.5 2.2 10 6 2.5-3.8 6-6 10-6 5.5 0 11 4 11 11.5C53 39 32 51 32 51z"
+          fill="#f97316"
+        />
+      </svg>
+    );
+  }
+
+  return null;
+}
+
 function SessionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1000,8 +1054,11 @@ function SessionPageInner() {
               Finding a prompt…
             </p>
           ) : (
-            <>
-              <div className="space-y-2">
+            <div className="prompt-reveal">
+              <div className="flex justify-center">
+                <ThemeIllustration kind={kind} />
+              </div>
+              <div className="mt-3 space-y-2">
                 <h2 className="text-lg font-semibold text-[color:var(--color-primary)]">
                   {prompt.title}
                 </h2>
@@ -1045,7 +1102,7 @@ function SessionPageInner() {
                   Maybe later
                 </Link>
               </div>
-            </>
+            </div>
           )}
           </BrandCard>
         )}
@@ -1115,7 +1172,9 @@ function SessionPageInner() {
         {step === "done" && (
           <BrandCard tone="accent">
           <div className="space-y-4 text-center">
-            <p className="text-4xl">🌱</p>
+            <p className="text-4xl">
+              <span className="sprout-pop">🌱</span>
+            </p>
             <p className="text-base font-medium text-[color:var(--color-ink-on-accent-soft)]">
               {(mood !== null ? moodFinishMessages[mood] : defaultFinishMessage)
                 .headline}
