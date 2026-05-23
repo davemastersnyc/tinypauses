@@ -1110,6 +1110,7 @@ function SessionPageInner() {
 
   const seasonMotifColor = getSeasonalPalette(new Date()).motif;
   const moodShift = moodShiftMessage(moodBefore, mood);
+  const canShareMoment = isSignedIn ? specialContext?.shareable !== false : true;
 
   return (
     <PageShell maxWidth="md">
@@ -1457,48 +1458,38 @@ function SessionPageInner() {
                 {moodShift}
               </p>
             )}
-            {(isSignedIn ? specialContext?.shareable !== false : true) && (
-              <button
-                type="button"
-                onClick={handleShareMoment}
-                disabled={shareLoading}
-                className="mx-auto inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-[color:var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-[var(--shadow-soft)] transition hover:bg-[color:var(--color-accent)]/90 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <svg
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                  fill="none"
-                >
-                  <path
-                    d="M10 2.5l1.3 3.2 3.2 1.3-3.2 1.3-1.3 3.2-1.3-3.2-3.2-1.3 3.2-1.3L10 2.5zM15.5 10.2l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"
-                    fill="currentColor"
-                  />
-                </svg>
-                {shareLoading ? "Preparing image..." : "Share this moment"}
-              </button>
-            )}
             <div className="flex flex-col gap-3">
               {isSignedIn ? (
                 <>
                   <BrandButton type="button" onClick={startAnotherRound} fullWidth>
-                    Try another round
+                    Take another pause
                   </BrandButton>
-                  <BrandButton
-                    type="button"
-                    variant="outlineAccent"
-                    onClick={saveCurrentPrompt}
-                    fullWidth
+                  <div
+                    className={
+                      canShareMoment ? "grid grid-cols-2 gap-3" : "grid grid-cols-1"
+                    }
                   >
-                    {isPromptSaved ? "Saved to favorites" : "Save this prompt"}
-                  </BrandButton>
-                  <BrandButton
-                    type="button"
-                    onClick={() => router.push("/dashboard")}
-                    fullWidth
-                  >
-                    Go to my dashboard
-                  </BrandButton>
+                    <BrandButton
+                      type="button"
+                      variant="outlineAccent"
+                      onClick={saveCurrentPrompt}
+                      disabled={isPromptSaved}
+                      fullWidth
+                    >
+                      {isPromptSaved ? "Favorited" : "Favorite"}
+                    </BrandButton>
+                    {canShareMoment && (
+                      <BrandButton
+                        type="button"
+                        variant="outlineAccent"
+                        onClick={handleShareMoment}
+                        disabled={shareLoading}
+                        fullWidth
+                      >
+                        {shareLoading ? "Preparing..." : "Share"}
+                      </BrandButton>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
@@ -1509,14 +1500,25 @@ function SessionPageInner() {
                     Create a free account to save your tiny pauses and see them
                     grow over time.
                   </p>
-                  <BrandButton
-                    type="button"
-                    variant="outlineAccent"
-                    onClick={startAnotherRound}
-                    fullWidth
-                  >
-                    Try another one
-                  </BrandButton>
+                  <div className="grid grid-cols-2 gap-3">
+                    <BrandButton
+                      type="button"
+                      variant="outlineAccent"
+                      onClick={handleShareMoment}
+                      disabled={shareLoading}
+                      fullWidth
+                    >
+                      {shareLoading ? "Preparing..." : "Share"}
+                    </BrandButton>
+                    <BrandButton
+                      type="button"
+                      variant="outlineAccent"
+                      onClick={startAnotherRound}
+                      fullWidth
+                    >
+                      Try another
+                    </BrandButton>
+                  </div>
                 </>
               )}
             </div>
