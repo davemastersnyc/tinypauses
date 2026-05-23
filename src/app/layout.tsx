@@ -1,18 +1,29 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ServiceWorkerRegister } from "./service-worker-register";
+
+export const viewport: Viewport = {
+  themeColor: "#faf8f5",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://tinypauses.com"),
   title: "Tiny Pauses · Tiny mindful moments",
   description:
     "Tiny Pauses offers 2–3 minute, kid-friendly mindful prompts to help 9–12 year olds (and their grown‑ups) pause, notice, and reset. Learn more at tinypauses.com.",
+  applicationName: "Tiny Pauses",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Tiny Pauses",
+  },
   alternates: {
     canonical: "https://tinypauses.com",
   },
   icons: {
     icon: "/brand/SmileFavicon.png",
     shortcut: "/brand/SmileFavicon.png",
-    apple: "/brand/SmileFavicon.png",
+    apple: "/icons/apple-touch-icon.png",
   },
   openGraph: {
     title: "Tiny Pauses · Tiny mindful moments",
@@ -48,6 +59,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         {children}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
