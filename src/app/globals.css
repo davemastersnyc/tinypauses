@@ -250,6 +250,29 @@ h3 {
   animation: sproutPop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+@keyframes motifDrift {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.85);
+  }
+  25% {
+    opacity: 0.5;
+  }
+  75% {
+    opacity: 0.32;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-44px) scale(1);
+  }
+}
+
+.motif-drift {
+  animation-name: motifDrift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-orb,
   .brain-break-fade,
@@ -264,5 +287,10 @@ h3 {
   .theme-illustration,
   .sprout-pop {
     animation: none;
+  }
+
+  .motif-drift {
+    animation: none;
+    opacity: 0;
   }
 }

@@ -18,6 +18,7 @@ import {
   renderCardCanvas,
   preloadCardAssets,
 } from "@/lib/cardRenderer";
+import { getSeasonalPalette } from "@/lib/cardStyles";
 import {
   getFavorite,
   migrateLocalFavorites,
@@ -96,17 +97,27 @@ const moodFinishMessages: Record<number, { headline: string; body: string }> = {
   },
   3: {
     headline: "Okay is a perfectly good place to be.",
-    body: "You took a moment just for you. Notice one more thing around you that feels steady or calm before you go.",
+    body: "You took a moment just for you. Before you go, find one more thing around you that feels calm or safe.",
   },
   4: {
     headline: "Pretty good is worth holding onto.",
-    body: "Nice work taking this pause. Carry that bit of calm with you into whatever comes next.",
+    body: "Nice work taking this pause. Try to keep a little of this calm feeling with you for the next thing you do.",
   },
   5: {
     headline: "Really good. Soak it up.",
     body: "That is a lovely way to feel. Take one more slow breath and enjoy it before you move on.",
   },
 };
+
+// Soft seasonal flecks that drift up behind the done-screen card. Purely
+// decorative; hidden under prefers-reduced-motion (see globals.css).
+const driftMotifs = [
+  { left: "6%", size: 11, delay: "0s", duration: "8.5s" },
+  { left: "24%", size: 7, delay: "1.7s", duration: "10.5s" },
+  { left: "58%", size: 14, delay: "0.7s", duration: "9.3s" },
+  { left: "80%", size: 8, delay: "2.6s", duration: "11.2s" },
+  { left: "44%", size: 6, delay: "3.4s", duration: "9.9s" },
+] as const;
 
 const stepOrder = ["choose", "prompt", "mood", "done"] as const;
 const stepLabels: Record<(typeof stepOrder)[number], string> = {
@@ -997,6 +1008,8 @@ function SessionPageInner() {
     link.click();
   }
 
+  const seasonMotifColor = getSeasonalPalette(new Date()).motif;
+
   return (
     <PageShell maxWidth="md">
       <div
@@ -1264,14 +1277,33 @@ function SessionPageInner() {
           <BrandCard tone="accent">
           <div className="space-y-4 text-center">
             {doneCardUrl ? (
-              <div className="mx-auto w-full max-w-[244px]">
+              <div className="relative mx-auto w-full max-w-[244px]">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-[-18%] bottom-[-6%] top-[-24%] z-0 overflow-hidden"
+                >
+                  {driftMotifs.map((motif, index) => (
+                    <span
+                      key={index}
+                      className="motif-drift absolute bottom-0 rounded-full"
+                      style={{
+                        left: motif.left,
+                        width: `${motif.size}px`,
+                        height: `${motif.size}px`,
+                        backgroundColor: seasonMotifColor,
+                        animationDuration: motif.duration,
+                        animationDelay: motif.delay,
+                      }}
+                    />
+                  ))}
+                </div>
                 <Image
                   src={doneCardUrl}
                   alt="Your tiny pause card"
                   width={720}
                   height={720}
                   unoptimized
-                  className="sprout-pop w-full rounded-2xl border border-[color:var(--color-border-subtle)] shadow-[var(--shadow-soft)]"
+                  className="sprout-pop relative z-10 w-full rounded-2xl border border-[color:var(--color-border-subtle)] shadow-[var(--shadow-soft)]"
                 />
               </div>
             ) : (

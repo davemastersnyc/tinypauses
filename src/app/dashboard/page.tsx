@@ -24,6 +24,7 @@ import {
   type WrapUpPeriod,
   type WrapUpStats,
   fallbackCardText,
+  preloadCardAssets,
   renderCardBlob,
   renderCardCanvas,
 } from "@/lib/cardRenderer";
@@ -34,17 +35,6 @@ import {
   type FavoritePrompt,
 } from "@/lib/favorites";
 import { BrandButton, BrandCard, PageShell } from "../ui";
-
-const FAVORITE_KIND_LABELS: Record<string, string> = {
-  pause: "Just a pause",
-  "letting-go": "Letting go",
-  reflect: "Reflecting on today",
-  kindness: "Kindness",
-};
-
-function favoriteKindLabel(kind: string) {
-  return FAVORITE_KIND_LABELS[kind] ?? "Saved";
-}
 
 type DayEntry = { dateLabel: string; practiced: boolean };
 type MomentRow = {
@@ -216,7 +206,13 @@ function getWrapUpSummary(row: WrapUpRow) {
   return `${row.stats?.total_moments ?? 0} moments`;
 }
 
-function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
+function TimelineThumb({
+  metadata,
+  ready = true,
+}: {
+  metadata: CardMetadata;
+  ready?: boolean;
+}) {
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -234,10 +230,10 @@ function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
   }, []);
 
   const thumbUrl = useMemo(() => {
-    if (!visible) return null;
+    if (!visible || !ready) return null;
     const canvas = renderCardCanvas(metadata, 120);
     return canvas ? canvas.toDataURL("image/png") : null;
-  }, [visible, metadata]);
+  }, [visible, ready, metadata]);
 
   const fallbackText = fallbackCardText(metadata);
 
@@ -266,6 +262,92 @@ function TimelineThumb({ metadata }: { metadata: CardMetadata }) {
   );
 }
 
+function FavoriteCard({
+  favorite,
+  ready,
+  onReplay,
+  onRemove,
+}: {
+  favorite: FavoritePrompt;
+  ready: boolean;
+  onReplay: () => void;
+  onRemove: () => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const target = ref.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setVisible(true);
+      },
+      { rootMargin: "160px 0px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+
+  const metadata = useMemo<MomentCardMetadata>(
+    () => ({
+      type: "moment",
+      category: categoryFromKind(favorite.kind) ?? "Tiny pause",
+      promptName: favorite.title,
+      moodValue: null,
+      specialType: null,
+      specialKey: favorite.kind ?? null,
+    }),
+    [favorite],
+  );
+
+  const cardUrl = useMemo(() => {
+    if (!visible || !ready) return null;
+    const canvas = renderCardCanvas(metadata, 360);
+    return canvas ? canvas.toDataURL("image/png") : null;
+  }, [visible, ready, metadata]);
+
+  const fallback = fallbackCardText(metadata);
+
+  return (
+    <div ref={ref} className="group flex flex-col">
+      <button
+        type="button"
+        onClick={onReplay}
+        title="Do it again"
+        className="relative block w-full overflow-hidden rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
+      >
+        {cardUrl ? (
+          <Image
+            src={cardUrl}
+            alt={favorite.title}
+            width={360}
+            height={360}
+            unoptimized
+            className="aspect-square w-full object-cover"
+          />
+        ) : (
+          <div className="flex aspect-square w-full items-center justify-center p-3 text-center">
+            <p className="text-xs font-semibold text-[color:var(--color-primary)]/85">
+              {fallback.title}
+            </p>
+          </div>
+        )}
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-slate-900/45 to-transparent px-2 pb-2 pt-6 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+          Do it again
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="mt-1.5 self-center text-[11px] text-[color:var(--color-foreground)]/55 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
+      >
+        Remove
+      </button>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [greetingName, setGreetingName] = useState<string | null>(null);
@@ -290,6 +372,7 @@ export default function DashboardPage() {
   const [accountState, setAccountState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [emailState, setEmailState] = useState<"idle" | "saving" | "error">("idle");
   const [exporting, setExporting] = useState(false);
+  const [cardAssetsReady, setCardAssetsReady] = useState(false);
   const storyWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -297,6 +380,16 @@ export default function DashboardPage() {
     if (window.localStorage.getItem(dashboardNudgeKey) === "1") {
       setShowTogetherNudge(true);
     }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    preloadCardAssets().then(() => {
+      if (active) setCardAssetsReady(true);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -874,46 +967,19 @@ export default function DashboardPage() {
 
           {favorites.length > 0 && (
             <BrandCard>
-              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Saved prompts</p>
+              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your pause cards</p>
               <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
-                Prompts you kept to come back to.
+                Pauses you kept. Tap a card to do it again.
               </p>
-              <div className="mt-3 space-y-3">
+              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {favorites.map((favorite) => (
-                  <div
+                  <FavoriteCard
                     key={favorite.id}
-                    className="flex items-start gap-3 rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] p-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      {favorite.kind && (
-                        <p className="inline-flex rounded-full bg-[color:var(--color-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-ink-on-accent-soft)]">
-                          {favoriteKindLabel(favorite.kind)}
-                        </p>
-                      )}
-                      <p className="mt-1 truncate text-sm font-medium text-[color:var(--color-primary)]">
-                        {favorite.title}
-                      </p>
-                      <p className="mt-1 line-clamp-2 text-xs text-[color:var(--color-foreground)]/72">
-                        {favorite.body}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/session?favorite=${favorite.id}`)}
-                        className="rounded-[var(--radius-pill)] bg-[color:var(--color-accent)] px-4 py-2 text-xs font-semibold text-slate-900 transition hover:bg-[color:var(--color-accent)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
-                      >
-                        Do it again
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeSavedPrompt(favorite.id)}
-                        className="text-xs text-[color:var(--color-foreground)]/55 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
+                    favorite={favorite}
+                    ready={cardAssetsReady}
+                    onReplay={() => router.push(`/session?favorite=${favorite.id}`)}
+                    onRemove={() => removeSavedPrompt(favorite.id)}
+                  />
                 ))}
               </div>
             </BrandCard>
@@ -1069,7 +1135,7 @@ export default function DashboardPage() {
                     }}
                     className={wrapperClass}
                   >
-                    <TimelineThumb metadata={entry.metadata} />
+                    <TimelineThumb metadata={entry.metadata} ready={cardAssetsReady} />
                     <div className="min-w-0 flex-1">
                       {entry.kind === "moment" ? (
                         <>
