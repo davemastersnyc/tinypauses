@@ -5,16 +5,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-type AuthState = {
-  label: string | null;
-  signedIn: boolean;
-};
-
 export function AppNav() {
-  const [authState, setAuthState] = useState<AuthState>({
-    label: null,
-    signedIn: false,
-  });
+  const [signedIn, setSignedIn] = useState(false);
   const [authResolved, setAuthResolved] = useState(!supabase);
 
   useEffect(() => {
@@ -23,46 +15,12 @@ export function AppNav() {
     if (!supabase) return;
     const client = supabase;
 
-    async function getDisplayLabel(user: { id: string; email?: string | null }) {
-      const { data: profile } = await client
-        .from("profiles")
-        .select("adult_mode, display_name, child_name, nickname")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const adultMode = Boolean(profile?.adult_mode);
-      const displayName =
-        typeof profile?.display_name === "string" && profile.display_name.trim()
-          ? profile.display_name.trim()
-          : null;
-      const childName =
-        typeof profile?.child_name === "string" && profile.child_name.trim()
-          ? profile.child_name.trim()
-          : null;
-      const nickname =
-        typeof profile?.nickname === "string" && profile.nickname.trim()
-          ? profile.nickname.trim()
-          : null;
-
-      if (adultMode && displayName) return displayName;
-      if (!adultMode && childName) return childName;
-      if (displayName) return displayName;
-      if (childName) return childName;
-      if (nickname) return nickname;
-      return user.email ?? "Signed in";
-    }
-
     async function loadUser() {
       const {
         data: { user },
       } = await client.auth.getUser();
       if (!isMounted) return;
-
-      const label = user ? await getDisplayLabel(user) : null;
-      setAuthState({
-        label,
-        signedIn: Boolean(user),
-      });
+      setSignedIn(Boolean(user));
       setAuthResolved(true);
     }
 
@@ -70,18 +28,9 @@ export function AppNav() {
 
     const { data: listener } = client.auth.onAuthStateChange(
       (_event, session) => {
-        async function syncSessionState() {
-          if (!isMounted) return;
-          const user = session?.user ?? null;
-          const label = user ? await getDisplayLabel(user) : null;
-          setAuthState({
-            label,
-            signedIn: Boolean(user),
-          });
-          setAuthResolved(true);
-        }
-
-        syncSessionState();
+        if (!isMounted) return;
+        setSignedIn(Boolean(session?.user));
+        setAuthResolved(true);
       },
     );
 
@@ -91,22 +40,10 @@ export function AppNav() {
     };
   }, []);
 
-  function formatDisplayName(value: string | null) {
-    if (!value) return null;
-    if (value.includes("@")) return value;
-    return value
-      .trim()
-      .split(/\s+/)
-      .map((part) =>
-        part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part,
-      )
-      .join(" ");
-  }
-
   async function handleSignOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
-    setAuthState({ label: null, signedIn: false });
+    setSignedIn(false);
     window.location.href = "/";
   }
 
@@ -135,16 +72,14 @@ export function AppNav() {
           </Link>
           {!authResolved ? (
             <span className="inline-flex h-[30px] w-[128px] animate-pulse rounded-full bg-[color:var(--color-surface-soft)]" />
-          ) : authState.signedIn ? (
+          ) : signedIn ? (
             <>
               <Link
                 href="/dashboard"
                 title="Go to your dashboard"
-                className="max-w-[16rem] truncate rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)] transition hover:bg-[color:var(--color-accent-soft)]/70"
+                className="rounded-full bg-[color:var(--color-accent-soft)] px-3 py-1.5 text-[color:var(--color-ink-on-accent-soft)] transition hover:bg-[color:var(--color-accent-soft)]/70"
               >
-                {authState.label
-                  ? formatDisplayName(authState.label)
-                  : "Dashboard"}
+                Your pauses
               </Link>
               <button
                 type="button"
