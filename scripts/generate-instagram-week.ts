@@ -21,6 +21,10 @@ import {
   type MilestoneHit,
   type MilestoneKind,
 } from "../src/lib/social.ts";
+import {
+  resolveCardTheme,
+  drawCardIllustration,
+} from "../src/lib/cardIllustrations.ts";
 
 dotenv.config({ path: ".env.local" });
 
@@ -280,6 +284,9 @@ function parseForcedMilestone(raw: string | undefined): MilestoneHit | null {
 async function renderCards(cards: Card[], outputDir: string) {
   const iconBuffer = fs.readFileSync(BRAND_ICON_PATH);
   const iconDataUrl = `data:image/png;base64,${iconBuffer.toString("base64")}`;
+  // Serialize the shared illustration drawer so the headless cards stay
+  // identical to the in-app share card.
+  const illustrationSource = drawCardIllustration.toString();
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1080, height: 1080 } });
@@ -288,13 +295,17 @@ async function renderCards(cards: Card[], outputDir: string) {
   );
 
   for (const card of cards) {
+    const cardTheme = resolveCardTheme(card.label, card.specialKey);
     await page.evaluate(
-      async ({ cardData, icon }) => {
+      async ({ cardData, icon, illustrationSource, cardTheme }) => {
         const canvas = document.getElementById("card") as HTMLCanvasElement | null;
         if (!canvas) throw new Error("Card canvas element is missing.");
         const ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("2D canvas context is unavailable.");
         const size = 1080;
+        const drawCardIllustration = new Function(
+          "return (" + illustrationSource + ")",
+        )();
 
         function drawRoundedRect(
           context: CanvasRenderingContext2D,
@@ -325,37 +336,6 @@ async function renderCards(cards: Card[], outputDir: string) {
           if (lower.includes("kind")) return "#66cccc";
           if (lower.includes("pause")) return "#66cccc";
           return "#f97316";
-        }
-
-        function drawSprout(
-          context: CanvasRenderingContext2D,
-          centerX: number,
-          centerY: number,
-          color: string,
-        ) {
-          context.save();
-          context.strokeStyle = color;
-          context.fillStyle = color;
-          context.lineWidth = 14;
-          context.lineCap = "round";
-          context.beginPath();
-          context.moveTo(centerX, centerY + 40);
-          context.bezierCurveTo(
-            centerX - 4,
-            centerY - 18,
-            centerX + 4,
-            centerY - 62,
-            centerX,
-            centerY - 120,
-          );
-          context.stroke();
-          context.beginPath();
-          context.ellipse(centerX - 46, centerY - 118, 56, 30, -0.45, 0, Math.PI * 2);
-          context.fill();
-          context.beginPath();
-          context.ellipse(centerX + 46, centerY - 118, 56, 30, 0.45, 0, Math.PI * 2);
-          context.fill();
-          context.restore();
         }
 
         function drawFallbackSmileIcon(
@@ -407,7 +387,7 @@ async function renderCards(cards: Card[], outputDir: string) {
         ctx.textBaseline = "middle";
         ctx.fillText(badgeLabel, size / 2, badgeY + 40);
 
-        drawSprout(ctx, size / 2, 520, "#2f7e58");
+        drawCardIllustration(ctx, size / 2, 520, cardTheme);
 
         ctx.fillStyle = "#1b2438";
         ctx.font = "600 58px Inter, Avenir Next, Segoe UI, sans-serif";
@@ -436,7 +416,7 @@ async function renderCards(cards: Card[], outputDir: string) {
         ctx.font = "500 30px Inter, Avenir Next, Segoe UI, sans-serif";
         ctx.fillText("tinypauses.com", size / 2, 952);
       },
-      { cardData: card, icon: iconDataUrl },
+      { cardData: card, icon: iconDataUrl, illustrationSource, cardTheme },
     );
 
     await page.screenshot({

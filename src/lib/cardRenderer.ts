@@ -1,3 +1,5 @@
+import { drawCardIllustration, resolveCardTheme } from "./cardIllustrations";
+
 export type WrapUpPeriod = "weekly" | "monthly" | "yearly";
 
 export type WrapUpStats = {
@@ -136,7 +138,12 @@ function drawMomentCard(
     drawSpecialCornerIllustration(ctx, size - 170, 150, metadata.specialKey);
   }
 
-  drawSprout(ctx, size / 2, 520, "#2f7e58");
+  drawCardIllustration(
+    ctx,
+    size / 2,
+    520,
+    resolveCardTheme(metadata.category, metadata.specialKey),
+  );
 
   ctx.fillStyle = "#1b2438";
   ctx.font = "600 58px Inter, Avenir Next, Segoe UI, sans-serif";
@@ -525,33 +532,6 @@ function drawRoundedRect(
   ctx.arcTo(x, y + safeHeight, x, y, r);
   ctx.arcTo(x, y, x + safeWidth, y, r);
   ctx.closePath();
-}
-
-function drawSprout(
-  ctx: CanvasRenderingContext2D,
-  centerX: number,
-  centerY: number,
-  color: string,
-) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 14;
-  ctx.lineCap = "round";
-
-  ctx.beginPath();
-  ctx.moveTo(centerX, centerY + 40);
-  ctx.bezierCurveTo(centerX - 4, centerY - 18, centerX + 4, centerY - 62, centerX, centerY - 120);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.ellipse(centerX - 46, centerY - 118, 56, 30, -0.45, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.ellipse(centerX + 46, centerY - 118, 56, 30, 0.45, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
 }
 
 function badgeColorForCategory(category: string) {
