@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { BrandButton, BrandCard, BrandPill, PageShell } from "./ui";
+import { Testimonials } from "./testimonials";
 
 function KidsIcon() {
   return (
@@ -192,6 +193,8 @@ export default function Home() {
           </p>
         </BrandCard>
       </section>
+
+      <Testimonials />
 
       <BrandCard>
         <div className="flex flex-col items-stretch gap-4 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
