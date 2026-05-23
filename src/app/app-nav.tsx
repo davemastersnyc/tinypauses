@@ -137,13 +137,25 @@ export function AppNav() {
             href="/session"
             className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
           >
-            Moment
+            Try now
           </Link>
           <Link
             href="/dashboard"
             className="hidden rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] sm:inline-flex"
           >
             Dashboard
+          </Link>
+          <Link
+            href="/about"
+            className="hidden rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] sm:inline-flex"
+          >
+            About
+          </Link>
+          <Link
+            href="/privacy"
+            className="hidden rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] sm:inline-flex"
+          >
+            Privacy
           </Link>
           {!authResolved ? (
             <span className="inline-flex h-[30px] w-[128px] animate-pulse rounded-full bg-[color:var(--color-surface-soft)]" />

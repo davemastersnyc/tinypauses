@@ -131,33 +131,33 @@ export default function Home() {
               Designed for kids 9-12, with their grown-ups in mind.
             </p>
           )}
+          <div className="mx-auto mt-2 max-w-md rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-5 text-left shadow-[var(--shadow-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/70">
+              Here&apos;s what a tiny pause looks like
+            </p>
+            <p className="mt-2 text-base leading-relaxed text-[color:var(--color-foreground)]/90">
+              Look out a window or around the room. Find one thing that&apos;s
+              moving, like a tree, a cloud, or your own breath. Watch it for
+              three slow breaths.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-3 pt-1">
+            <BrandButton href="/session" variant="primary">
+              Try a tiny pause
+            </BrandButton>
+            <a
+              href={isSignedIn ? "/dashboard" : "/login"}
+              className="text-sm text-[color:var(--color-foreground)]/70 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
+            >
+              {isSignedIn
+                ? "Go to my dashboard"
+                : "Already have an account? Log in"}
+            </a>
+          </div>
         </div>
       </header>
 
-      <BrandCard>
-        <div className="flex flex-col items-stretch gap-4 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-7 sm:py-2">
-          <div className="space-y-2 text-sm text-[color:var(--color-foreground)]/85 sm:text-base">
-            <p className="font-medium text-[color:var(--color-primary)]">
-              Try today&apos;s practice.
-            </p>
-            <p>
-              Pick a quick prompt, take a tiny pause, and notice how you feel.
-              You can keep track over time, or just visit when you need a
-              breather.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <BrandButton href="/session" variant="primary">
-              Start a mindful moment
-            </BrandButton>
-            <BrandButton href={isSignedIn ? "/dashboard" : "/login"} variant="secondary">
-              {isSignedIn ? "Go to my dashboard" : "Log in to keep track"}
-            </BrandButton>
-          </div>
-        </div>
-      </BrandCard>
-
-      <section className="mt-16 grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
+      <section className="mt-8 grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
         <BrandCard tone="muted">
           <div className="-mx-6 -mt-6 mb-4 h-1 rounded-t-[var(--radius-card)] bg-[#66cccc]/45" />
           <KidsIcon />

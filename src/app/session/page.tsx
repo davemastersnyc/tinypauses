@@ -70,6 +70,34 @@ const moodOptions = [
   { value: 5, label: "Really good" },
 ];
 
+const defaultFinishMessage = {
+  headline: "Taking even one tiny pause like this is a big deal.",
+  body: "You can come back for another moment any time you like. For now, notice one more thing around you that makes you feel okay or safe.",
+};
+
+const moodFinishMessages: Record<number, { headline: string; body: string }> = {
+  1: {
+    headline: "Thank you for pausing, even on a hard day.",
+    body: "Feeling not great is okay. You showed up anyway, and that counts. Be gentle with yourself for the rest of today.",
+  },
+  2: {
+    headline: "A little off is still worth noticing.",
+    body: "You gave yourself a moment to check in. That is a kind thing to do. Come back whenever you need another tiny pause.",
+  },
+  3: {
+    headline: "Okay is a perfectly good place to be.",
+    body: "You took a moment just for you. Notice one more thing around you that feels steady or calm before you go.",
+  },
+  4: {
+    headline: "Pretty good is worth holding onto.",
+    body: "Nice work taking this pause. Carry that bit of calm with you into whatever comes next.",
+  },
+  5: {
+    headline: "Really good. Soak it up.",
+    body: "That is a lovely way to feel. Take one more slow breath and enjoy it before you move on.",
+  },
+};
+
 const stepOrder = ["choose", "prompt", "mood", "done"] as const;
 const stepLabels: Record<(typeof stepOrder)[number], string> = {
   choose: "Choose",
@@ -798,7 +826,8 @@ function SessionPageInner() {
       if (canShareFiles) {
         await nav.share({
           title: "Tiny Pauses",
-          text: "I took a tiny pause today.",
+          text: "I just took a two-minute tiny pause. Try your own:",
+          url: "https://tinypauses.com",
           files: [file],
         });
         return;
@@ -910,28 +939,28 @@ function SessionPageInner() {
             <button
               type="button"
               onClick={() => selectPromptKind("pause")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
             >
               Just a pause
             </button>
             <button
               type="button"
               onClick={() => selectPromptKind("letting-go")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
             >
               Letting go
             </button>
             <button
               type="button"
               onClick={() => selectPromptKind("reflect")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
             >
               Reflecting on today
             </button>
             <button
               type="button"
               onClick={() => selectPromptKind("kindness")}
-              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
+              className="rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
             >
               Kindness
             </button>
@@ -1036,7 +1065,7 @@ function SessionPageInner() {
                   setMood(option.value);
                   completeRegularSession(option.value);
                 }}
-                className={`flex flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition ${
+                className={`flex flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
                   mood === option.value
                     ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
                     : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
@@ -1054,7 +1083,7 @@ function SessionPageInner() {
               setMood(option.value);
               completeRegularSession(option.value);
             }}
-            className={`mt-3 flex w-full flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition ${
+            className={`mt-3 flex w-full flex-col items-center rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
               mood === moodOptions[4].value
                 ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
                 : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/85 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
@@ -1088,11 +1117,12 @@ function SessionPageInner() {
           <div className="space-y-4 text-center">
             <p className="text-4xl">🌱</p>
             <p className="text-base font-medium text-[color:var(--color-ink-on-accent-soft)]">
-              Taking even one tiny pause like this is a big deal.
+              {(mood !== null ? moodFinishMessages[mood] : defaultFinishMessage)
+                .headline}
             </p>
             <p className="text-sm text-[color:var(--color-ink-on-accent-soft)]/90">
-              You can come back for another moment any time you like. For now,
-              notice one more thing around you that makes you feel okay or safe.
+              {(mood !== null ? moodFinishMessages[mood] : defaultFinishMessage)
+                .body}
             </p>
             {(isSignedIn ? specialContext?.shareable !== false : true) && (
               <button

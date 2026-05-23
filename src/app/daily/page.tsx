@@ -83,7 +83,7 @@ export default function DailyPage() {
                   <p className="text-center text-xs text-[color:var(--color-foreground)]/62">
                     Want to save your moments too?{" "}
                     <Link
-                      href="/signup"
+                      href="/login"
                       className="underline decoration-[color:var(--color-foreground)]/38 underline-offset-2 hover:text-[color:var(--color-foreground)]/85"
                     >
                       Create a free account.

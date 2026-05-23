@@ -83,7 +83,7 @@ export function BrandButton({
     secondary:
       "border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] disabled:bg-[color:var(--color-surface-soft)]",
     outlineAccent:
-      "border border-[#66cccc] bg-white/70 text-[#66cccc] hover:bg-white disabled:opacity-70",
+      "border border-[#3aa6a6] bg-white/70 text-[#006b6b] hover:bg-white disabled:opacity-70",
     ghost:
       "bg-transparent text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]",
   };
