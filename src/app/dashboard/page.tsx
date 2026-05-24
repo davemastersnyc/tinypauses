@@ -360,6 +360,7 @@ export default function DashboardPage() {
   const [moodSessions, setMoodSessions] = useState<MoodSession[]>([]);
   const [wrapUps, setWrapUps] = useState<WrapUpRow[]>([]);
   const [showFullHistory, setShowFullHistory] = useState(false);
+  const [showStory, setShowStory] = useState(false);
   const [visibleTimelineCount, setVisibleTimelineCount] = useState(5);
   const [selectedCard, setSelectedCard] = useState<TimelineEntry | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
@@ -921,20 +922,26 @@ export default function DashboardPage() {
           <div className="h-9 w-44 animate-pulse rounded-xl bg-[color:var(--color-surface-soft)]" />
         )}
         <p className="text-sm text-[color:var(--color-foreground)]/80">
-          You can take a tiny mindful moment any time you like. We&apos;ll keep gentle track for you.
+          You can take a tiny pause any time you like. We&apos;ll keep gentle track for you.
         </p>
+        {totalMoments > 0 && (
+          <p className="text-sm font-medium text-[color:var(--color-accent)]">
+            {totalMoments} {totalMoments === 1 ? "tiny moment" : "tiny moments"} so
+            far, and counting.
+          </p>
+        )}
       </header>
 
       <BrandCard>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-[color:var(--color-primary)]">Ready for today&apos;s moment?</p>
+            <p className="text-sm font-medium text-[color:var(--color-primary)]">Ready for today&apos;s pause?</p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/85">
               It only takes a minute or two. After, you can see how many tiny pauses you&apos;ve taken this week.
             </p>
           </div>
           <BrandButton href="/session" variant="primary">
-            Take a mindful moment
+            Take today&apos;s pause
           </BrandButton>
         </div>
       </BrandCard>
@@ -969,7 +976,7 @@ export default function DashboardPage() {
           )}
           <BrandCard>
             <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">This week</p>
-            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">Every dot is a day you showed up for yourself.</p>
+            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">The days you paused this week. No need to fill them all.</p>
             <div className="mt-4 flex items-center justify-between gap-2">
               {week.map((day) => (
                 <div key={day.dateLabel} className="flex flex-col items-center">
@@ -1036,6 +1043,29 @@ export default function DashboardPage() {
                   />
                 )}
               </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[color:var(--color-foreground)]/60">
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: "rgba(71, 178, 158, 0.92)" }}
+                  />
+                  lighter
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: "rgba(204, 167, 109, 0.9)" }}
+                  />
+                  about the same
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: "rgba(125, 145, 168, 0.82)" }}
+                  />
+                  heavier
+                </span>
+              </div>
             </BrandCard>
           )}
 
@@ -1095,95 +1125,118 @@ export default function DashboardPage() {
 
           <BrandCard>
             <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your story so far</p>
-            <div
-              ref={storyWrapRef}
-              className="relative mt-3 overflow-x-auto rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 p-2"
-            >
-              {daysWithMomentsCount < 7 ? (
-                <p className="px-4 py-8 text-center text-sm text-[color:var(--color-foreground)]/68">{earlyStoryMessage}</p>
-              ) : (
-                <svg
-                  width={svgWidth}
-                  height={svgHeight}
-                  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                  role="img"
-                  aria-label="Moment history dots"
-                >
-                  {historyModel.dots.map((dot) => {
-                    const cx = pad + dot.weekIndex * cell + cell / 2;
-                    const cy = pad + dot.dayIndex * cell + cell / 2;
-                    const style = dot.moment
-                      ? moodDotStyle(dot.moment.mood_value)
-                      : { fill: "rgba(137, 146, 157, 0.16)", radius: 4.2 };
-                    return (
-                      <circle
-                        key={dot.dayKey}
-                        cx={cx}
-                        cy={cy}
-                        r={style.radius}
-                        fill={style.fill}
-                        className={dot.moment ? "cursor-pointer" : ""}
-                        onMouseEnter={(event) => {
-                          if (!dot.moment || !storyWrapRef.current) return;
-                          const rect = storyWrapRef.current.getBoundingClientRect();
-                          setActiveTooltip({
-                            x: event.clientX - rect.left + 10,
-                            y: event.clientY - rect.top - 10,
-                            dot,
-                          });
-                        }}
-                        onMouseMove={(event) => {
-                          if (!dot.moment || !storyWrapRef.current) return;
-                          const rect = storyWrapRef.current.getBoundingClientRect();
-                          setActiveTooltip({
-                            x: event.clientX - rect.left + 10,
-                            y: event.clientY - rect.top - 10,
-                            dot,
-                          });
-                        }}
-                        onMouseLeave={() => setActiveTooltip(null)}
-                      />
-                    );
-                  })}
-                </svg>
-              )}
-              {daysWithMomentsCount >= 7 && activeTooltip?.dot.moment && (
-                <div
-                  className="pointer-events-none absolute z-10 w-52 rounded-xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs text-[color:var(--color-foreground)] shadow-[var(--shadow-soft)]"
-                  style={{
-                    left: Math.min(Math.max(activeTooltip.x, 8), (storyWrapRef.current?.clientWidth ?? 240) - 220),
-                    top: Math.max(activeTooltip.y - 54, 8),
-                  }}
-                >
-                  <p className="font-medium">
-                    {activeTooltip.dot.date.toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                  <p className="mt-0.5 text-[color:var(--color-foreground)]/78">
-                    {resolveMomentCategory(activeTooltip.dot.moment)} ·{" "}
-                    {resolveMomentPrompt(activeTooltip.dot.moment)}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {daysWithMomentsCount >= 7 && historyModel.hasOlderHistory && !showFullHistory && (
+            {daysWithMomentsCount < 7 ? (
+              <p className="mt-3 rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 px-4 py-8 text-center text-sm text-[color:var(--color-foreground)]/68">
+                {earlyStoryMessage}
+              </p>
+            ) : !showStory ? (
               <button
                 type="button"
-                onClick={() => setShowFullHistory(true)}
+                onClick={() => setShowStory(true)}
                 className="mt-3 text-xs text-[color:var(--color-primary)]/78 underline decoration-[color:var(--color-primary)]/35 underline-offset-2 hover:text-[color:var(--color-primary)]"
               >
-                Show more
+                Show your story
               </button>
+            ) : (
+              <>
+                <div
+                  ref={storyWrapRef}
+                  className="relative mt-3 overflow-x-auto rounded-xl border border-[color:var(--color-border-subtle)]/65 bg-[color:var(--color-surface-soft)]/45 p-2"
+                >
+                  <svg
+                    width={svgWidth}
+                    height={svgHeight}
+                    viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                    role="img"
+                    aria-label="The days you took a pause"
+                  >
+                    {historyModel.dots.map((dot) => {
+                      // Presence only: never draw an empty day. A gap in a grid
+                      // reads as a missed day, the streak pressure we promise
+                      // not to create.
+                      if (!dot.moment) return null;
+                      const cx = pad + dot.weekIndex * cell + cell / 2;
+                      const cy = pad + dot.dayIndex * cell + cell / 2;
+                      const style = moodDotStyle(dot.moment.mood_value);
+                      return (
+                        <circle
+                          key={dot.dayKey}
+                          cx={cx}
+                          cy={cy}
+                          r={style.radius}
+                          fill={style.fill}
+                          className="cursor-pointer"
+                          onMouseEnter={(event) => {
+                            if (!storyWrapRef.current) return;
+                            const rect = storyWrapRef.current.getBoundingClientRect();
+                            setActiveTooltip({
+                              x: event.clientX - rect.left + 10,
+                              y: event.clientY - rect.top - 10,
+                              dot,
+                            });
+                          }}
+                          onMouseMove={(event) => {
+                            if (!storyWrapRef.current) return;
+                            const rect = storyWrapRef.current.getBoundingClientRect();
+                            setActiveTooltip({
+                              x: event.clientX - rect.left + 10,
+                              y: event.clientY - rect.top - 10,
+                              dot,
+                            });
+                          }}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                        />
+                      );
+                    })}
+                  </svg>
+                  {activeTooltip?.dot.moment && (
+                    <div
+                      className="pointer-events-none absolute z-10 w-52 rounded-xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-xs text-[color:var(--color-foreground)] shadow-[var(--shadow-soft)]"
+                      style={{
+                        left: Math.min(Math.max(activeTooltip.x, 8), (storyWrapRef.current?.clientWidth ?? 240) - 220),
+                        top: Math.max(activeTooltip.y - 54, 8),
+                      }}
+                    >
+                      <p className="font-medium">
+                        {activeTooltip.dot.date.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                      <p className="mt-0.5 text-[color:var(--color-foreground)]/78">
+                        {resolveMomentCategory(activeTooltip.dot.moment)} ·{" "}
+                        {resolveMomentPrompt(activeTooltip.dot.moment)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 flex items-center gap-4">
+                  {historyModel.hasOlderHistory && !showFullHistory && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFullHistory(true)}
+                      className="text-xs text-[color:var(--color-primary)]/78 underline decoration-[color:var(--color-primary)]/35 underline-offset-2 hover:text-[color:var(--color-primary)]"
+                    >
+                      Show more
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowStory(false)}
+                    className="text-xs text-[color:var(--color-foreground)]/62 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
+                  >
+                    Hide
+                  </button>
+                </div>
+              </>
             )}
           </BrandCard>
 
           {totalMoments > 0 && (
             <BrandCard>
-              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your check-ins</p>
+              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your recent pauses</p>
               <div className="mt-3 space-y-3">
                 {visibleEntries.map((entry) => {
                   const isBrainBreak =
@@ -1286,7 +1339,7 @@ export default function DashboardPage() {
           <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
             {totalMoments === 0
               ? "Everyone starts somewhere. Your first tiny moment is waiting."
-              : "That's how many mindful moments you've taken overall. Each one is a small, real win."}
+              : "That's how many moments you've kept so far. It only grows. Each one is a small, real win."}
           </p>
         </BrandCard>
       </section>
