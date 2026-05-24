@@ -329,12 +329,36 @@ export default function Home() {
             </p>
           )}
           <div className="flex flex-col items-center gap-3 pt-1">
-            <BrandButton href="/session?start=brain-break" variant="primary">
-              Start a Brain Break
-            </BrandButton>
-            <BrandButton href="/session" variant="secondary">
-              Or take a tiny pause
-            </BrandButton>
+            <div className="grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
+              <a
+                href="/session?start=brain-break"
+                className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[color:var(--color-accent)]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-accent)]/12 transition group-hover:bg-[color:var(--color-accent)]/20">
+                  <BrainBreakBoltIcon />
+                </span>
+                <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                  Start a Brain Break
+                </span>
+                <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                  Shake it out and reset in 90 seconds
+                </span>
+              </a>
+              <a
+                href="/session"
+                className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc]"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
+                  <PauseLeafIcon />
+                </span>
+                <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                  Take a tiny pause
+                </span>
+                <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                  A quiet moment to notice how you feel
+                </span>
+              </a>
+            </div>
             <a
               href={isSignedIn ? "/dashboard" : "/login"}
               className="text-sm text-[color:var(--color-foreground)]/70 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
