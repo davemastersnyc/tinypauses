@@ -78,14 +78,26 @@ function GentleTrackIcon() {
 export default function Home() {
   const [hideKidsLine, setHideKidsLine] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  // Returning = signed in, or has taken a pause before (the session sets this
+  // local flag on first visit). Returning visitors skip the marketing pitch and
+  // land straight on "take today's pause".
+  const [isReturning, setIsReturning] = useState(false);
 
   useEffect(() => {
-    async function checkAdultMode() {
-      if (!supabase) return;
+    const visited =
+      typeof window !== "undefined" &&
+      window.localStorage.getItem("tinyPauses.hasVisited") === "1";
+    async function checkState() {
+      if (!supabase) {
+        setIsReturning(visited);
+        return;
+      }
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setIsSignedIn(Boolean(user));
+      const signedIn = Boolean(user);
+      setIsSignedIn(signedIn);
+      setIsReturning(signedIn || visited);
       if (!user) {
         setHideKidsLine(false);
         return;
@@ -97,7 +109,7 @@ export default function Home() {
         .maybeSingle();
       setHideKidsLine(Boolean(profile?.adult_mode));
     }
-    checkAdultMode();
+    checkState();
   }, []);
 
   return (
@@ -116,6 +128,30 @@ export default function Home() {
             priority
             className="mx-auto h-auto w-44 sm:w-56"
           />
+          {isReturning ? (
+            <>
+              <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
+                Welcome back.
+              </h1>
+              <p className="mx-auto max-w-xl text-balance text-base text-[color:var(--color-foreground)]/80 sm:text-lg">
+                Ready for today&apos;s pause? It only takes a minute or two.
+              </p>
+              <div className="flex flex-col items-center gap-3 pt-1">
+                <BrandButton href="/session" variant="primary">
+                  Take today&apos;s pause
+                </BrandButton>
+                <a
+                  href={isSignedIn ? "/dashboard" : "/login"}
+                  className="text-sm text-[color:var(--color-foreground)]/70 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
+                >
+                  {isSignedIn
+                    ? "Go to my dashboard"
+                    : "Save your pauses — create a free account"}
+                </a>
+              </div>
+            </>
+          ) : (
+          <>
           <BrandPill>TINY PAUSES · TINY MINDFUL MOMENTS</BrandPill>
           <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
             2–3 minutes.{" "}
@@ -155,9 +191,13 @@ export default function Home() {
               three slow breaths.
             </p>
           </div>
+          </>
+          )}
         </div>
       </header>
 
+      {!isReturning && (
+        <>
       <section className="mt-8 grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
         <BrandCard tone="muted">
           <div className="-mx-6 -mt-6 mb-4 h-1 rounded-t-[var(--radius-card)] bg-[#66cccc]/45" />
@@ -195,6 +235,8 @@ export default function Home() {
       </section>
 
       <Testimonials />
+        </>
+      )}
 
       <BrandCard>
         <div className="flex flex-col items-stretch gap-4 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
