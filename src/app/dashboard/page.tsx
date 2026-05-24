@@ -34,6 +34,7 @@ import {
   removeFavorite,
   type FavoritePrompt,
 } from "@/lib/favorites";
+import { buildMoodReflection, type MoodSession } from "@/lib/moodReflection";
 import { BrandButton, BrandCard, PageShell } from "../ui";
 
 type DayEntry = { dateLabel: string; practiced: boolean };
@@ -356,6 +357,7 @@ export default function DashboardPage() {
   const [showTogetherNudge, setShowTogetherNudge] = useState(false);
   const [childNameForNudge, setChildNameForNudge] = useState<string | null>(null);
   const [moments, setMoments] = useState<MomentRow[]>([]);
+  const [moodSessions, setMoodSessions] = useState<MoodSession[]>([]);
   const [wrapUps, setWrapUps] = useState<WrapUpRow[]>([]);
   const [showFullHistory, setShowFullHistory] = useState(false);
   const [visibleTimelineCount, setVisibleTimelineCount] = useState(5);
@@ -478,6 +480,29 @@ export default function DashboardPage() {
         setWrapUps([]);
       }
 
+      // Before/after mood per pause, for the gentle "how pauses land"
+      // reflection. Separate from the moments query, which only carries the
+      // after-mood. Capped since the reflection only looks at a recent window.
+      const { data: moodRows } = await supabase
+        .from("sessions")
+        .select("mood_before, mood_after, completed_at")
+        .eq("user_id", user.id)
+        .order("completed_at", { ascending: false })
+        .limit(180);
+      setMoodSessions(
+        ((moodRows ?? []) as Array<{
+          mood_before: number | null;
+          mood_after: number | null;
+          completed_at: string | null;
+        }>)
+          .filter((row) => Boolean(row.completed_at))
+          .map((row) => ({
+            moodBefore: row.mood_before,
+            moodAfter: row.mood_after,
+            completedAt: row.completed_at as string,
+          })),
+      );
+
       setUserId(user.id);
       await migrateLocalFavorites(supabase, user.id);
       try {
@@ -591,6 +616,11 @@ export default function DashboardPage() {
 
   const totalMoments = moments.length;
   const daysWithMomentsCount = latestMomentByDay.size;
+
+  const moodReflection = useMemo(
+    () => buildMoodReflection(moodSessions),
+    [moodSessions],
+  );
 
   const week = useMemo(() => {
     const recentByDay = new Set<string>();
@@ -964,6 +994,50 @@ export default function DashboardPage() {
               <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">Your first tiny pause will show up here.</p>
             )}
           </BrandCard>
+
+          {moodReflection && (
+            <BrandCard>
+              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
+                How your pauses tend to land
+              </p>
+              <p className="mt-2 text-base font-medium text-[color:var(--color-primary)]">
+                {moodReflection.headline}
+              </p>
+              <p className="mt-1 text-sm text-[color:var(--color-foreground)]/82">
+                {moodReflection.body}
+              </p>
+              <div
+                className="mt-4 flex h-2 overflow-hidden rounded-full bg-[color:var(--color-surface-soft)]"
+                role="img"
+                aria-label={`Of ${moodReflection.measured} recent pauses, ${moodReflection.lifted} left you lighter, ${moodReflection.steady} about the same, and ${moodReflection.softened} heavier.`}
+              >
+                {moodReflection.lifted > 0 && (
+                  <span
+                    style={{
+                      width: `${(moodReflection.lifted / moodReflection.measured) * 100}%`,
+                      backgroundColor: "rgba(71, 178, 158, 0.92)",
+                    }}
+                  />
+                )}
+                {moodReflection.steady > 0 && (
+                  <span
+                    style={{
+                      width: `${(moodReflection.steady / moodReflection.measured) * 100}%`,
+                      backgroundColor: "rgba(204, 167, 109, 0.9)",
+                    }}
+                  />
+                )}
+                {moodReflection.softened > 0 && (
+                  <span
+                    style={{
+                      width: `${(moodReflection.softened / moodReflection.measured) * 100}%`,
+                      backgroundColor: "rgba(125, 145, 168, 0.82)",
+                    }}
+                  />
+                )}
+              </div>
+            </BrandCard>
+          )}
 
           {favorites.length > 0 && (
             <BrandCard>
