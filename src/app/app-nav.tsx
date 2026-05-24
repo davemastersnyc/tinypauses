@@ -65,6 +65,12 @@ export function AppNav() {
 
         <div className="flex flex-wrap items-center gap-2 text-xs sm:justify-end">
           <Link
+            href="/for-classrooms"
+            className="px-2 py-1.5 text-[color:var(--color-primary)]/80 hover:text-[color:var(--color-primary)]"
+          >
+            For classrooms
+          </Link>
+          <Link
             href="/session"
             className="rounded-full border border-[color:var(--color-border-subtle)] px-3 py-1.5 text-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)]"
           >

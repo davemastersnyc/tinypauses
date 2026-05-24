@@ -25,6 +25,16 @@ export default function ForClassroomsPage() {
           </p>
         </section>
 
+        <section className="rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] px-5 py-4">
+          <p className="text-base font-semibold text-[color:var(--color-primary)]">
+            No student accounts. No ads. No tracking kids. No streaks.
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/72">
+            Nothing for kids to log into, and nothing sold. You run it, the room
+            follows along.
+          </p>
+        </section>
+
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight text-[color:var(--color-primary)]">
             How it helps in class
@@ -65,25 +75,53 @@ export default function ForClassroomsPage() {
           </div>
         </section>
 
+        <section className="space-y-4">
+          <h2 className="text-2xl font-semibold tracking-tight text-[color:var(--color-primary)]">
+            When to use it
+          </h2>
+          <ul className="grid gap-2.5 sm:grid-cols-2">
+            {[
+              "Right after recess, when bodies are still buzzing",
+              "Before a test, when nerves are running high",
+              "During a noisy transition between subjects",
+              "After a conflict, when the room feels tense",
+              "Any time the room gets wiggly and restless",
+              "When one kid needs a reset and the whole class could use one too",
+            ].map((moment) => (
+              <li
+                key={moment}
+                className="flex items-start gap-2.5 rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] px-4 py-3 text-sm leading-relaxed text-[color:var(--color-foreground)]/85"
+              >
+                <span
+                  aria-hidden="true"
+                  className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[color:var(--color-accent)]"
+                />
+                {moment}
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <section className="space-y-4 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-6">
           <h2 className="text-xl font-semibold tracking-tight text-[color:var(--color-primary)]">
-            The classroom version is in the works
+            Join the teacher pilot
           </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            We are building a teacher view, printable pause cards, and a simple
-            way to run a pause for the whole room. If you teach kids 9-12 and
-            want to help shape it, we would love to hear from you.
+            The whole-class board mode is still being built. If you teach kids
+            9-12, you can be one of the first classrooms to try it and help shape
+            how it works. Tell us a little about your room and we will be in
+            touch.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-            <BrandButton href="/daily" variant="primary">
-              Get a daily pause to try
-            </BrandButton>
-            <a
-              href="mailto:hello@tinypauses.com?subject=Tiny%20Pauses%20for%20my%20classroom"
-              className="text-sm font-medium text-[color:var(--color-primary)] underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-accent)]"
+            <BrandButton
+              href="mailto:hello@tinypauses.com?subject=Tiny%20Pauses%20teacher%20pilot&body=Grade%20I%20teach%3A%0AClass%20size%3A%0AWhat%20I%20would%20use%20it%20for%3A"
+              variant="primary"
             >
-              Email us about your classroom
-            </a>
+              Join the pilot
+            </BrandButton>
+            <BrandButton href="/daily" variant="secondary">
+              Try a daily pause first
+            </BrandButton>
           </div>
         </section>
 
