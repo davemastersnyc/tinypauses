@@ -119,8 +119,8 @@ export default function ForClassroomsPage() {
             >
               Join the pilot
             </BrandButton>
-            <BrandButton href="/daily" variant="secondary">
-              Try a daily pause first
+            <BrandButton href="/session" variant="secondary">
+              Try a pause first
             </BrandButton>
           </div>
         </section>
