@@ -224,6 +224,11 @@ const togetherBannerKey = "tinyPauses.showTogetherBanner";
 const togetherSessionKey = "tinyPauses.firstTogetherSession";
 const pendingMomentKey = "pending_moment";
 const firstVisitKey = "tinyPauses.hasVisited";
+// Set only once a pause (or brain break) is actually completed, never on mere
+// page open. The homepage uses this to decide between the new-visitor pitch and
+// the lightweight "welcome back" resume, so opening the session and bouncing
+// must not strip the acquisition story.
+const completedPauseKey = "tinyPauses.hasCompletedPause";
 
 // Recently-shown prompt ids, kept locally so a kid does not see the same
 // prompt twice in a row now that the library is large. Global across kinds.
@@ -460,8 +465,14 @@ function SessionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<
-    "feeling" | "choose" | "prompt" | "mood" | "done"
-  >("feeling");
+    "start" | "feeling" | "choose" | "prompt" | "mood" | "done"
+  >(() =>
+    // Special/favorite deep-links jump straight to a prompt, and ?start=brain-break
+    // switches modes, so only a cold open should land on the entry fork.
+    searchParams.get("specialType") || searchParams.get("favorite")
+      ? "feeling"
+      : "start",
+  );
   const [mode, setMode] = useState<"regular" | "brain-break">("regular");
   const [mood, setMood] = useState<number | null>(null);
   const [moodBefore, setMoodBefore] = useState<number | null>(null);
@@ -496,11 +507,13 @@ function SessionPageInner() {
   const brainBreakAudioContextRef = useRef<AudioContext | null>(null);
   const brainBreakOscillatorRef = useRef<OscillatorNode | null>(null);
   const brainBreakGainRef = useRef<GainNode | null>(null);
+  const autostartedBrainBreakRef = useRef(false);
 
   const accentByStep: Record<
-    "feeling" | "choose" | "prompt" | "mood" | "done",
+    "start" | "feeling" | "choose" | "prompt" | "mood" | "done",
     string
   > = {
+    start: "#66cccc",
     feeling: "#66cccc",
     choose: "#66cccc",
     prompt: "#66cccc",
@@ -721,6 +734,22 @@ function SessionPageInner() {
     }
   }, []);
 
+  // Deep-link: /session?start=brain-break drops straight into the Brain Break
+  // intro, so a homepage CTA (or a bookmarked/classroom link) can skip the
+  // feeling and choose screens. Ref-guarded so a searchParams re-emit can never
+  // yank a kid back into Brain Break mid-session. Mirrors startBrainBreak().
+  useEffect(() => {
+    if (autostartedBrainBreakRef.current) return;
+    if (searchParams.get("start") === "brain-break") {
+      autostartedBrainBreakRef.current = true;
+      setMode("brain-break");
+      setBrainBreakStep(-1);
+      setBrainBreakShowFinishActions(false);
+      setBrainBreakLogged(false);
+      setShowBrainBreakNudge(false);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (mode !== "regular" || step !== "choose") {
       setShowBrainBreakNudge(false);
@@ -735,6 +764,9 @@ function SessionPageInner() {
   const recordBrainBreakCompletion = useCallback(async () => {
     if (brainBreakLogged) return;
     setBrainBreakLogged(true);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(completedPauseKey, "1");
+    }
     if (!supabase || !userId) return;
     try {
       const completedAt = new Date().toISOString();
@@ -923,7 +955,7 @@ function SessionPageInner() {
   }
 
   function goToStep(
-    target: "feeling" | "choose" | "prompt" | "mood" | "done",
+    target: "start" | "feeling" | "choose" | "prompt" | "mood" | "done",
   ) {
     setStep(target);
   }
@@ -1023,6 +1055,9 @@ function SessionPageInner() {
       window.sessionStorage.removeItem(togetherBannerKey);
     }
     setMilestoneThreshold(null);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(completedPauseKey, "1");
+    }
     storePendingMoment(selectedMood);
     recordSession(selectedMood);
     setStep("done");
@@ -1233,6 +1268,49 @@ function SessionPageInner() {
       >
         {mode === "regular" ? (
           <>
+        {step === "start" && (
+          <div className="space-y-5">
+            <header className="space-y-2 text-center">
+              <h1 className="text-2xl font-semibold leading-tight text-[color:var(--color-primary)]">
+                What do you need right now?
+              </h1>
+              <p className="text-sm text-[color:var(--color-foreground)]/80">
+                Pick whatever feels right. There&apos;s no wrong choice.
+              </p>
+            </header>
+            <BrandCard>
+              <button
+                type="button"
+                onClick={startBrainBreak}
+                className="w-full rounded-2xl border border-[#66cccc] bg-[#66cccc]/20 px-4 py-4 text-left transition hover:bg-[#66cccc]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66cccc]"
+              >
+                <p className="text-base font-bold text-[#006666]">Brain Break</p>
+                <p className="mt-0.5 text-sm text-[#006666]">
+                  Feeling like a lot? A 90-second reset to slow your brain down.
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep("feeling")}
+                className="mt-3 w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-4 text-left transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]"
+              >
+                <p className="text-base font-bold text-[color:var(--color-primary)]">
+                  Take a tiny pause
+                </p>
+                <p className="mt-0.5 text-sm text-[color:var(--color-foreground)]/80">
+                  A two-minute mindful moment. Notice, breathe, reset.
+                </p>
+              </button>
+              <Link
+                href="/"
+                className="mx-auto mt-4 block text-center text-xs text-[color:var(--color-foreground)]/62 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
+              >
+                Maybe later
+              </Link>
+            </BrandCard>
+          </div>
+        )}
+        {step !== "start" && (
         <header className="text-center space-y-1.5">
           {step !== "choose" && step !== "feeling" && (
             <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium tracking-wide text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
@@ -1260,28 +1338,48 @@ function SessionPageInner() {
                     : "You just took a tiny pause.")}
           </h1>
           <div className="mx-auto h-1 w-16 rounded-full bg-[color:var(--color-accent)]" />
-          <div className="mx-auto mt-3 flex max-w-sm items-center justify-between gap-2">
-            {stepOrder.map((s, idx) => {
-              const activeIndex = stepOrder.indexOf(step);
-              const isComplete = idx <= activeIndex;
+          <nav aria-label="Your progress through this pause" className="mx-auto mt-3 max-w-sm">
+            <ol className="flex items-center justify-between gap-2">
+              {stepOrder.map((s, idx) => {
+                const activeIndex = stepOrder.indexOf(step);
+                const isCurrent = idx === activeIndex;
+                const isComplete = idx < activeIndex;
+                const stateLabel = isComplete
+                  ? ", completed"
+                  : isCurrent
+                    ? ""
+                    : ", not done yet";
 
-              return (
-                <div key={s} className="flex flex-1 flex-col items-center gap-1">
-                  <span
-                    className={`h-2 w-full rounded-full ${
-                      isComplete
-                        ? "bg-[color:var(--color-accent)]"
-                        : "bg-[color:var(--color-surface-soft)]"
-                    }`}
-                  />
-                  <span className="text-[10px] uppercase tracking-wide text-[color:var(--color-foreground)]/60">
-                    {stepLabels[s]}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                return (
+                  <li
+                    key={s}
+                    aria-current={isCurrent ? "step" : undefined}
+                    className="flex flex-1 flex-col items-center gap-1"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`h-2 w-full rounded-full ${
+                        idx <= activeIndex
+                          ? "bg-[color:var(--color-accent)]"
+                          : "bg-[color:var(--color-surface-soft)]"
+                      }`}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="text-[10px] uppercase tracking-wide text-[color:var(--color-foreground)]/60"
+                    >
+                      {stepLabels[s]}
+                    </span>
+                    <span className="sr-only">
+                      {`Step ${idx + 1} of ${stepOrder.length}: ${stepLabels[s]}${stateLabel}`}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
         </header>
+        )}
 
         {step === "feeling" && (
           <BrandCard>
@@ -1327,23 +1425,22 @@ function SessionPageInner() {
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={startBrainBreak}
-              className="mt-4 w-full rounded-2xl border border-[#66cccc] bg-[#66cccc]/20 px-4 py-3 text-left transition hover:bg-[#66cccc]/30"
-            >
-              <p className="text-sm font-bold text-[#006666]">Brain Break</p>
-              <p className="mt-0.5 text-xs text-[#006666]">
-                Feeling like a lot? Slow your brain down first.
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep("choose")}
-              className="mx-auto mt-4 block text-xs text-[color:var(--color-foreground)]/62 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 transition hover:text-[color:var(--color-primary)]"
-            >
-              Skip for now
-            </button>
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setStep("start")}
+                className="text-xs text-[color:var(--color-foreground)]/62 transition hover:text-[color:var(--color-primary)]"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep("choose")}
+                className="text-xs text-[color:var(--color-foreground)]/62 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 transition hover:text-[color:var(--color-primary)]"
+              >
+                Skip for now
+              </button>
+            </div>
           </BrandCard>
         )}
 
@@ -1636,8 +1733,9 @@ function SessionPageInner() {
                     Keep this moment
                   </BrandButton>
                   <p className="px-1 text-center text-xs text-[color:var(--color-foreground)]/68">
-                    Create a free account to save your tiny pauses and see them
-                    grow over time.
+                    Create a free grown-up account and we&apos;ll save this exact
+                    moment, waiting for you when you sign in. Parent-held, no ads,
+                    nothing sold.
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <BrandButton
@@ -1718,7 +1816,7 @@ function SessionPageInner() {
                   <p className="text-xs font-medium tracking-wide text-[#66cccc]/80">
                     Step {brainBreakStep + 1} of 6
                   </p>
-                  <div className="flex items-center gap-1.5">
+                  <div aria-hidden="true" className="flex items-center gap-1.5">
                     {brainBreakSteps.map((_, idx) => (
                       <span
                         key={idx}

@@ -73,6 +73,40 @@ export default function DailyPage() {
             </p>
           </header>
 
+          {status !== "success" && (
+            <div className="mx-auto max-w-md text-left">
+              <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-[color:var(--color-foreground)]/55">
+                Here&apos;s what tomorrow morning looks like
+              </p>
+              <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] shadow-[var(--shadow-soft)]">
+                <div className="border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] px-4 py-2">
+                  <p className="text-xs text-[color:var(--color-foreground)]/60">
+                    Tiny Pauses · Today&apos;s tiny pause ✨
+                  </p>
+                </div>
+                <div className="space-y-2 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#11756a]">
+                    Just a pause
+                  </p>
+                  <p className="text-lg font-semibold text-[color:var(--color-primary)]">
+                    Color Hunt
+                  </p>
+                  <p className="text-sm text-[color:var(--color-foreground)]/80">
+                    Look around the room and quietly name three things you can
+                    see that are blue or green.
+                  </p>
+                  <p className="text-sm text-[color:var(--color-foreground)]/80">
+                    <span className="font-semibold text-[color:var(--color-primary)]">
+                      Your tiny step:
+                    </span>{" "}
+                    Take three slow breaths. With each breath, gently focus your
+                    eyes on one of the colors you found.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <BrandCard>
             {status === "success" ? (
               <div className="space-y-3">
@@ -86,7 +120,7 @@ export default function DailyPage() {
                       href="/login"
                       className="underline decoration-[color:var(--color-foreground)]/38 underline-offset-2 hover:text-[color:var(--color-foreground)]/85"
                     >
-                      Create a free account.
+                      Create a free grown-up account.
                     </Link>
                   </p>
                 )}
@@ -97,7 +131,7 @@ export default function DailyPage() {
                   htmlFor="daily-email"
                   className="block text-sm font-medium text-[color:var(--color-primary)]"
                 >
-                  Your email address
+                  Grown-up&apos;s email
                 </label>
                 <input
                   id="daily-email"
@@ -105,7 +139,7 @@ export default function DailyPage() {
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="Your email address"
+                  placeholder="grown-up@example.com"
                   className="w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-primary)] shadow-sm outline-none placeholder:text-[color:var(--color-foreground)]/40 focus:border-[color:var(--color-accent)] focus:ring-2 focus:ring-[color:var(--color-accent-soft)]"
                 />
                 <BrandButton type="submit" fullWidth disabled={status === "loading"}>

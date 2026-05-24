@@ -78,15 +78,19 @@ function GentleTrackIcon() {
 export default function Home() {
   const [hideKidsLine, setHideKidsLine] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
-  // Returning = signed in, or has taken a pause before (the session sets this
-  // local flag on first visit). Returning visitors skip the marketing pitch and
-  // land straight on "take today's pause".
+  // Returning = signed in, or has completed a pause before (the session sets
+  // this flag only on completion, not on page open). Returning visitors skip the
+  // marketing pitch and land straight on "take today's pause"; first-timers who
+  // open the session and bounce still get the full story.
   const [isReturning, setIsReturning] = useState(false);
+  // A returning visitor can opt back into the full new-visitor story without
+  // losing their place. Not persisted; it only affects this view.
+  const [wantsStory, setWantsStory] = useState(false);
 
   useEffect(() => {
     const visited =
       typeof window !== "undefined" &&
-      window.localStorage.getItem("tinyPauses.hasVisited") === "1";
+      window.localStorage.getItem("tinyPauses.hasCompletedPause") === "1";
     async function checkState() {
       if (!supabase) {
         setIsReturning(visited);
@@ -128,16 +132,19 @@ export default function Home() {
             priority
             className="mx-auto h-auto w-44 sm:w-56"
           />
-          {isReturning ? (
+          {isReturning && !wantsStory ? (
             <>
               <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
                 Welcome back.
               </h1>
               <p className="mx-auto max-w-xl text-balance text-base text-[color:var(--color-foreground)]/80 sm:text-lg">
-                Ready for today&apos;s pause? It only takes a minute or two.
+                What do you need right now?
               </p>
               <div className="flex flex-col items-center gap-3 pt-1">
-                <BrandButton href="/session" variant="primary">
+                <BrandButton href="/session?start=brain-break" variant="primary">
+                  Brain Break in 90 seconds
+                </BrandButton>
+                <BrandButton href="/session" variant="secondary">
                   Take today&apos;s pause
                 </BrandButton>
                 <a
@@ -146,22 +153,30 @@ export default function Home() {
                 >
                   {isSignedIn
                     ? "Go to my dashboard"
-                    : "Save your pauses — create a free account"}
+                    : "Save your pauses, create a free account"}
                 </a>
+                <button
+                  type="button"
+                  onClick={() => setWantsStory(true)}
+                  className="text-xs text-[color:var(--color-foreground)]/55 underline decoration-[color:var(--color-foreground)]/25 underline-offset-2 hover:text-[color:var(--color-primary)]"
+                >
+                  New here? See how it works
+                </button>
               </div>
             </>
           ) : (
           <>
           <BrandPill>TINY PAUSES · TINY MINDFUL MOMENTS</BrandPill>
           <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
-            2–3 minutes.{" "}
+            A{" "}
             <span className="text-[color:var(--color-accent)]">
-              Just for you.
-            </span>
+              90-second reset
+            </span>{" "}
+            for when things feel like too much.
           </h1>
           <p className="mx-auto max-w-xl text-balance text-base text-[color:var(--color-foreground)]/80 sm:text-lg">
-            No writing. No talking. Just a tiny pause to help your brain and
-            body reset, one gentle moment at a time.
+            Move, shake it out, breathe. Plus tiny mindful moments whenever you
+            want one. No writing, no streaks, no pressure.
           </p>
           {!hideKidsLine && (
             <p className="mx-auto max-w-xl text-balance text-sm text-[color:var(--color-foreground)]/62">
@@ -169,8 +184,11 @@ export default function Home() {
             </p>
           )}
           <div className="flex flex-col items-center gap-3 pt-1">
-            <BrandButton href="/session" variant="primary">
-              Try a tiny pause
+            <BrandButton href="/session?start=brain-break" variant="primary">
+              Start a Brain Break
+            </BrandButton>
+            <BrandButton href="/session" variant="secondary">
+              Or take a tiny pause
             </BrandButton>
             <a
               href={isSignedIn ? "/dashboard" : "/login"}
@@ -183,12 +201,12 @@ export default function Home() {
           </div>
           <div className="mx-auto mt-2 max-w-md rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-5 text-left shadow-[var(--shadow-soft)]">
             <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/70">
-              Here&apos;s what a tiny pause looks like
+              Here&apos;s what a Brain Break looks like
             </p>
             <p className="mt-2 text-base leading-relaxed text-[color:var(--color-foreground)]/90">
-              Look out a window or around the room. Find one thing that&apos;s
-              moving, like a tree, a cloud, or your own breath. Watch it for
-              three slow breaths.
+              Shake your hands out like you&apos;re flicking off water. Stomp
+              your feet. Squeeze your fists tight, then let go. Take three slow
+              breaths. That&apos;s it.
             </p>
           </div>
           </>
@@ -196,7 +214,7 @@ export default function Home() {
         </div>
       </header>
 
-      {!isReturning && (
+      {(!isReturning || wantsStory) && (
         <>
       <section className="mt-8 grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
         <BrandCard tone="muted">
