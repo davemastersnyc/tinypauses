@@ -1,5 +1,6 @@
 import { BrevoClient } from "@getbrevo/brevo";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { sendDailyPromptToRecipients } from "@/lib/dailyEmail";
 
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
 
@@ -49,14 +50,6 @@ function isAuthorized(request: Request) {
     ? authHeader.slice("Bearer ".length).trim()
     : null;
   return Boolean(secret && token && token === secret);
-}
-
-function chunk<T>(items: T[], size: number) {
-  const result: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    result.push(items.slice(i, i + size));
-  }
-  return result;
 }
 
 function buildEmailText(prompt: PromptRow) {
@@ -286,21 +279,44 @@ async function runDailyPrompt(request: Request, options: DailyPromptOptions) {
     });
   }
 
-  let sendError: unknown = null;
-  try {
-    for (const recipient of recipientEmails) {
-      await brevo.transactionalEmails.sendTransacEmail({
-        sender: { email: "hello@tinypauses.com", name: "Tiny Pauses" },
-        replyTo: { email: "hello@tinypauses.com", name: "Tiny Pauses" },
-        subject: "Today's tiny pause ✨",
-        textContent: buildEmailText(prompt),
-        htmlContent: buildEmailHtml(prompt),
-        to: [{ email: recipient }],
+  const result = await sendDailyPromptToRecipients(
+    brevo.transactionalEmails,
+    {
+      sender: { email: "hello@tinypauses.com", name: "Tiny Pauses" },
+      replyTo: { email: "hello@tinypauses.com", name: "Tiny Pauses" },
+      subject: "Today's tiny pause ✨",
+      textContent: buildEmailText(prompt),
+      htmlContent: buildEmailHtml(prompt),
+    },
+    recipientEmails,
+  );
+
+  // Only mark a prompt consumed if it actually reached someone. If nothing
+  // went out we do NOT log it, so the next run can reuse it instead of burning
+  // it from rotation for 30 days. Once at least one email sends we must log,
+  // since re-sending would double-email the recipients who already received it.
+  if (result.sent === 0) {
+    // attempted > 0 means every send failed (a real error, retryable).
+    // attempted === 0 means there were simply no recipients (a no-op).
+    const everySendFailed = result.attempted > 0;
+    if (everySendFailed) {
+      console.error("Daily prompt send failed for all recipients", {
+        recipientCount: result.attempted,
+        promptName: prompt.title,
       });
     }
-  } catch (error) {
-    sendError = error;
-    console.error("Daily prompt send error", error);
+    return Response.json(
+      {
+        ok: !everySendFailed,
+        listMode,
+        promptName: prompt.title,
+        recipientCount: result.attempted,
+        sent: 0,
+        failedCount: result.failedRecipients.length,
+        logged: false,
+      },
+      { status: everySendFailed ? 500 : 200 },
+    );
   }
 
   const { error: logError } = await supabase.from("prompt_send_log").insert({
@@ -311,24 +327,21 @@ async function runDailyPrompt(request: Request, options: DailyPromptOptions) {
     console.error("Failed logging daily prompt send", logError);
   }
 
-  if (sendError) {
-    return Response.json(
-      {
-        ok: false,
-        listMode,
-        promptName: prompt.title,
-        recipientCount: recipientEmails.length,
-        logged: !logError,
-      },
-      { status: 500 },
-    );
+  if (result.failedRecipients.length > 0) {
+    console.error("Daily prompt send had partial failures", {
+      sent: result.sent,
+      failedCount: result.failedRecipients.length,
+      promptName: prompt.title,
+    });
   }
 
   return Response.json({
     ok: true,
     listMode,
     promptName: prompt.title,
-    recipientCount: recipientEmails.length,
+    recipientCount: result.attempted,
+    sent: result.sent,
+    failedCount: result.failedRecipients.length,
     logged: !logError,
   });
 }
