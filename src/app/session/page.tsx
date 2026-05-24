@@ -37,6 +37,7 @@ import {
   type SpecialPromptRow,
 } from "@/lib/specialPrompts";
 import { personalMilestoneForCount } from "@/lib/social";
+import { dailyPromptIndex } from "@/lib/dailyPause";
 import { BrandButton, BrandCard, PageShell } from "../ui";
 
 type PromptKind = "pause" | "letting-go" | "reflect" | "kindness";
@@ -805,6 +806,67 @@ function SessionPageInner() {
     }
   }
 
+  // One-tap entry: a ready pause for today. Reuses the regular prompt library
+  // but picks deterministically by date (see dailyPause), so it stays stable on
+  // reload and rotates day to day instead of feeling random.
+  async function loadTodaysPause() {
+    setSpecialContext(null);
+    setLoadingPrompt(true);
+    setPrompt(null);
+
+    const allKinds: PromptKind[] = [
+      "pause",
+      "letting-go",
+      "reflect",
+      "kindness",
+    ];
+
+    function applyFallback() {
+      const fallbackKind = allKinds[dailyPromptIndex(new Date(), allKinds.length)];
+      setKind(fallbackKind);
+      setPrompt(fallbackPrompts[fallbackKind]);
+      setIsPromptSaved(false);
+      setStep("prompt");
+    }
+
+    try {
+      if (supabase) {
+        const { data, error } = await supabase
+          .from("prompts")
+          .select("id, title, body, step, kind")
+          .in("kind", allKinds)
+          .eq("status", "active")
+          .limit(400);
+
+        if (!error && data && data.length > 0) {
+          // DB row order is not guaranteed, so order it ourselves before the
+          // day-seeded index, otherwise "today's pause" could differ per load.
+          const ordered = [...data].sort((a, b) =>
+            String(a.id).localeCompare(String(b.id)),
+          );
+          const choice = ordered[dailyPromptIndex(new Date(), ordered.length)];
+          setKind(choice.kind as PromptKind);
+          rememberPromptId(choice.id);
+          setPrompt({
+            id: choice.id,
+            title: choice.title,
+            body: choice.body,
+            step: choice.step,
+          });
+          setIsPromptSaved(false);
+          setStep("prompt");
+          return;
+        }
+      }
+      applyFallback();
+    } catch (err) {
+      console.error("Error loading today's pause", err);
+      applyFallback();
+    } finally {
+      setLoadingPrompt(false);
+    }
+  }
+
   async function recordSession(selectedMood: number | null) {
     if (!supabase) return;
     if (!userId) return;
@@ -1272,10 +1334,21 @@ function SessionPageInner() {
               })}
             </div>
           </div>
-          <p className="text-sm text-[color:var(--color-foreground)]/85">
+          <BrandButton
+            type="button"
+            onClick={loadTodaysPause}
+            fullWidth
+            disabled={loadingPrompt}
+          >
+            {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
+          </BrandButton>
+          <p className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
+            One tap. We picked a gentle one for today.
+          </p>
+          <p className="mt-5 text-sm text-[color:var(--color-foreground)]/85">
             {moodBefore !== null && moodBefore <= 2
-              ? "Pick what feels right. These two are gentle when things feel heavy:"
-              : "Pick the kind of moment that would feel most helpful right now."}
+              ? "Or pick what feels right. These two are gentle when things feel heavy:"
+              : "Or pick the kind of moment that would help most:"}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2.5">
             {sessionKinds.map((item) => {
