@@ -164,10 +164,11 @@ const driftMotifs = [
   { left: "44%", size: 6, delay: "3.4s", duration: "9.9s" },
 ] as const;
 
-const stepOrder = ["choose", "prompt", "mood", "done"] as const;
+const stepOrder = ["feeling", "choose", "prompt", "mood", "done"] as const;
 const stepLabels: Record<(typeof stepOrder)[number], string> = {
+  feeling: "Feel",
   choose: "Choose",
-  prompt: "Prompt",
+  prompt: "Pause",
   mood: "Mood",
   done: "Done",
 };
@@ -458,9 +459,9 @@ function ThemeIllustration({ kind }: { kind: PromptKind | null }) {
 function SessionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [step, setStep] = useState<"choose" | "prompt" | "mood" | "done">(
-    "choose",
-  );
+  const [step, setStep] = useState<
+    "feeling" | "choose" | "prompt" | "mood" | "done"
+  >("feeling");
   const [mode, setMode] = useState<"regular" | "brain-break">("regular");
   const [mood, setMood] = useState<number | null>(null);
   const [moodBefore, setMoodBefore] = useState<number | null>(null);
@@ -497,9 +498,10 @@ function SessionPageInner() {
   const brainBreakGainRef = useRef<GainNode | null>(null);
 
   const accentByStep: Record<
-    "choose" | "prompt" | "mood" | "done",
+    "feeling" | "choose" | "prompt" | "mood" | "done",
     string
   > = {
+    feeling: "#66cccc",
     choose: "#66cccc",
     prompt: "#66cccc",
     mood: "#66cccc",
@@ -920,7 +922,9 @@ function SessionPageInner() {
     }
   }
 
-  function goToStep(target: "choose" | "prompt" | "mood" | "done") {
+  function goToStep(
+    target: "feeling" | "choose" | "prompt" | "mood" | "done",
+  ) {
     setStep(target);
   }
 
@@ -988,7 +992,7 @@ function SessionPageInner() {
     setShowTogetherDoneCopy(false);
     setSpecialContext(null);
     setMilestoneThreshold(null);
-    setStep("choose");
+    setStep("feeling");
   }
 
   function keepThisMoment() {
@@ -1230,7 +1234,7 @@ function SessionPageInner() {
         {mode === "regular" ? (
           <>
         <header className="text-center space-y-1.5">
-          {step !== "choose" && (
+          {step !== "choose" && step !== "feeling" && (
             <p className="inline-flex items-center rounded-[var(--radius-pill)] bg-[color:var(--color-accent-soft)] px-4 py-1 text-xs font-medium tracking-wide text-[color:var(--color-ink-on-accent-soft)] shadow-sm ring-1 ring-[color:var(--color-accent)]/30 backdrop-blur">
               {specialContext
                 ? specialContext.badgeLabel
@@ -1240,7 +1244,8 @@ function SessionPageInner() {
             </p>
           )}
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-[color:var(--color-primary)]">
-            {step === "choose" && "What do you want help with today?"}
+            {step === "feeling" && "How are you feeling right now?"}
+            {step === "choose" && "What kind of pause do you want?"}
             {step === "prompt" && "Try this tiny pause"}
             {step === "mood" && "How do you feel now?"}
             {step === "done" &&
@@ -1278,62 +1283,62 @@ function SessionPageInner() {
           </div>
         </header>
 
+        {step === "feeling" && (
+          <BrandCard>
+            {showTogetherBanner && (
+              <div className="mb-3 flex items-start justify-between gap-3 rounded-xl bg-[#66cccc] px-3 py-2 text-xs text-white">
+                <p>
+                  This one&apos;s for you and {childName ?? "your kid"} together.
+                  Pick whatever feels right.
+                </p>
+                <button
+                  type="button"
+                  onClick={dismissTogetherBanner}
+                  className="rounded-full px-1 text-white/90 hover:bg-white/10"
+                  aria-label="Dismiss together banner"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            {isFirstVisit && (
+              <p className="mb-3 rounded-xl bg-[color:var(--color-surface-soft)] px-3 py-2 text-xs text-[color:var(--color-foreground)]/80">
+                New here? A tiny pause takes about two minutes. There is no wrong
+                way to do it.
+              </p>
+            )}
+            <div className="grid grid-cols-5 gap-1.5">
+              {moodOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-label={option.label}
+                  title={option.label}
+                  onClick={() => {
+                    setMoodBefore(option.value);
+                    setStep("choose");
+                  }}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-[color:var(--color-border-subtle)] px-1 py-3 text-[color:var(--color-foreground)]/70 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]"
+                >
+                  <MoodFace level={option.value} />
+                  <span className="text-center text-[10px] leading-tight">
+                    {option.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setStep("choose")}
+              className="mx-auto mt-4 block text-xs text-[color:var(--color-foreground)]/62 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 transition hover:text-[color:var(--color-primary)]"
+            >
+              Skip for now
+            </button>
+          </BrandCard>
+        )}
+
         {step === "choose" && (
           <BrandCard>
-          {showTogetherBanner && (
-            <div className="mb-3 flex items-start justify-between gap-3 rounded-xl bg-[#66cccc] px-3 py-2 text-xs text-white">
-              <p>
-                This one&apos;s for you and {childName ?? "your kid"} together.
-                Pick whatever feels right.
-              </p>
-              <button
-                type="button"
-                onClick={dismissTogetherBanner}
-                className="rounded-full px-1 text-white/90 hover:bg-white/10"
-                aria-label="Dismiss together banner"
-              >
-                ×
-              </button>
-            </div>
-          )}
-          {isFirstVisit && (
-            <p className="mb-3 rounded-xl bg-[color:var(--color-surface-soft)] px-3 py-2 text-xs text-[color:var(--color-foreground)]/80">
-              New here? A tiny pause takes about two minutes. There is no wrong
-              way to do it.
-            </p>
-          )}
-          <div className="mb-4">
-            <p className="text-sm text-[color:var(--color-foreground)]/85">
-              How are you feeling right now?{" "}
-              <span className="text-[color:var(--color-foreground)]/55">
-                (optional)
-              </span>
-            </p>
-            <div className="mt-2 flex items-stretch justify-between gap-1.5">
-              {moodOptions.map((option) => {
-                const selected = moodBefore === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    aria-label={option.label}
-                    aria-pressed={selected}
-                    title={option.label}
-                    onClick={() =>
-                      setMoodBefore(selected ? null : option.value)
-                    }
-                    className={`flex flex-1 items-center justify-center rounded-xl border px-1 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] ${
-                      selected
-                        ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)]"
-                        : "border-[color:var(--color-border-subtle)] text-[color:var(--color-foreground)]/70 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)]"
-                    }`}
-                  >
-                    <MoodFace level={option.value} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
           <BrandButton
             type="button"
             onClick={loadTodaysPause}
@@ -1391,12 +1396,21 @@ function SessionPageInner() {
               Need to slow down first?
             </button>
           )}
-          <Link
-            href="/"
-            className="mt-3 inline-block text-xs text-[color:var(--color-foreground)]/62 transition hover:text-[color:var(--color-foreground)]/86"
-          >
-            Maybe later
-          </Link>
+          <div className="mt-3 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setStep("feeling")}
+              className="text-xs text-[color:var(--color-foreground)]/62 transition hover:text-[color:var(--color-foreground)]/86"
+            >
+              Back
+            </button>
+            <Link
+              href="/"
+              className="text-xs text-[color:var(--color-foreground)]/62 transition hover:text-[color:var(--color-foreground)]/86"
+            >
+              Maybe later
+            </Link>
+          </div>
           </BrandCard>
         )}
 
