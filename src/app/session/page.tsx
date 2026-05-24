@@ -1329,6 +1329,16 @@ function SessionPageInner() {
             </div>
             <button
               type="button"
+              onClick={startBrainBreak}
+              className="mt-4 w-full rounded-2xl border border-[#66cccc] bg-[#66cccc]/20 px-4 py-3 text-left transition hover:bg-[#66cccc]/30"
+            >
+              <p className="text-sm font-bold text-[#006666]">Brain Break</p>
+              <p className="mt-0.5 text-xs text-[#006666]">
+                Feeling like a lot? Slow your brain down first.
+              </p>
+            </button>
+            <button
+              type="button"
               onClick={() => setStep("choose")}
               className="mx-auto mt-4 block text-xs text-[color:var(--color-foreground)]/62 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 transition hover:text-[color:var(--color-primary)]"
             >
