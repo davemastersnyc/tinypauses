@@ -925,9 +925,11 @@ export default function DashboardPage() {
           You can take a tiny pause any time you like. We&apos;ll keep gentle track for you.
         </p>
         {totalMoments > 0 && (
-          <p className="text-sm font-medium text-[color:var(--color-accent)]">
-            {totalMoments} {totalMoments === 1 ? "tiny moment" : "tiny moments"} so
-            far, and counting.
+          <p className="text-sm text-[color:var(--color-foreground)]/80">
+            <span className="font-semibold text-[color:var(--color-accent)]">
+              {totalMoments} {totalMoments === 1 ? "tiny moment" : "tiny moments"}
+            </span>{" "}
+            kept so far. Each one is a small, real win.
           </p>
         )}
       </header>
@@ -937,7 +939,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-[color:var(--color-primary)]">Ready for today&apos;s pause?</p>
             <p className="mt-1 text-sm text-[color:var(--color-foreground)]/85">
-              It only takes a minute or two. After, you can see how many tiny pauses you&apos;ve taken this week.
+              It only takes a minute or two. No writing, no pressure.
             </p>
           </div>
           <BrandButton href="/session" variant="primary">
@@ -946,8 +948,7 @@ export default function DashboardPage() {
         </div>
       </BrandCard>
 
-      <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
-        <div className="space-y-4">
+      <section className="space-y-4">
           {showTogetherNudge && !isAdultMode && (
             <BrandCard tone="muted">
               <div className="flex items-start justify-between gap-3">
@@ -976,29 +977,28 @@ export default function DashboardPage() {
           )}
           <BrandCard>
             <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">This week</p>
-            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">The days you paused this week. No need to fill them all.</p>
-            <div className="mt-4 flex items-center justify-between gap-2">
-              {week.map((day) => (
-                <div key={day.dateLabel} className="flex flex-col items-center">
-                  <span
-                    className={`mb-1 h-3 w-3 rounded-full ${
-                      day.practiced
-                        ? "bg-[#66cccc] shadow-[0_0_0_4px_rgba(102,204,204,0.2)]"
-                        : "bg-[color:var(--color-surface-soft)]"
-                    }`}
-                  />
-                  <span className="text-[11px] font-medium text-[color:var(--color-foreground)]/70">{day.dateLabel}</span>
-                </div>
-              ))}
-            </div>
+            <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
+              {hasAnyMomentThisWeek
+                ? "The days you paused this week. Even one is plenty."
+                : "The days you pause this week will show up here."}
+            </p>
+            {hasAnyMomentThisWeek && (
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+                {week
+                  .filter((day) => day.practiced)
+                  .map((day) => (
+                    <div key={day.dateLabel} className="flex flex-col items-center">
+                      <span className="mb-1 h-3 w-3 rounded-full bg-[#66cccc] shadow-[0_0_0_4px_rgba(102,204,204,0.2)]" />
+                      <span className="text-[11px] font-medium text-[color:var(--color-foreground)]/70">{day.dateLabel}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
             {brainBreaksThisWeek > 0 && (
               <p className="mt-3 text-sm text-[#006666]">
                 You also took {brainBreaksThisWeek} brain break
                 {brainBreaksThisWeek === 1 ? "" : "s"} this week.
               </p>
-            )}
-            {!hasAnyMomentThisWeek && (
-              <p className="mt-4 text-sm text-[color:var(--color-foreground)]/72">Your first tiny pause will show up here.</p>
             )}
           </BrandCard>
 
@@ -1326,22 +1326,6 @@ export default function DashboardPage() {
               )}
             </BrandCard>
           )}
-        </div>
-
-        <BrandCard tone="muted">
-          <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">Your tiny wins so far</p>
-          <p className="mt-2 text-4xl font-semibold text-[color:var(--color-accent)]">
-            {totalMoments}
-            <span className="ml-2 text-base font-medium text-[color:var(--color-primary)]/80">
-              {totalMoments === 1 ? "moment" : "moments"}
-            </span>
-          </p>
-          <p className="mt-1 text-sm text-[color:var(--color-foreground)]/80">
-            {totalMoments === 0
-              ? "Everyone starts somewhere. Your first tiny moment is waiting."
-              : "That's how many moments you've kept so far. It only grows. Each one is a small, real win."}
-          </p>
-        </BrandCard>
       </section>
 
       <BrandCard>
