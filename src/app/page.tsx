@@ -75,6 +75,44 @@ function GentleTrackIcon() {
   );
 }
 
+function PauseLeafIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-6 w-6 text-[#1f9b9b]"
+      fill="none"
+    >
+      <path
+        d="M5 19c1-8 6-13 14-14-1 9-6 14-14 14z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <path
+        d="M9 15c2-3 4.5-5 7.5-6.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function BrainBreakBoltIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-6 w-6 text-[color:var(--color-accent)]"
+      fill="none"
+    >
+      <path d="M13 2.5 5.5 13H11l-1 8.5L18.5 10H12.5l.5-7.5z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function Home() {
   const [hideKidsLine, setHideKidsLine] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -86,14 +124,22 @@ export default function Home() {
   // A returning visitor can opt back into the full new-visitor story without
   // losing their place. Not persisted; it only affects this view.
   const [wantsStory, setWantsStory] = useState(false);
+  // The returning/new decision lives in localStorage + the Supabase session,
+  // both client-only, so the server can't know it. We hold the hero behind a
+  // placeholder until this flips true to avoid flashing the wrong hero.
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const visited =
       typeof window !== "undefined" &&
       window.localStorage.getItem("tinyPauses.hasCompletedPause") === "1";
+    // Decide from localStorage immediately (synchronous) so returning visitors
+    // never see the new-visitor hero first. Supabase resolves below and can
+    // upgrade a signed-in visitor who has no local flag yet.
+    setIsReturning(visited);
+    setReady(true);
     async function checkState() {
       if (!supabase) {
-        setIsReturning(visited);
         return;
       }
       const {
@@ -101,7 +147,9 @@ export default function Home() {
       } = await supabase.auth.getUser();
       const signedIn = Boolean(user);
       setIsSignedIn(signedIn);
-      setIsReturning(signedIn || visited);
+      if (signedIn) {
+        setIsReturning(true);
+      }
       if (!user) {
         setHideKidsLine(false);
         return;
@@ -132,7 +180,9 @@ export default function Home() {
             priority
             className="mx-auto h-auto w-44 sm:w-56"
           />
-          {isReturning && !wantsStory ? (
+          {!ready ? (
+            <div aria-hidden="true" className="min-h-[260px] sm:min-h-[280px]" />
+          ) : isReturning && !wantsStory ? (
             <>
               <h1 className="text-balance text-4xl font-semibold leading-tight text-[color:var(--color-primary)] sm:text-5xl">
                 Welcome back.
@@ -141,12 +191,36 @@ export default function Home() {
                 What do you need right now?
               </p>
               <div className="flex flex-col items-center gap-3 pt-1">
-                <BrandButton href="/session?start=brain-break" variant="primary">
-                  Brain Break in 90 seconds
-                </BrandButton>
-                <BrandButton href="/session" variant="secondary">
-                  Take today&apos;s pause
-                </BrandButton>
+                <div className="grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
+                  <a
+                    href="/session"
+                    className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc]"
+                  >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
+                      <PauseLeafIcon />
+                    </span>
+                    <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                      Take today&apos;s pause
+                    </span>
+                    <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                      A quiet moment to notice how you feel
+                    </span>
+                  </a>
+                  <a
+                    href="/session?start=brain-break"
+                    className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[color:var(--color-accent)]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]"
+                  >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-accent)]/12 transition group-hover:bg-[color:var(--color-accent)]/20">
+                      <BrainBreakBoltIcon />
+                    </span>
+                    <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                      Brain Break
+                    </span>
+                    <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                      Shake it out and reset in 90 seconds
+                    </span>
+                  </a>
+                </div>
                 <a
                   href={isSignedIn ? "/dashboard" : "/login"}
                   className="text-sm text-[color:var(--color-foreground)]/70 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
@@ -214,7 +288,7 @@ export default function Home() {
         </div>
       </header>
 
-      {(!isReturning || wantsStory) && (
+      {ready && (!isReturning || wantsStory) && (
         <>
       <section className="mt-8 grid gap-4 text-sm text-[color:var(--color-foreground)]/85 sm:grid-cols-3">
         <BrandCard tone="muted">

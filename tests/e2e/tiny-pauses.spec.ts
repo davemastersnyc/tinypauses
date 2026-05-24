@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { completeAnonymousSession, completeLoggedInSession } from "./helpers/flows";
+import {
+  completeAnonymousSession,
+  completeLoggedInSession,
+  startTinyPauseFromEntry,
+} from "./helpers/flows";
 import {
   clearMoments,
   completeSignupFromEmailLink,
@@ -21,6 +25,7 @@ test.describe("Tiny Pauses critical E2E flows", () => {
     await page.goto("/session");
     await expect(page.getByRole("link", { name: "Log in" })).toBeVisible();
 
+    await startTinyPauseFromEntry(page);
     await page.getByRole("button", { name: "Just a pause" }).click();
     await expect(page.getByRole("heading", { name: "Try this tiny pause" })).toBeVisible();
     await expect(page.getByText("Your tiny step")).toBeVisible();
@@ -325,6 +330,7 @@ test.describe("Tiny Pauses critical E2E flows", () => {
       let seen = false;
       for (let attempt = 0; attempt < 12; attempt += 1) {
         await page.goto("/session");
+        await startTinyPauseFromEntry(page);
         await page.getByRole("button", { name: "Kindness" }).click();
         await expect(page.getByRole("heading", { name: "Try this tiny pause" })).toBeVisible();
         if (await page.getByRole("heading", { level: 2, name: promptTitle }).count()) {
@@ -355,6 +361,7 @@ test.describe("Tiny Pauses critical E2E flows", () => {
 
       // Complete a session and capture the prompt that gets saved.
       await page.goto("/session");
+      await startTinyPauseFromEntry(page);
       await page.getByRole("button", { name: "Just a pause" }).click();
       await expect(page.getByRole("heading", { name: "Try this tiny pause" })).toBeVisible();
       const promptTitle = (await page.locator("h2").first().textContent())?.trim() ?? "";
