@@ -1,4 +1,9 @@
-import { drawCardIllustration, resolveCardTheme } from "./cardIllustrations";
+import {
+  badgeColorForCategory,
+  drawCardIllustration,
+  drawMomentCardComposition,
+  resolveCardTheme,
+} from "./cardIllustrations";
 import { getSeasonalPalette, resolveCardStyleName } from "./cardStyles";
 
 export type WrapUpPeriod = "weekly" | "monthly" | "yearly";
@@ -121,98 +126,35 @@ function drawMomentCardSeason(
   metadata: MomentCardMetadata,
 ) {
   const palette = getSeasonalPalette(new Date());
-
-  const gradient = ctx.createLinearGradient(0, 0, 0, size);
-  gradient.addColorStop(0, palette.bgFrom);
-  gradient.addColorStop(1, palette.bgTo);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, size, size);
-
-  ctx.save();
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle = palette.motif;
-  ctx.beginPath();
-  ctx.arc(size * 0.02, size * 0.1, 150, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(size * 0.98, size * 0.92, 200, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  ctx.fillStyle = palette.panel;
-  drawRoundedRect(ctx, 76, 76, size - 152, size - 152, 52);
-  ctx.fill();
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const logo = ensureLogoImage();
-  if (logo && logo.complete && logo.naturalWidth > 0) {
-    const logoH = 150;
-    const logoW = (logoH * logo.naturalWidth) / logo.naturalHeight;
-    ctx.drawImage(logo, size / 2 - logoW / 2, 84, logoW, logoH);
-  } else {
-    ctx.save();
-    ctx.fillStyle = palette.inkSoft;
-    ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
-    ctx.letterSpacing = "6px";
-    ctx.fillText("TINY PAUSES", size / 2, 150);
-    ctx.restore();
-  }
-
   const isMilestone = metadata.specialType === "milestone";
   const milestoneCount = metadata.milestoneCount ?? 0;
   const badgeLabel = isMilestone
     ? "Milestone"
     : metadata.category || "Mindful moment";
-  const badgeColor = isMilestone
-    ? "#f97316"
-    : badgeColorForCategory(metadata.category);
-  ctx.font = "500 40px Inter, Avenir Next, Segoe UI, sans-serif";
-  const badgeWidth = Math.max(240, ctx.measureText(badgeLabel).width + 86);
-  const badgeX = (size - badgeWidth) / 2;
-  const badgeY = 270;
-  ctx.fillStyle = badgeColor;
-  drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 74, 37);
-  ctx.fill();
-  ctx.fillStyle = "#121826";
-  ctx.fillText(badgeLabel, size / 2, badgeY + 38);
 
-  ctx.save();
-  ctx.translate(size / 2, 500);
-  ctx.scale(1.25, 1.25);
-  ctx.translate(-(size / 2), -500);
-  drawCardIllustration(
+  drawMomentCardComposition(
     ctx,
-    size / 2,
-    500,
-    isMilestone
-      ? "star"
-      : metadata.illustrationKey ||
+    size,
+    {
+      badgeLabel,
+      badgeColor: badgeColorForCategory(badgeLabel),
+      illustration: isMilestone
+        ? "star"
+        : metadata.illustrationKey ||
           resolveCardTheme(metadata.category, metadata.specialKey),
+      heroText: isMilestone
+        ? milestoneCount === 1
+          ? "My first tiny pause"
+          : `${milestoneCount.toLocaleString()} tiny pauses`
+        : metadata.promptName || "Tiny pause",
+      subText: isMilestone
+        ? "Look how many moments I have made."
+        : "I took a tiny pause today.",
+    },
+    palette,
+    ensureLogoImage(),
+    drawCardIllustration,
   );
-  ctx.restore();
-
-  const heroText = isMilestone
-    ? milestoneCount === 1
-      ? "My first tiny pause"
-      : `${milestoneCount.toLocaleString()} tiny pauses`
-    : metadata.promptName || "Tiny pause";
-  const subText = isMilestone
-    ? "Look how many moments I have made."
-    : "I took a tiny pause today.";
-
-  ctx.fillStyle = palette.ink;
-  ctx.font = "700 62px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText(heroText, size / 2, 700);
-
-  ctx.fillStyle = palette.inkSoft;
-  ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText(subText, size / 2, 760);
-
-  ctx.fillStyle = palette.inkSoft;
-  ctx.font = "500 28px Inter, Avenir Next, Segoe UI, sans-serif";
-  ctx.fillText("tinypauses.com", size / 2, 952);
 }
 
 function drawMomentCardLegacy(
@@ -685,17 +627,6 @@ function drawRoundedRect(
   ctx.arcTo(x, y + safeHeight, x, y, r);
   ctx.arcTo(x, y, x + safeWidth, y, r);
   ctx.closePath();
-}
-
-function badgeColorForCategory(category: string) {
-  const lower = category.trim().toLowerCase();
-  if (lower.includes("letting")) return "#ff2f92";
-  if (lower.includes("reflect")) return "#ffd84a";
-  if (lower.includes("kind")) return "#66cccc";
-  if (lower.includes("brain")) return "#66cccc";
-  if (lower.includes("pause")) return "#66cccc";
-  if (lower.includes("mindful")) return "#66cccc";
-  return "#f97316";
 }
 
 function drawSpecialCornerIllustration(

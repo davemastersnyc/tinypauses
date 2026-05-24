@@ -286,3 +286,149 @@ export function drawCardIllustration(
 
   ctx.restore();
 }
+
+// Brand badge color by category label. Pure string logic, shared by the in-app
+// renderer and the Instagram generator so the two never disagree on a color.
+export function badgeColorForCategory(category: string): string {
+  const lower = (category ?? "").trim().toLowerCase();
+  if (lower.includes("milestone")) return "#f97316";
+  if (lower.includes("letting")) return "#ff2f92";
+  if (lower.includes("reflect")) return "#ffd84a";
+  if (lower.includes("kind")) return "#66cccc";
+  if (lower.includes("brain")) return "#66cccc";
+  if (lower.includes("pause")) return "#66cccc";
+  if (lower.includes("mindful")) return "#66cccc";
+  return "#f97316";
+}
+
+export type CardPalette = {
+  bgFrom: string;
+  bgTo: string;
+  motif: string;
+  panel: string;
+  ink: string;
+  inkSoft: string;
+};
+
+// The resolved, ready-to-draw content of a moment card. Callers decide what
+// goes in each slot (normal vs seasonal vs weekly vs milestone); the layout is
+// identical regardless.
+export type MomentCardFields = {
+  badgeLabel: string;
+  badgeColor: string;
+  illustration: string;
+  heroText: string;
+  subText: string;
+};
+
+// The single source of truth for moment-card layout: gradient, motif blooms,
+// panel, logo, badge, illustration, hero + sub text, footer. Intentionally
+// self-contained (only ctx, plain data, Math, and the two function params) so
+// it can be serialized via Function.toString() and rehydrated inside the
+// headless Instagram generator, exactly like drawCardIllustration. The in-app
+// renderer calls it directly. This keeps the two cards from drifting apart.
+export function drawMomentCardComposition(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  fields: MomentCardFields,
+  palette: CardPalette,
+  logoImage: HTMLImageElement | null,
+  drawIllustration: (
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    theme: string,
+  ) => void,
+) {
+  function drawRoundedRect(
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+  ) {
+    const safeWidth = Math.max(0, width);
+    const safeHeight = Math.max(0, height);
+    if (!safeWidth || !safeHeight) return;
+    const r = Math.max(0, Math.min(radius, safeWidth / 2, safeHeight / 2));
+    context.beginPath();
+    context.moveTo(x + r, y);
+    context.arcTo(x + safeWidth, y, x + safeWidth, y + safeHeight, r);
+    context.arcTo(x + safeWidth, y + safeHeight, x, y + safeHeight, r);
+    context.arcTo(x, y + safeHeight, x, y, r);
+    context.arcTo(x, y, x + safeWidth, y, r);
+    context.closePath();
+  }
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, size);
+  gradient.addColorStop(0, palette.bgFrom);
+  gradient.addColorStop(1, palette.bgTo);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = palette.motif;
+  ctx.beginPath();
+  ctx.arc(size * 0.02, size * 0.1, 150, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.98, size * 0.92, 200, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = palette.panel;
+  drawRoundedRect(ctx, 76, 76, size - 152, size - 152, 52);
+  ctx.fill();
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  if (logoImage && logoImage.complete && logoImage.naturalWidth > 0) {
+    const logoH = 150;
+    const logoW = (logoH * logoImage.naturalWidth) / logoImage.naturalHeight;
+    ctx.drawImage(logoImage, size / 2 - logoW / 2, 84, logoW, logoH);
+  } else {
+    ctx.save();
+    ctx.fillStyle = palette.inkSoft;
+    ctx.font = "600 26px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.letterSpacing = "6px";
+    ctx.fillText("TINY PAUSES", size / 2, 150);
+    ctx.restore();
+  }
+
+  ctx.font = "500 40px Inter, Avenir Next, Segoe UI, sans-serif";
+  const badgeWidth = Math.max(
+    240,
+    ctx.measureText(fields.badgeLabel).width + 86,
+  );
+  const badgeX = (size - badgeWidth) / 2;
+  const badgeY = 270;
+  ctx.fillStyle = fields.badgeColor;
+  drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, 74, 37);
+  ctx.fill();
+  ctx.fillStyle = "#121826";
+  ctx.fillText(fields.badgeLabel, size / 2, badgeY + 38);
+
+  ctx.save();
+  ctx.translate(size / 2, 500);
+  ctx.scale(1.25, 1.25);
+  ctx.translate(-(size / 2), -500);
+  drawIllustration(ctx, size / 2, 500, fields.illustration);
+  ctx.restore();
+
+  ctx.fillStyle = palette.ink;
+  ctx.font = "700 62px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.fillText(fields.heroText || "Tiny pause", size / 2, 700);
+
+  if (fields.subText) {
+    ctx.fillStyle = palette.inkSoft;
+    ctx.font = "500 32px Inter, Avenir Next, Segoe UI, sans-serif";
+    ctx.fillText(fields.subText, size / 2, 760);
+  }
+
+  ctx.fillStyle = palette.inkSoft;
+  ctx.font = "500 28px Inter, Avenir Next, Segoe UI, sans-serif";
+  ctx.fillText("tinypauses.com", size / 2, 952);
+}
