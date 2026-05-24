@@ -996,6 +996,9 @@ function SessionPageInner() {
     }
   }
 
+  // TODO(classroom): the planned hands-free "run it on the board" mode (marked
+  // Coming soon on /for-classrooms) would auto-advance these steps on a per-step
+  // timer instead of this tap, skip account logging, and end on "Play again".
   function advanceBrainBreakStep() {
     setBrainBreakStep((prev) => Math.min(prev + 1, 5));
   }

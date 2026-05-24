@@ -113,6 +113,77 @@ function BrainBreakBoltIcon() {
   );
 }
 
+function HeartIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-7 w-7 text-[#2f9e6f]"
+      fill="none"
+    >
+      <path
+        d="M12 20.5C6.5 16.8 3.5 14 3.5 10.4 3.5 8 5.4 6.1 7.8 6.1c1.4 0 2.7.7 3.5 1.8.3.4.9.4 1.2 0 .8-1.1 2.1-1.8 3.5-1.8 2.4 0 4.3 1.9 4.3 4.3 0 3.6-3 6.4-8.3 10.1z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function BoardIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-7 w-7 text-[#bd8b00]"
+      fill="none"
+    >
+      <rect
+        x="3.5"
+        y="4"
+        width="17"
+        height="11"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M12 15v4M8 21l4-2.2L16 21"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7 8h8M7 11h5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className="h-3.5 w-3.5 transition group-hover:translate-x-0.5"
+      fill="none"
+    >
+      <path
+        d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function Home() {
   const [hideKidsLine, setHideKidsLine] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -327,6 +398,71 @@ export default function Home() {
       </section>
 
       <Testimonials />
+
+      <section className="mt-4">
+        <h2 className="text-center text-2xl font-semibold tracking-tight text-[color:var(--color-primary)]">
+          One pause, three ways in
+        </h2>
+        <p className="mx-auto mt-2 max-w-xl text-center text-sm text-[color:var(--color-foreground)]/70">
+          The same calm tool, however you come to it.
+        </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <a
+            href="/session"
+            className="group flex flex-col rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc]"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15">
+              <KidsIcon />
+            </span>
+            <p className="mt-4 text-base font-semibold text-[color:var(--color-primary)]">
+              For kids 9-12
+            </p>
+            <p className="mt-1 flex-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
+              A 90-second reset when feelings get big. No writing, no streaks, no
+              pressure.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1f9b9b]">
+              Start a pause <ArrowIcon />
+            </span>
+          </a>
+          <a
+            href="/daily"
+            className="group flex flex-col rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#7edfaa]/70 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2f9e6f]"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7edfaa]/25">
+              <HeartIcon />
+            </span>
+            <p className="mt-4 text-base font-semibold text-[color:var(--color-primary)]">
+              For parents
+            </p>
+            <p className="mt-1 flex-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
+              A calm moment you can do together. Parent-held account, no ads,
+              nothing sold.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#2f9e6f]">
+              Get daily pauses <ArrowIcon />
+            </span>
+          </a>
+          <a
+            href="/for-classrooms"
+            className="group flex flex-col rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#ffd84a]/80 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#d4a300]"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffd84a]/25">
+              <BoardIcon />
+            </span>
+            <p className="mt-4 text-base font-semibold text-[color:var(--color-primary)]">
+              For teachers
+            </p>
+            <p className="mt-1 flex-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
+              Quick resets for the whole class. After recess, before a test, any
+              restless moment.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#a87e00]">
+              For classrooms <ArrowIcon />
+            </span>
+          </a>
+        </div>
+      </section>
         </>
       )}
 
