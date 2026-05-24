@@ -1,10 +1,15 @@
 import { expect, type Page } from "@playwright/test";
 
 // /session now opens on a fork ("What do you need right now?"). Pick the pause
-// path and clear the mood check-in to land on the "what kind of pause" chooser.
+// path, clear the mood check-in, then reveal the kind grid (it's tucked behind
+// "Pick the kind of pause that would help most" so the chooser isn't a wall of
+// choices).
 export async function startTinyPauseFromEntry(page: Page) {
   await page.getByRole("button", { name: "Take a tiny pause" }).click();
   await page.getByRole("button", { name: "Skip for now" }).click();
+  await page
+    .getByRole("button", { name: "Pick the kind of pause that would help most" })
+    .click();
 }
 
 export async function completeAnonymousSession(page: Page) {

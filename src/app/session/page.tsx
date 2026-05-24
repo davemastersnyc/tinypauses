@@ -491,6 +491,9 @@ function SessionPageInner() {
     null,
   );
   const [showBrainBreakNudge, setShowBrainBreakNudge] = useState(false);
+  // The chooser leads with one-tap "Take today's pause"; the kind grid stays
+  // tucked away until asked for, so the screen isn't a wall of choices.
+  const [showKindOptions, setShowKindOptions] = useState(false);
   const [brainBreakSoundMode, setBrainBreakSoundMode] =
     useState<BrainBreakSoundMode>("quiet");
   const [brainBreakStep, setBrainBreakStep] = useState(-1);
@@ -1457,43 +1460,45 @@ function SessionPageInner() {
           <p className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
             One tap. Today&apos;s pause, ready to go.
           </p>
-          <p className="mt-5 text-sm text-[color:var(--color-foreground)]/85">
-            {moodBefore !== null && moodBefore <= 2
-              ? "Or pick what feels right. These two are gentle when things feel heavy:"
-              : "Or pick the kind of moment that would help most:"}
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-2.5">
-            {sessionKinds.map((item) => {
-              const suggested =
-                moodBefore !== null &&
-                moodBefore <= 2 &&
-                lowMoodKinds.includes(item.kind);
-              return (
-                <button
-                  key={item.kind}
-                  type="button"
-                  onClick={() => selectPromptKind(item.kind)}
-                  className={`rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
-                    suggested
-                      ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)] ring-1 ring-[color:var(--color-accent)]/40"
-                      : "border-[color:var(--color-border-subtle)]"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-          <button
-            type="button"
-            onClick={startBrainBreak}
-            className="mt-3 w-full rounded-2xl border border-[#66cccc] bg-[#66cccc]/20 px-4 py-3 text-left transition hover:bg-[#66cccc]/30"
-          >
-            <p className="text-sm font-bold text-[#006666]">Brain Break</p>
-            <p className="mt-0.5 text-xs text-[#006666]">
-              Slow your brain down first.
-            </p>
-          </button>
+          {showKindOptions ? (
+            <>
+              {moodBefore !== null && moodBefore <= 2 && (
+                <p className="mt-5 text-sm text-[color:var(--color-foreground)]/85">
+                  The highlighted ones are gentle when things feel heavy:
+                </p>
+              )}
+              <div className="mt-5 grid grid-cols-2 gap-2.5">
+                {sessionKinds.map((item) => {
+                  const suggested =
+                    moodBefore !== null &&
+                    moodBefore <= 2 &&
+                    lowMoodKinds.includes(item.kind);
+                  return (
+                    <button
+                      key={item.kind}
+                      type="button"
+                      onClick={() => selectPromptKind(item.kind)}
+                      className={`rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
+                        suggested
+                          ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)] ring-1 ring-[color:var(--color-accent)]/40"
+                          : "border-[color:var(--color-border-subtle)]"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowKindOptions(true)}
+              className="mt-4 w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-sm font-medium text-[color:var(--color-foreground)]/75 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
+            >
+              Pick the kind of pause that would help most
+            </button>
+          )}
           {showBrainBreakNudge && (
             <button
               type="button"
