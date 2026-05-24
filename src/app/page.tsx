@@ -132,16 +132,6 @@ export default function Home() {
               Designed for kids 9-12, with their grown-ups in mind.
             </p>
           )}
-          <div className="mx-auto mt-2 max-w-md rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-5 text-left shadow-[var(--shadow-soft)]">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/70">
-              Here&apos;s what a tiny pause looks like
-            </p>
-            <p className="mt-2 text-base leading-relaxed text-[color:var(--color-foreground)]/90">
-              Look out a window or around the room. Find one thing that&apos;s
-              moving, like a tree, a cloud, or your own breath. Watch it for
-              three slow breaths.
-            </p>
-          </div>
           <div className="flex flex-col items-center gap-3 pt-1">
             <BrandButton href="/session" variant="primary">
               Try a tiny pause
@@ -154,6 +144,16 @@ export default function Home() {
                 ? "Go to my dashboard"
                 : "Already have an account? Log in"}
             </a>
+          </div>
+          <div className="mx-auto mt-2 max-w-md rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] p-5 text-left shadow-[var(--shadow-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]/70">
+              Here&apos;s what a tiny pause looks like
+            </p>
+            <p className="mt-2 text-base leading-relaxed text-[color:var(--color-foreground)]/90">
+              Look out a window or around the room. Find one thing that&apos;s
+              moving, like a tree, a cloud, or your own breath. Watch it for
+              three slow breaths.
+            </p>
           </div>
         </div>
       </header>

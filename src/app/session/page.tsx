@@ -1343,7 +1343,7 @@ function SessionPageInner() {
             {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
           </BrandButton>
           <p className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
-            One tap. We picked a gentle one for today.
+            One tap. Today&apos;s pause, ready to go.
           </p>
           <p className="mt-5 text-sm text-[color:var(--color-foreground)]/85">
             {moodBefore !== null && moodBefore <= 2
