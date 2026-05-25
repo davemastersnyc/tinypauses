@@ -381,4 +381,15 @@ h3 {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
+  /* Teacher one-pager: a small print zoom keeps the whole sheet on one page in
+     Chromium and Safari (what schools mostly print from). Firefox ignores zoom
+     and may run slightly long. print-color-adjust keeps the accent circles and
+     tints (e.g. white step numbers on a colored dot) from dropping out. Scoped
+     so it never affects the rest of the site. */
+  .handout-sheet {
+    zoom: 0.85;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
