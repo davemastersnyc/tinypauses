@@ -73,10 +73,8 @@ export default function ForClassroomsPage() {
             Classroom resets, in preview.
           </h1>
           <p className="text-lg leading-8 text-[color:var(--color-foreground)]/88">
-            Two early tools for teachers, both built on Tiny Pauses: a
-            ninety-second Brain Break you run from the board to settle a buzzing
-            room, and five-minute green time recipe cards for the quiet slot. You
-            can try both right now.
+            Two early tools for teachers, both built on Tiny Pauses. Try them
+            both right now.
           </p>
           <div className="grid gap-3 pt-1 sm:grid-cols-2">
             {heroTools.map((tool) => (
@@ -127,7 +125,7 @@ export default function ForClassroomsPage() {
             No student accounts. No ads. No tracking kids. No streaks.
           </p>
           <p className="mt-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/72">
-            Designed for grades 4-6 (kids 9-12). Nothing for kids to log into,
+            Designed for grades 3-6 (ages 8-12). Nothing for kids to log into,
             and nothing sold.
           </p>
         </section>
@@ -153,9 +151,9 @@ export default function ForClassroomsPage() {
                 90-second reset, for a buzzing room
               </p>
               <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
-                A hands-free, movement-then-breath reset you run from the front
-                of the room. Pick where the room is, press go, and lead it with
-                your body. Quiet by default, sound optional.
+                A hands-free, movement-then-breath reset you lead from the front
+                of the room. Pick where the room is, press go, lead with your
+                body. Quiet by default.
               </p>
               <div className="mt-4">
                 <BrandButton href="/for-classrooms/board" variant="primary">
@@ -177,8 +175,8 @@ export default function ForClassroomsPage() {
               </p>
               <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
                 Make-then-rest recipe cards. A kid picks one, makes a small
-                thing, then settles with it. Print a set to cut out, or project
-                the calm board menu.
+                thing, then settles with it. Print a set, or project the board
+                menu.
               </p>
               <div className="mt-4">
                 <BrandButton href="/for-classrooms/recipes" variant="primary">
@@ -216,8 +214,7 @@ export default function ForClassroomsPage() {
           </ul>
           <p className="text-sm leading-7 text-[color:var(--color-foreground)]/65">
             Each Brain Break moves through shaking, stomping, and squeezing
-            before slow breaths, the same movement-then-breath order therapists
-            use.
+            before slow breaths, an order often used in regulation work.
           </p>
         </section>
 
@@ -226,10 +223,9 @@ export default function ForClassroomsPage() {
             Help us build the right thing
           </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            Both tools are in early mode. If you teach kids 9-12, try them and
-            tell us your grade, class size, school setting, and which moments you
-            would actually use them in. We will fold it into how we build, and
-            bring you in early.
+            Both tools are in early mode. If you teach these grades, try them
+            and tell us what works and what does not. We will fold it into how we
+            build, and bring you in early.
           </p>
           <div className="pt-1">
             <TeacherPilotForm />

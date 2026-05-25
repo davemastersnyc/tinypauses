@@ -201,9 +201,15 @@ export function TeacherPilotForm({
               </div>
             </div>
 
+            <p className="mt-3 text-xs leading-relaxed text-[color:var(--color-foreground)]/55">
+              Please do not include student names or private student
+              information. We only need classroom-level detail.
+            </p>
+
             {status === "success" && (
               <p className="mt-3 text-xs text-[color:var(--color-primary)]/75">
-                Thanks. We will be in touch as the pilot takes shape.
+                Thanks. We will email you about the classroom pilot. We only ask
+                about classroom-level needs, never student information.
               </p>
             )}
             {status === "error" && errorMsg && (
