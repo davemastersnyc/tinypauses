@@ -37,6 +37,7 @@ const content: HandoutContent = {
   moments:
     "The quiet work slot, after lunch, independent reading time, or any stretch that needs a calm, self-directed reset.",
   safe: "No student accounts. No logins. No ads. No tracking. The kids' part is fully screen-free. Designed for grades 3-6.",
+  note: "Any kid can sit out, or pick a calmer card, and what they draw stays private. This is a whole-class option, not a replacement for an IEP, 504 plan, therapy, or counseling.",
   askTitle: "This is early. Tell me if it helped.",
   askBody: `After you try it, I would love two minutes: did kids settle into it? Would you use it again? What got in the way? Reach me at tinypauses.com/for-classrooms, with the "Join the teacher pilot" button.`,
 };

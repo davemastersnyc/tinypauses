@@ -374,7 +374,7 @@ export default function Home() {
             </p>
             <p className="mt-2 text-base leading-relaxed text-[color:var(--color-foreground)]/90">
               Shake your hands out like you&apos;re flicking off water. Stomp
-              your feet. Squeeze your fists tight, then let go. Take three slow
+              your feet. Squeeze your fists firmly, then let go. Take three slow
               breaths. That&apos;s it.
             </p>
           </div>

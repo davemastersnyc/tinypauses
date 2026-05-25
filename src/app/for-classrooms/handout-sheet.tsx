@@ -15,6 +15,7 @@ export type HandoutContent = {
   tip: string;
   moments: string;
   safe: string;
+  note: string;
   askTitle: string;
   askBody: string;
 };
@@ -127,6 +128,10 @@ export function HandoutSheet({ content }: { content: HandoutContent }) {
               </p>
             </div>
           </div>
+
+          <p className="mt-4 text-sm leading-relaxed text-[color:var(--color-foreground)]/65">
+            {content.note}
+          </p>
 
           <div
             className="mt-7 rounded-2xl px-5 py-4"

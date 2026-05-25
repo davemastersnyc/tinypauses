@@ -330,6 +330,11 @@ export function BoardMode() {
               the beat, so you do not have to click through anything. Pick where
               the room is right now, then go.
             </p>
+            <p className="max-w-xl text-sm leading-6 text-[color:var(--color-foreground)]/60">
+              Eyes open is fine. Sitting out quietly is fine. Any kid can do a
+              smaller version. A whole-class reset, not a replacement for an IEP,
+              504 plan, therapy, or counseling.
+            </p>
           </header>
 
           <section className="space-y-3">

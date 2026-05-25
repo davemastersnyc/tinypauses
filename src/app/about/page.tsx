@@ -42,8 +42,8 @@ export default function AboutPage() {
           </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
             Brain Break mode came from watching what actually helps kids regulate when things feel
-            like too much -- movement and pressure before breath work. It turns out this closely
-            mirrors what occupational therapists have known for years about somatic regulation.
+            like too much -- movement and pressure before breath work. It follows a common
+            regulation pattern: movement and pressure first, then slower breathing.
             Kids helped design it. The product is better for it.
           </p>
         </section>

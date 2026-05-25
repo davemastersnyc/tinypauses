@@ -438,8 +438,8 @@ function drawWrapUpCard(
       size / 2,
       655,
       metadata.stats.brain_break_year_note ??
-        `You slowed your brain down ${metadata.stats.brain_break_count ?? 0} ${
-          (metadata.stats.brain_break_count ?? 0) === 1 ? "time" : "times"
+        `You took ${metadata.stats.brain_break_count ?? 0} brain break${
+          (metadata.stats.brain_break_count ?? 0) === 1 ? "" : "s"
         } this year.`,
     );
     drawBrainBreakMonthBars(

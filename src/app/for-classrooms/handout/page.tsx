@@ -37,6 +37,7 @@ const content: HandoutContent = {
   moments:
     "Right after recess, before a test, during a noisy transition, after a conflict, or any time the room gets wiggly.",
   safe: "No student accounts. No logins. No ads. No tracking. Nothing is stored. Designed for grades 3-6.",
+  note: "Eyes open is fine, and any kid can sit out quietly or do a smaller version. This is a whole-class reset, not a replacement for an IEP, 504 plan, therapy, or counseling.",
   askTitle: "This is early. Tell me if it helped.",
   askBody: `After you try it, I would love two minutes: did the room settle? Would you use it again? What got in the way? Reach me at tinypauses.com/for-classrooms, with the "Join the teacher pilot" button.`,
 };

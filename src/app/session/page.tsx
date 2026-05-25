@@ -205,7 +205,7 @@ const defaultBrainBreakSteps: BrainBreakStep[] = [
   },
   {
     instruction:
-      "Make your hands into fists. Squeeze hard for three seconds. Then let go completely.",
+      "Make your hands into fists. Squeeze firmly for three seconds. Then let go completely.",
   },
   {
     instruction:
@@ -216,7 +216,7 @@ const defaultBrainBreakSteps: BrainBreakStep[] = [
       "Breathe in slowly through your nose. Out through your mouth. Do that three times.",
   },
   {
-    instruction: "Your brain slowed down. You did that.",
+    instruction: "You gave your body a reset. You did that.",
   },
 ];
 
@@ -1292,7 +1292,7 @@ function SessionPageInner() {
               >
                 <p className="text-base font-bold text-[#006666]">Brain Break</p>
                 <p className="mt-0.5 text-sm text-[#006666]">
-                  Feeling like a lot? A 90-second reset to slow your brain down.
+                  Feeling like a lot? A 90-second reset to help you settle.
                 </p>
               </button>
               <button
