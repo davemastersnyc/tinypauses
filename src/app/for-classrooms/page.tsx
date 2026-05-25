@@ -5,7 +5,7 @@ import { TeacherPilotForm } from "../teacher-pilot-form";
 export const metadata: Metadata = {
   title: "Tiny Pauses for classrooms",
   description:
-    "We are building a board-friendly version of Tiny Pauses for teachers: 90-second resets for after recess, before tests, and noisy transitions. Join the pilot to help shape it. No student accounts, no ads, no tracking kids.",
+    "An early-preview, board-friendly version of Tiny Pauses for teachers: 90-second resets for after recess, before tests, and noisy transitions. Try the board preview and help shape it. No student accounts, no ads, no tracking kids.",
 };
 
 export default function ForClassroomsPage() {
@@ -14,26 +14,33 @@ export default function ForClassroomsPage() {
       <article className="mx-auto w-full max-w-2xl space-y-10 py-4 sm:py-8">
         <section className="space-y-4">
           <span className="inline-flex items-center rounded-full bg-[#ffd84a]/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#8a6a00]">
-            In development
+            Early preview
           </span>
           <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--color-primary)] sm:text-4xl">
-            Classroom Brain Breaks are coming.
+            Classroom Brain Breaks, in preview.
           </h1>
           <p className="text-lg leading-8 text-[color:var(--color-foreground)]/88">
-            We are building a simple, board-friendly version of Tiny Pauses for
-            teachers: ninety-second resets for after recess, before tests, noisy
-            transitions, and big feelings.
+            A simple, board-friendly version of Tiny Pauses for teachers:
+            ninety-second resets for after recess, before tests, noisy
+            transitions, and big feelings. There is an early version you can put
+            on the board right now.
           </p>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            Tiny Pauses began as a tool for one kid at a time. A whole-class
-            version is the next step, but we would rather build it with teachers
-            than guess. That is what the pilot is for.
+            Tiny Pauses began as a tool for one kid at a time. This whole-class
+            version is the next step, and it is in early mode. We would rather
+            build it with teachers than guess, so try the preview and tell us
+            what works.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-            <TeacherPilotForm />
+            <BrandButton href="/for-classrooms/board" variant="primary">
+              Open the board preview
+            </BrandButton>
             <BrandButton href="/session" variant="secondary">
               Try Tiny Pauses as a student
             </BrandButton>
+          </div>
+          <div className="pt-1">
+            <TeacherPilotForm />
           </div>
         </section>
 
@@ -57,8 +64,8 @@ export default function ForClassroomsPage() {
                 <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
                   Built for the board
                 </p>
-                <span className="rounded-full bg-[#ffd84a]/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8a6a00]">
-                  Planned
+                <span className="rounded-full bg-[#0e8a8a]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0e8a8a]">
+                  Preview
                 </span>
               </div>
               <p className="mt-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
@@ -125,15 +132,16 @@ export default function ForClassroomsPage() {
             Help us build the right thing
           </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            The board mode is still in development. If you teach kids 9-12, tell
-            us your grade, class size, school setting, and when you would use it.
-            We will fold it into how we build, and bring you in early.
+            The board mode is in early mode. If you teach kids 9-12, try it and
+            tell us your grade, class size, school setting, and when you would
+            actually use it. We will fold it into how we build, and bring you in
+            early.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-            <TeacherPilotForm />
-            <BrandButton href="/session" variant="secondary">
-              Try Tiny Pauses as a student
+            <BrandButton href="/for-classrooms/board" variant="primary">
+              Open the board preview
             </BrandButton>
+            <TeacherPilotForm />
           </div>
         </section>
 

@@ -162,6 +162,35 @@ h3 {
   animation: brainBreakFadeIn 240ms ease-out both;
 }
 
+/* Board mode: a slower, calmer entrance so steps ease in rather than snap. */
+@keyframes boardStepEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.board-step-enter {
+  animation: boardStepEnter 850ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The breathing dot during the rest beat between steps. */
+.board-rest-dot {
+  background: radial-gradient(
+    circle,
+    rgba(14, 138, 138, 0.3) 0%,
+    rgba(14, 138, 138, 0.16) 45%,
+    rgba(14, 138, 138, 0.04) 70%,
+    rgba(14, 138, 138, 0) 100%
+  );
+  animation: boardStepEnter 900ms ease-out both,
+    brainBreakBreath 3.6s ease-in-out 0.3s infinite;
+}
+
 .bb-hand-wiggle-left {
   transform-origin: 62px 84px;
   animation: brainBreakWiggleLeft 0.9s ease-in-out infinite;
@@ -283,6 +312,8 @@ h3 {
   .bb-squeeze-right,
   .bb-warm-lines,
   .bb-breath-orb,
+  .board-step-enter,
+  .board-rest-dot,
   .prompt-reveal,
   .theme-illustration,
   .sprout-pop {
