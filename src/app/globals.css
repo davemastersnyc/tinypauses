@@ -325,3 +325,16 @@ h3 {
     opacity: 0;
   }
 }
+
+/* Green time recipe cards: keep the kind colors when printed, and give the
+   sheet sensible page margins so cards do not run to the paper edge. */
+@media print {
+  @page {
+    margin: 0.5in;
+  }
+
+  .recipe-card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

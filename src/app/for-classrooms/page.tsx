@@ -143,6 +143,16 @@ export default function ForClassroomsPage() {
             </BrandButton>
             <TeacherPilotForm />
           </div>
+          <p className="text-sm leading-7 text-[color:var(--color-foreground)]/65">
+            Rather stay off-screen?{" "}
+            <a
+              href="/for-classrooms/recipes"
+              className="font-medium text-[color:var(--color-primary)] underline underline-offset-2 hover:text-[color:var(--color-accent)]"
+            >
+              Print the green time recipe cards
+            </a>{" "}
+            and try those instead.
+          </p>
         </section>
 
         <p className="pt-2 text-sm leading-7 text-[color:var(--color-foreground)]/58">
