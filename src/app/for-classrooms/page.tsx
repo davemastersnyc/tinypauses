@@ -8,6 +8,59 @@ export const metadata: Metadata = {
     "Two early-preview classroom tools from Tiny Pauses: a 90-second Brain Break board to settle a buzzing room, and 5-minute green time recipe cards for the quiet slot. Try both and help shape them. No student accounts, no ads, no tracking kids.",
 };
 
+function BrainBreakMotif() {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className="h-6 w-6"
+      fill="none"
+      stroke="#0e8a8a"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="24" cy="11" r="4" fill="#0e8a8a" stroke="none" />
+      <path d="M24 17v10" />
+      <path d="M24 19l-8-4M24 19l8-4" />
+      <path d="M24 27l-7 9M24 27l7 9" />
+    </svg>
+  );
+}
+
+function GreenTimeMotif() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-6 w-6" aria-hidden="true">
+      <circle cx="31" cy="15" r="6.5" fill="#f1c462" fillOpacity="0.55" />
+      <path
+        d="M15 33h16.5a5.5 5.5 0 0 0 .5-11 7.5 7.5 0 0 0-14.3-2.1A5.5 5.5 0 0 0 15 33z"
+        fill="#e89058"
+      />
+    </svg>
+  );
+}
+
+const heroTools = [
+  {
+    href: "/for-classrooms/board",
+    eyebrow: "90-second reset",
+    title: "Brain Break board",
+    blurb: "Settle a buzzing room with movement, then breath.",
+    accent: "#0e8a8a",
+    tileBg: "bg-[#0e8a8a]/10",
+    motif: <BrainBreakMotif />,
+  },
+  {
+    href: "/for-classrooms/recipes",
+    eyebrow: "5-minute settle",
+    title: "Green time cards",
+    blurb: "Make a small thing, then rest with it.",
+    accent: "#a35d22",
+    tileBg: "bg-[#f0a35f]/15",
+    motif: <GreenTimeMotif />,
+  },
+];
+
 export default function ForClassroomsPage() {
   return (
     <PageShell maxWidth="md">
@@ -25,19 +78,34 @@ export default function ForClassroomsPage() {
             room, and five-minute green time recipe cards for the quiet slot. You
             can try both right now.
           </p>
-          <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            Tiny Pauses began as a tool for one kid at a time. This whole-class
-            version is the next step, and it is in early mode. We would rather
-            build it with teachers than guess, so try the previews and tell us
-            what works.
-          </p>
-          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-            <BrandButton href="/for-classrooms/board" variant="primary">
-              Open the Brain Break board
-            </BrandButton>
-            <BrandButton href="/for-classrooms/recipes" variant="secondary">
-              See the green time cards
-            </BrandButton>
+          <div className="grid gap-3 pt-1 sm:grid-cols-2">
+            {heroTools.map((tool) => (
+              <a
+                key={tool.href}
+                href={tool.href}
+                className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] p-4 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[color:var(--color-foreground)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
+              >
+                <span
+                  className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${tool.tileBg}`}
+                >
+                  {tool.motif}
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className="block text-[11px] font-semibold uppercase tracking-wide"
+                    style={{ color: tool.accent }}
+                  >
+                    {tool.eyebrow}
+                  </span>
+                  <span className="block text-base font-semibold text-[color:var(--color-primary)]">
+                    {tool.title}
+                  </span>
+                  <span className="mt-0.5 block text-sm leading-snug text-[color:var(--color-foreground)]/70">
+                    {tool.blurb}
+                  </span>
+                </span>
+              </a>
+            ))}
           </div>
           <div className="pt-1">
             <TeacherPilotForm />
