@@ -1,6 +1,7 @@
 import { BrevoClient } from "@getbrevo/brevo";
 import { createClient } from "@supabase/supabase-js";
 import { applyRateLimit, getClientIp, isTrustedOrigin } from "@/lib/apiSecurity";
+import { isLikelyEmail } from "@/lib/teacherPilot";
 
 function requireEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json().catch(() => null)) as
-      | { message?: string }
+      | { message?: string; subject?: string; replyTo?: string }
       | null;
 
     const feedbackTextRaw = body?.message?.trim() || "";
@@ -43,6 +44,19 @@ export async function POST(request: Request) {
       );
     }
     const feedbackText = feedbackTextRaw || "(No feedback message provided)";
+
+    // Optional subject so different intents (e.g. teacher-pilot signups) are
+    // triageable in the inbox. Falls back to the default feedback subject.
+    const subjectRaw = body?.subject?.trim() || "";
+    const subject =
+      subjectRaw.length > 0 && subjectRaw.length <= 120
+        ? subjectRaw
+        : "Tiny Pauses feedback";
+
+    // Optional reply-to so a reply lands with the person who submitted (the
+    // sender/return-path stays our verified domain, so SPF/DKIM are unaffected).
+    const replyToRaw = body?.replyTo?.trim() || "";
+    const replyTo = isLikelyEmail(replyToRaw) ? replyToRaw : null;
 
     const fromEmail = process.env.BREVO_FROM_EMAIL?.trim() || "hello@tinypauses.com";
     const brevoApiKey = requireEnv("BREVO_API_KEY");
@@ -82,7 +96,8 @@ export async function POST(request: Request) {
     await brevo.transactionalEmails.sendTransacEmail({
       sender: { email: fromEmail, name: "Tiny Pauses" },
       to: [{ email: "hello@tinypauses.com" }],
-      subject: "Tiny Pauses feedback",
+      ...(replyTo ? { replyTo: { email: replyTo } } : {}),
+      subject,
       textContent,
       htmlContent: `<p style="white-space:pre-wrap;font-family:Arial,sans-serif;">${htmlContent}</p>`,
     });

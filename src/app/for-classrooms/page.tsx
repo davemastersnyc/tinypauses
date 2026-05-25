@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import { BrandButton, BrandCard, PageShell } from "../ui";
+import { TeacherPilotForm } from "../teacher-pilot-form";
 
 export const metadata: Metadata = {
   title: "Tiny Pauses for classrooms",
   description:
     "We are building a board-friendly version of Tiny Pauses for teachers: 90-second resets for after recess, before tests, and noisy transitions. Join the pilot to help shape it. No student accounts, no ads, no tracking kids.",
 };
-
-const pilotMailto =
-  "mailto:hello@tinypauses.com?subject=Tiny%20Pauses%20teacher%20pilot&body=Grade%20I%20teach%3A%0AClass%20size%3A%0ASchool%20or%20setting%3A%0AWhen%20I%20would%20use%20it%3A";
 
 export default function ForClassroomsPage() {
   return (
@@ -32,9 +30,7 @@ export default function ForClassroomsPage() {
             than guess. That is what the pilot is for.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-            <BrandButton href={pilotMailto} variant="primary">
-              Join the teacher pilot
-            </BrandButton>
+            <TeacherPilotForm />
             <BrandButton href="/session" variant="secondary">
               Try Tiny Pauses as a student
             </BrandButton>
@@ -134,9 +130,7 @@ export default function ForClassroomsPage() {
             We will fold it into how we build, and bring you in early.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-            <BrandButton href={pilotMailto} variant="primary">
-              Join the teacher pilot
-            </BrandButton>
+            <TeacherPilotForm />
             <BrandButton href="/session" variant="secondary">
               Try Tiny Pauses as a student
             </BrandButton>
