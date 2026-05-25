@@ -5,7 +5,7 @@ import { TeacherPilotForm } from "../teacher-pilot-form";
 export const metadata: Metadata = {
   title: "Tiny Pauses for classrooms",
   description:
-    "An early-preview, board-friendly version of Tiny Pauses for teachers: 90-second resets for after recess, before tests, and noisy transitions. Try the board preview and help shape it. No student accounts, no ads, no tracking kids.",
+    "Two early-preview classroom tools from Tiny Pauses: a 90-second Brain Break board to settle a buzzing room, and 5-minute green time recipe cards for the quiet slot. Try both and help shape them. No student accounts, no ads, no tracking kids.",
 };
 
 export default function ForClassroomsPage() {
@@ -17,31 +17,41 @@ export default function ForClassroomsPage() {
             Early preview
           </span>
           <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--color-primary)] sm:text-4xl">
-            Classroom Brain Breaks, in preview.
+            Classroom resets, in preview.
           </h1>
           <p className="text-lg leading-8 text-[color:var(--color-foreground)]/88">
-            A simple, board-friendly version of Tiny Pauses for teachers:
-            ninety-second resets for after recess, before tests, noisy
-            transitions, and big feelings. There is an early version you can put
-            on the board right now.
+            Two early tools for teachers, both built on Tiny Pauses: a
+            ninety-second Brain Break you run from the board to settle a buzzing
+            room, and five-minute green time recipe cards for the quiet slot. You
+            can try both right now.
           </p>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
             Tiny Pauses began as a tool for one kid at a time. This whole-class
             version is the next step, and it is in early mode. We would rather
-            build it with teachers than guess, so try the preview and tell us
+            build it with teachers than guess, so try the previews and tell us
             what works.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
             <BrandButton href="/for-classrooms/board" variant="primary">
-              Open the board preview
+              Open the Brain Break board
             </BrandButton>
-            <BrandButton href="/session" variant="secondary">
-              Try Tiny Pauses as a student
+            <BrandButton href="/for-classrooms/recipes" variant="secondary">
+              See the green time cards
             </BrandButton>
           </div>
           <div className="pt-1">
             <TeacherPilotForm />
           </div>
+          <p className="text-sm text-[color:var(--color-foreground)]/60">
+            Or{" "}
+            <a
+              href="/session"
+              className="font-medium text-[color:var(--color-primary)] underline underline-offset-2 hover:text-[color:var(--color-accent)]"
+            >
+              try Tiny Pauses as a student
+            </a>
+            .
+          </p>
         </section>
 
         <section className="rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-soft)] px-5 py-4">
@@ -56,41 +66,57 @@ export default function ForClassroomsPage() {
 
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight text-[color:var(--color-primary)]">
-            What we are building
+            Two ways to try it
           </h2>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <p className="text-sm leading-7 text-[color:var(--color-foreground)]/70">
+            The room has two kinds of moments. Each tool is for one of them.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
             <BrandCard tone="muted">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
-                  Built for the board
+                <p className="text-base font-semibold text-[color:var(--color-primary)]">
+                  Brain Break board
                 </p>
                 <span className="rounded-full bg-[#0e8a8a]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0e8a8a]">
                   Preview
                 </span>
               </div>
-              <p className="mt-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
-                A view designed for smartboards and projectors. Quiet by
-                default, with sound optional, so you can run it from the front of
-                the room.
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[color:var(--color-foreground)]/55">
+                90-second reset, for a buzzing room
               </p>
+              <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
+                A hands-free, movement-then-breath reset you run from the front
+                of the room. Pick where the room is, press go, and lead it with
+                your body. Quiet by default, sound optional.
+              </p>
+              <div className="mt-4">
+                <BrandButton href="/for-classrooms/board" variant="primary">
+                  Open the board
+                </BrandButton>
+              </div>
             </BrandCard>
             <BrandCard tone="muted">
-              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
-                Short enough for transitions
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-base font-semibold text-[color:var(--color-primary)]">
+                  Green time cards
+                </p>
+                <span className="rounded-full bg-[#0e8a8a]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0e8a8a]">
+                  Preview
+                </span>
+              </div>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[color:var(--color-foreground)]/55">
+                5-minute settle, for the quiet slot
               </p>
-              <p className="mt-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
-                Ninety seconds start to finish. Long enough to settle the room,
-                short enough to fit between activities.
+              <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
+                Make-then-rest recipe cards. A kid picks one, makes a small
+                thing, then settles with it. Print a set to cut out, or project
+                the calm board menu.
               </p>
-            </BrandCard>
-            <BrandCard tone="muted">
-              <p className="text-sm font-semibold text-[color:var(--color-primary)]/85">
-                Shaped by teacher feedback
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
-                We are building it around real classrooms: grade level, class
-                size, and the moments you would actually use it.
-              </p>
+              <div className="mt-4">
+                <BrandButton href="/for-classrooms/recipes" variant="primary">
+                  See the cards
+                </BrandButton>
+              </div>
             </BrandCard>
           </div>
         </section>
@@ -132,27 +158,14 @@ export default function ForClassroomsPage() {
             Help us build the right thing
           </h2>
           <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
-            The board mode is in early mode. If you teach kids 9-12, try it and
-            tell us your grade, class size, school setting, and when you would
-            actually use it. We will fold it into how we build, and bring you in
-            early.
+            Both tools are in early mode. If you teach kids 9-12, try them and
+            tell us your grade, class size, school setting, and which moments you
+            would actually use them in. We will fold it into how we build, and
+            bring you in early.
           </p>
-          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-            <BrandButton href="/for-classrooms/board" variant="primary">
-              Open the board preview
-            </BrandButton>
+          <div className="pt-1">
             <TeacherPilotForm />
           </div>
-          <p className="text-sm leading-7 text-[color:var(--color-foreground)]/65">
-            Rather stay off-screen?{" "}
-            <a
-              href="/for-classrooms/recipes"
-              className="font-medium text-[color:var(--color-primary)] underline underline-offset-2 hover:text-[color:var(--color-accent)]"
-            >
-              Print the green time recipe cards
-            </a>{" "}
-            and try those instead.
-          </p>
         </section>
 
         <p className="pt-2 text-sm leading-7 text-[color:var(--color-foreground)]/58">

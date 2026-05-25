@@ -314,6 +314,8 @@ h3 {
   .bb-breath-orb,
   .board-step-enter,
   .board-rest-dot,
+  .ambient-dusk,
+  .lantern-orb,
   .prompt-reveal,
   .theme-illustration,
   .sprout-pop {
@@ -323,6 +325,48 @@ h3 {
   .motif-drift {
     animation: none;
     opacity: 0;
+  }
+}
+
+/* Ambient projected board menu: a deep dusk-teal field that slowly drifts, so
+   the wall reads as calm colored light rather than a UI. Saturated-but-deep so
+   a projector emits real color (it cannot do true black). */
+.ambient-dusk {
+  background: linear-gradient(
+    135deg,
+    #0a3a39 0%,
+    #0e4744 32%,
+    #0b3b46 68%,
+    #0a3a39 100%
+  );
+  background-size: 220% 220%;
+  animation: ambientDrift 34s ease-in-out infinite;
+}
+
+@keyframes ambientDrift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* The lantern light on each menu tile, breathing slowly out of sync. */
+.lantern-orb {
+  animation: lanternBreath 5.5s ease-in-out infinite;
+}
+
+@keyframes lanternBreath {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
   }
 }
 
