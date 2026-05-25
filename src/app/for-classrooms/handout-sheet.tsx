@@ -62,24 +62,24 @@ export function HandoutSheet({ content }: { content: HandoutContent }) {
             </span>
           </div>
 
-          <p className="mt-5 text-base leading-7 text-[color:var(--color-foreground)]/85">
+          <p className="mt-6 text-base leading-7 text-[color:var(--color-foreground)]/85">
             {content.lead}
           </p>
 
-          <ol className="mt-5 space-y-2.5">
+          <ol className="mt-7 space-y-4">
             {content.steps.map((s) => (
-              <li key={s.n} className="flex gap-3">
+              <li key={s.n} className="flex gap-3.5">
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
                   style={{ backgroundColor: accent }}
                 >
                   {s.n}
                 </span>
-                <span>
+                <span className="pt-0.5">
                   <span className="block font-semibold text-[color:var(--color-primary)]">
                     {s.title}
                   </span>
-                  <span className="block text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
+                  <span className="mt-0.5 block text-sm leading-relaxed text-[color:var(--color-foreground)]/75">
                     {s.body}
                   </span>
                 </span>
@@ -88,7 +88,7 @@ export function HandoutSheet({ content }: { content: HandoutContent }) {
           </ol>
 
           <div
-            className="mt-5 rounded-2xl border-2 border-dashed px-5 py-3.5 text-center"
+            className="mt-7 rounded-2xl border-2 border-dashed px-5 py-4 text-center"
             style={{ borderColor: `${accent}55` }}
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-foreground)]/55">
@@ -102,15 +102,15 @@ export function HandoutSheet({ content }: { content: HandoutContent }) {
             </p>
           </div>
 
-          <p className="mt-3.5 text-sm leading-relaxed text-[color:var(--color-foreground)]/70">
+          <p className="mt-4 text-sm leading-relaxed text-[color:var(--color-foreground)]/70">
             <span className="font-semibold text-[color:var(--color-primary)]">
               Tip:
             </span>{" "}
             {content.tip}
           </p>
 
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 print:grid-cols-2">
-            <div>
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 print:grid-cols-2">
+            <div className="rounded-2xl bg-[color:var(--color-surface-soft)] px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-foreground)]/55">
                 Good moments
               </p>
@@ -118,7 +118,7 @@ export function HandoutSheet({ content }: { content: HandoutContent }) {
                 {content.moments}
               </p>
             </div>
-            <div>
+            <div className="rounded-2xl bg-[color:var(--color-surface-soft)] px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-foreground)]/55">
                 Safe for school
               </p>
@@ -129,7 +129,7 @@ export function HandoutSheet({ content }: { content: HandoutContent }) {
           </div>
 
           <div
-            className="mt-5 rounded-2xl px-5 py-3.5"
+            className="mt-7 rounded-2xl px-5 py-4"
             style={{ backgroundColor: `${accent}0f` }}
           >
             <p className="font-semibold" style={{ color: deep }}>
@@ -140,7 +140,7 @@ export function HandoutSheet({ content }: { content: HandoutContent }) {
             </p>
           </div>
 
-          <p className="mt-5 border-t border-[color:var(--color-border-subtle)] pt-3 text-xs leading-5 text-[color:var(--color-foreground)]/50">
+          <p className="mt-7 border-t border-[color:var(--color-border-subtle)] pt-4 text-xs leading-5 text-[color:var(--color-foreground)]/50">
             Tiny Pauses is not medical advice. A small, kind tool to help kids
             pause and notice how they feel. tinypauses.com
           </p>
