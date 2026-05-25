@@ -185,6 +185,16 @@ export default function ForClassroomsPage() {
               </div>
             </BrandCard>
           </div>
+          <p className="text-sm leading-7 text-[color:var(--color-foreground)]/65">
+            Want a one-page intro to print or hand a colleague?{" "}
+            <a
+              href="/for-classrooms/handouts"
+              className="font-medium text-[color:var(--color-primary)] underline underline-offset-2 hover:text-[color:var(--color-accent)]"
+            >
+              Open the classroom handouts
+            </a>
+            .
+          </p>
         </section>
 
         <section className="space-y-4">
