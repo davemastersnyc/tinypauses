@@ -16,6 +16,18 @@ const glowByKind: Record<Kind, string> = {
 
 const INK = "#f2efe6"; // warm off-white, never pure white (glares when projected)
 
+type Zone = "any" | "buzzing" | "tense" | "flat";
+
+// Teacher's optional read of the room. Picking one narrows the menu to the
+// recipe kinds that fit, then kids still choose their own card from what is
+// left. Default "any" keeps the free pick. Labels mirror the Brain Break dial.
+const zones: { key: Zone; label: string; kinds: Kind[] | null; note: string }[] = [
+  { key: "any", label: "Any", kinds: null, note: "Green time. Pick one." },
+  { key: "buzzing", label: "Buzzing", kinds: ["pause"], note: "For a buzzing room. Pick one to settle." },
+  { key: "tense", label: "Tense", kinds: ["letting-go"], note: "For a tense room. Pick one to let go." },
+  { key: "flat", label: "Flat", kinds: ["reflect", "kindness"], note: "For a flat room. Pick one for a lift." },
+];
+
 function LanternOrb({ color, size, delay }: { color: string; size: string; delay?: string }) {
   return (
     <span
@@ -32,6 +44,12 @@ function LanternOrb({ color, size, delay }: { color: string; size: string; delay
 
 export function RecipeBoard() {
   const [selected, setSelected] = useState<Recipe | null>(null);
+  const [zone, setZone] = useState<Zone>("any");
+
+  const activeZone = zones.find((z) => z.key === zone) ?? zones[0];
+  const filtered = activeZone.kinds
+    ? recipes.filter((r) => activeZone.kinds!.includes(r.kind))
+    : recipes;
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -114,28 +132,51 @@ export function RecipeBoard() {
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-            <p className="mb-6 text-center text-2xl font-medium sm:text-3xl" style={{ color: `${INK}cc` }}>
-              Green time. Pick one.
+            <p className="mb-5 text-center text-2xl font-medium sm:text-3xl" style={{ color: `${INK}cc` }}>
+              {activeZone.note}
             </p>
+
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
+              {zones.map((z) => {
+                const on = z.key === zone;
+                return (
+                  <button
+                    key={z.key}
+                    type="button"
+                    onClick={() => setZone(z.key)}
+                    aria-pressed={on}
+                    className="rounded-full border px-4 py-1.5 text-sm font-medium transition"
+                    style={
+                      on
+                        ? { borderColor: `${INK}cc`, background: `${INK}1f`, color: INK }
+                        : { borderColor: `${INK}33`, color: `${INK}99` }
+                    }
+                  >
+                    {z.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <div
-              className="grid min-h-0 w-full max-w-6xl flex-1 grid-cols-2 grid-rows-4 gap-4 sm:grid-cols-4 sm:grid-rows-2 sm:gap-5"
-              style={{ maxHeight: "74vh" }}
+              className="flex w-full max-w-5xl flex-wrap items-center justify-center gap-4 sm:gap-5"
+              style={{ maxHeight: "58vh" }}
             >
-              {recipes.map((recipe, i) => {
+              {filtered.map((recipe, i) => {
                 const glow = glowByKind[recipe.kind];
                 return (
                   <button
                     key={recipe.title}
                     type="button"
                     onClick={() => setSelected(recipe)}
-                    className="flex h-full flex-col items-center justify-center gap-3 rounded-3xl border p-4 text-center transition duration-500 hover:-translate-y-1"
+                    className="flex aspect-[6/5] w-[44%] max-w-[240px] flex-col items-center justify-center gap-3 rounded-3xl border p-4 text-center transition duration-500 hover:-translate-y-1 sm:w-[22%]"
                     style={{
                       borderColor: `${glow}55`,
                       background: `radial-gradient(120% 100% at 50% 0%, ${glow}26 0%, rgba(7,38,38,0.45) 72%)`,
                       boxShadow: `0 0 55px ${glow}1f, inset 0 0 45px ${glow}14`,
                     }}
                   >
-                    <LanternOrb color={glow} size="h-12 w-12 sm:h-14 sm:w-14" delay={`${(i % 4) * 0.5 + Math.floor(i / 4) * 0.25}s`} />
+                    <LanternOrb color={glow} size="h-11 w-11 sm:h-14 sm:w-14" delay={`${i * 0.35}s`} />
                     <span className="text-lg font-semibold leading-tight sm:text-xl" style={{ color: INK }}>
                       {recipe.title}
                     </span>
@@ -146,6 +187,10 @@ export function RecipeBoard() {
                 );
               })}
             </div>
+
+            <p className="mt-7 text-center text-xs" style={{ color: `${INK}55` }}>
+              Teacher picks the room. Kids pick the card.
+            </p>
           </div>
         )}
       </div>
