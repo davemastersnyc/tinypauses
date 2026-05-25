@@ -332,8 +332,7 @@ export function BoardMode() {
             </p>
             <p className="max-w-xl text-sm leading-6 text-[color:var(--color-foreground)]/60">
               Eyes open is fine. Sitting out quietly is fine. Any kid can do a
-              smaller version. A whole-class reset, not a replacement for an IEP,
-              504 plan, therapy, or counseling.
+              smaller version.
             </p>
           </header>
 

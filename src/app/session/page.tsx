@@ -216,7 +216,7 @@ const defaultBrainBreakSteps: BrainBreakStep[] = [
       "Breathe in slowly through your nose. Out through your mouth. Do that three times.",
   },
   {
-    instruction: "You gave your body a reset. You did that.",
+    instruction: "A little calmer than a minute ago. You did that.",
   },
 ];
 

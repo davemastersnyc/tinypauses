@@ -46,6 +46,11 @@ export default function AboutPage() {
             regulation pattern: movement and pressure first, then slower breathing.
             Kids helped design it. The product is better for it.
           </p>
+          <p className="text-base leading-8 text-[color:var(--color-foreground)]/88">
+            It is a regulation support, not a replacement for the individualized help some
+            kids need, like an IEP, 504 plan, therapy, or counseling. If a kid needs more,
+            this does not stand in for it.
+          </p>
         </section>
 
         <section className="space-y-5">
