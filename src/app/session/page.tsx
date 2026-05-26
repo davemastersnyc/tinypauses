@@ -1499,19 +1499,21 @@ function SessionPageInner() {
                 type="button"
                 onClick={loadTodaysPause}
                 disabled={loadingPrompt}
-                className="group flex w-full flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc] disabled:opacity-60"
+                className="group flex w-full items-center gap-3 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc] disabled:opacity-60"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
                   <PauseLeafIcon />
                 </span>
-                <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                <span className="whitespace-nowrap text-sm font-semibold text-[color:var(--color-primary)]">
                   {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
                 </span>
-                <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
-                  One tap. Today&apos;s pause, ready to go.
-                </span>
+                {!loadingPrompt && (
+                  <span className="ml-auto hidden whitespace-nowrap text-xs text-[color:var(--color-foreground)]/55 sm:block">
+                    One tap
+                  </span>
+                )}
               </button>
-              <div className="mt-6 flex items-center gap-3">
+              <div className="mt-5 flex items-center gap-3">
                 <span className="h-px flex-1 bg-[color:var(--color-border-subtle)]" />
                 <span className="text-xs font-medium uppercase tracking-wide text-[color:var(--color-foreground)]/45">
                   or pick one
