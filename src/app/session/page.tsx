@@ -486,6 +486,19 @@ function PauseLeafIcon() {
   );
 }
 
+function BrainBreakBoltIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-6 w-6 text-[color:var(--color-accent)]"
+      fill="none"
+    >
+      <path d="M13 2.5 5.5 13H11l-1 8.5L18.5 10H12.5l.5-7.5z" fill="currentColor" />
+    </svg>
+  );
+}
+
 function ChoosePauseIcon() {
   return (
     <svg
@@ -1326,28 +1339,38 @@ function SessionPageInner() {
               </p>
             </header>
             <BrandCard>
-              <button
-                type="button"
-                onClick={startBrainBreak}
-                className="w-full rounded-2xl border border-[#66cccc] bg-[#66cccc]/20 px-4 py-4 text-left transition hover:bg-[#66cccc]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66cccc]"
-              >
-                <p className="text-base font-bold text-[#006666]">Brain Break</p>
-                <p className="mt-0.5 text-sm text-[#006666]">
-                  Feeling like a lot? A 90-second reset to help you settle.
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep("feeling")}
-                className="mt-3 w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-4 text-left transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]"
-              >
-                <p className="text-base font-bold text-[color:var(--color-primary)]">
-                  Take a tiny pause
-                </p>
-                <p className="mt-0.5 text-sm text-[color:var(--color-foreground)]/80">
-                  A two-minute mindful moment. Notice, breathe, reset.
-                </p>
-              </button>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={startBrainBreak}
+                  className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[color:var(--color-accent)]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-accent)]/12 transition group-hover:bg-[color:var(--color-accent)]/20">
+                    <BrainBreakBoltIcon />
+                  </span>
+                  <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                    Brain Break
+                  </span>
+                  <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                    Feeling like a lot? A 90-second reset to help you settle.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep("feeling")}
+                  className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc]"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
+                    <PauseLeafIcon />
+                  </span>
+                  <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                    Take a tiny pause
+                  </span>
+                  <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                    A two-minute mindful moment. Notice, breathe, reset.
+                  </span>
+                </button>
+              </div>
               <Link
                 href="/"
                 className="mx-auto mt-4 block text-center text-xs text-[color:var(--color-foreground)]/62 underline decoration-[color:var(--color-foreground)]/30 underline-offset-2 hover:text-[color:var(--color-primary)]"
