@@ -264,7 +264,7 @@ export default function Home() {
               <div className="flex flex-col items-center gap-3 pt-1">
                 <div className="grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
                   <a
-                    href="/session"
+                    href="/session?start=pause"
                     className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc]"
                   >
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
@@ -345,7 +345,7 @@ export default function Home() {
                 </span>
               </a>
               <a
-                href="/session"
+                href="/session?start=pause"
                 className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc]"
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">

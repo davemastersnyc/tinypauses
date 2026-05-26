@@ -520,13 +520,19 @@ function SessionPageInner() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<
     "start" | "feeling" | "choose" | "prompt" | "mood" | "done"
-  >(() =>
-    // Special/favorite deep-links jump straight to a prompt, and ?start=brain-break
-    // switches modes, so only a cold open should land on the entry fork.
-    searchParams.get("specialType") || searchParams.get("favorite")
-      ? "feeling"
-      : "start",
-  );
+  >(() => {
+    // Special/favorite deep-links jump straight to a prompt, ?start=brain-break
+    // switches modes, and ?start=pause skips the entry fork when the homepage
+    // hero already chose the pause path. Only a cold open lands on the fork.
+    if (
+      searchParams.get("specialType") ||
+      searchParams.get("favorite") ||
+      searchParams.get("start") === "pause"
+    ) {
+      return "feeling";
+    }
+    return "start";
+  });
   const [mode, setMode] = useState<"regular" | "brain-break">("regular");
   const [mood, setMood] = useState<number | null>(null);
   const [moodBefore, setMoodBefore] = useState<number | null>(null);
