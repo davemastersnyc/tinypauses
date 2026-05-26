@@ -1495,17 +1495,22 @@ function SessionPageInner() {
           <BrandCard>
           {showKindOptions ? (
             <>
-              <BrandButton
+              <button
                 type="button"
                 onClick={loadTodaysPause}
-                fullWidth
                 disabled={loadingPrompt}
+                className="group flex w-full flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc] disabled:opacity-60"
               >
-                {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
-              </BrandButton>
-              <p className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
-                One tap. Today&apos;s pause, ready to go.
-              </p>
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
+                  <PauseLeafIcon />
+                </span>
+                <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                  {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
+                </span>
+                <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                  One tap. Today&apos;s pause, ready to go.
+                </span>
+              </button>
               {moodBefore !== null && moodBefore <= 2 && (
                 <p className="mt-5 text-sm text-[color:var(--color-foreground)]/85">
                   The highlighted ones are gentle when things feel heavy:
