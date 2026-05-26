@@ -461,6 +461,47 @@ function ThemeIllustration({ kind }: { kind: PromptKind | null }) {
   return null;
 }
 
+function PauseLeafIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-6 w-6 text-[#1f9b9b]"
+      fill="none"
+    >
+      <path
+        d="M5 19c1-8 6-13 14-14-1 9-6 14-14 14z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <path
+        d="M9 15c2-3 4.5-5 7.5-6.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ChoosePauseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-6 w-6 text-[color:var(--color-accent)]"
+      fill="none"
+    >
+      <rect x="4" y="4" width="7" height="7" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="13" y="4" width="7" height="7" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="4" y="13" width="7" height="7" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="13" y="13" width="7" height="7" rx="2" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 function SessionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1452,19 +1493,19 @@ function SessionPageInner() {
 
         {step === "choose" && (
           <BrandCard>
-          <BrandButton
-            type="button"
-            onClick={loadTodaysPause}
-            fullWidth
-            disabled={loadingPrompt}
-          >
-            {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
-          </BrandButton>
-          <p className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
-            One tap. Today&apos;s pause, ready to go.
-          </p>
           {showKindOptions ? (
             <>
+              <BrandButton
+                type="button"
+                onClick={loadTodaysPause}
+                fullWidth
+                disabled={loadingPrompt}
+              >
+                {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
+              </BrandButton>
+              <p className="mt-2 text-center text-xs text-[color:var(--color-foreground)]/60">
+                One tap. Today&apos;s pause, ready to go.
+              </p>
               {moodBefore !== null && moodBefore <= 2 && (
                 <p className="mt-5 text-sm text-[color:var(--color-foreground)]/85">
                   The highlighted ones are gentle when things feel heavy:
@@ -1494,13 +1535,39 @@ function SessionPageInner() {
               </div>
             </>
           ) : (
-            <button
-              type="button"
-              onClick={() => setShowKindOptions(true)}
-              className="mt-4 w-full rounded-2xl border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-3 text-sm font-medium text-[color:var(--color-foreground)]/75 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2"
-            >
-              Pick the kind of pause that would help most
-            </button>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={loadTodaysPause}
+                disabled={loadingPrompt}
+                className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[#66cccc]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#66cccc] disabled:opacity-60"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#66cccc]/15 transition group-hover:bg-[#66cccc]/25">
+                  <PauseLeafIcon />
+                </span>
+                <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                  {loadingPrompt ? "Finding today's pause..." : "Take today's pause"}
+                </span>
+                <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                  One tap. Today&apos;s pause, ready to go.
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowKindOptions(true)}
+                className="group flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface)] px-4 py-5 text-center shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[color:var(--color-accent)]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-accent)]/12 transition group-hover:bg-[color:var(--color-accent)]/20">
+                  <ChoosePauseIcon />
+                </span>
+                <span className="text-base font-semibold text-[color:var(--color-primary)]">
+                  Pick your own
+                </span>
+                <span className="text-xs leading-snug text-[color:var(--color-foreground)]/65">
+                  Choose the kind of pause that would help most
+                </span>
+              </button>
+            </div>
           )}
           {showBrainBreakNudge && (
             <button
