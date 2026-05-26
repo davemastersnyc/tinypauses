@@ -1511,12 +1511,19 @@ function SessionPageInner() {
                   One tap. Today&apos;s pause, ready to go.
                 </span>
               </button>
+              <div className="mt-6 flex items-center gap-3">
+                <span className="h-px flex-1 bg-[color:var(--color-border-subtle)]" />
+                <span className="text-xs font-medium uppercase tracking-wide text-[color:var(--color-foreground)]/45">
+                  or pick one
+                </span>
+                <span className="h-px flex-1 bg-[color:var(--color-border-subtle)]" />
+              </div>
               {moodBefore !== null && moodBefore <= 2 && (
-                <p className="mt-5 text-sm text-[color:var(--color-foreground)]/85">
+                <p className="mt-4 text-sm text-[color:var(--color-foreground)]/85">
                   The highlighted ones are gentle when things feel heavy:
                 </p>
               )}
-              <div className="mt-5 grid grid-cols-2 gap-2.5">
+              <div className="mt-4 grid grid-cols-2 gap-3">
                 {sessionKinds.map((item) => {
                   const suggested =
                     moodBefore !== null &&
@@ -1527,7 +1534,7 @@ function SessionPageInner() {
                       key={item.kind}
                       type="button"
                       onClick={() => selectPromptKind(item.kind)}
-                      className={`rounded-2xl border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[color:var(--color-foreground)]/90 transition hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
+                      className={`flex min-h-[3.25rem] items-center justify-center rounded-2xl border bg-[color:var(--color-surface)] px-4 py-4 text-center text-sm font-semibold text-[color:var(--color-foreground)]/90 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[color:var(--color-accent)] hover:bg-[color:var(--color-surface-soft)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 ${
                         suggested
                           ? "border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-ink-on-accent-soft)] ring-1 ring-[color:var(--color-accent)]/40"
                           : "border-[color:var(--color-border-subtle)]"
