@@ -110,7 +110,7 @@ values
   ('seasonal', 'back-to-school', 'back-to-school', 'First Week Jitters', 'Feeling nervous about something new is your brain paying attention. That is normal.', 'Press your feet into the floor three times and remind yourself: I have done new things before.', 3, 'active'),
 
   ('seasonal', 'halloween', 'halloween', 'Good Excited', 'Notice where the excitement is living in your body right now. Your chest? Your stomach?', 'Take three quick breaths in and one long breath out. Let some of that energy move through you.', 1, 'active'),
-  ('seasonal', 'halloween', 'halloween', 'Lot Going On', 'Sometimes there is just a lot happening at once and your brain does not know where to look.', 'Find one still thing near you. Look at it for three slow breaths.', 2, 'active'),
+  ('seasonal', 'halloween', 'halloween', 'Lot Going On', 'Sometimes there is just a lot happening at once and your brain does not know where to look.', 'Pick one still thing near you, or picture something steady like a candle flame, and rest on it for three slow breaths.', 2, 'active'),
   ('seasonal', 'halloween', 'halloween', 'After the Rush', 'The excitement is real but so is the tired that comes after it.', 'Let your shoulders drop. Take two slow breaths and let your body catch up.', 3, 'active'),
 
   ('seasonal', 'thanksgiving-week', 'thanksgiving-week', 'Big Table', 'Family time can be wonderful and also a lot. Both things can be true at once.', 'Take a breath and give yourself permission to feel however you actually feel.', 1, 'active'),

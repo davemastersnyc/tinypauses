@@ -31,7 +31,7 @@ export const recipes: Recipe[] = [
     kind: "pause",
     need: "paper, a pencil",
     make: "Draw a few clouds across your paper. Any shapes you like, soft and slow.",
-    rest: "Pick your favorite. Breathe in for four, out for four, and watch it drift by in your mind.",
+    rest: "Pick your favorite. Breathe in for four, out for four, and picture it drifting gently by.",
     makes: "a sky to rest your eyes on",
   },
   {
@@ -55,7 +55,7 @@ export const recipes: Recipe[] = [
     kind: "letting-go",
     need: "a small square of paper",
     make: "Fold a little paper boat, or draw one. Quietly give it one worry to carry, just for you.",
-    rest: "Set it in front of you. Breathe out slowly three times and watch it drift away and out of sight.",
+    rest: "Set it in front of you. Breathe out slowly three times and picture it drifting away and out of sight.",
     makes: "one worry, sailing off",
   },
   {
@@ -63,7 +63,7 @@ export const recipes: Recipe[] = [
     kind: "letting-go",
     need: "paper, a pencil",
     make: "Draw a snow globe. Fill it with dots for all the flakes swirling around in there.",
-    rest: "Sit still for three breaths and watch the flakes settle to the bottom.",
+    rest: "Sit still for three breaths and picture the flakes settling to the bottom.",
     makes: "a settled snow globe",
   },
   {

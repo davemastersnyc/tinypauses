@@ -53,8 +53,8 @@ const fallbackPrompts: Record<PromptKind, Prompt> = {
   pause: {
     id: "fallback-pause-color-hunt",
     title: "Color Hunt",
-    body: "Look around the room and quietly name three things you can see that are blue or green.",
-    step: "Take three slow breaths. With each breath, gently focus your eyes on one of the colors you found.",
+    body: "Look around you and quietly name three things that are blue or green, or picture three blue or green things in your mind.",
+    step: "Take three slow breaths. With each one, gently rest your attention on one of those colors.",
   },
   "letting-go": {
     id: "fallback-letting-go-heavy-backpack",
