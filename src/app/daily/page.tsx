@@ -92,15 +92,15 @@ export default function DailyPage() {
                     Color Hunt
                   </p>
                   <p className="text-sm text-[color:var(--color-foreground)]/80">
-                    Look around the room and quietly name three things you can
-                    see that are blue or green.
+                    Look around you and quietly name three things that are blue
+                    or green, or picture three blue or green things in your mind.
                   </p>
                   <p className="text-sm text-[color:var(--color-foreground)]/80">
                     <span className="font-semibold text-[color:var(--color-primary)]">
                       Your tiny step:
                     </span>{" "}
-                    Take three slow breaths. With each breath, gently focus your
-                    eyes on one of the colors you found.
+                    Take three slow breaths. With each one, gently rest your
+                    attention on one of those colors.
                   </p>
                 </div>
               </div>

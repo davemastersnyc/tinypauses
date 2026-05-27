@@ -13,8 +13,8 @@ type Energy = "buzzing" | "tense" | "flat";
 type Dose = "full" | "short" | "breath";
 type Phase = "setup" | "running" | "done";
 
-// visual maps to the same artwork the /session Brain Break uses:
-// 0 shake, 1 stomp, 2 squeeze, 3 notice, 4 breath, 5 land
+// visual maps to brain-break artwork:
+// 0 shake, 1 stomp, 2 squeeze, 3 notice, 4 breath, 5 land, 6 reach, 7 roll
 type BoardStep = { visual: number; text: string; seconds: number };
 
 const TEAL = "#0e8a8a";
@@ -47,73 +47,81 @@ const doseMeta: Record<Dose, { label: string; sub: string }> = {
   breath: { label: "One breath", sub: "Almost no time at all" },
 };
 
-const text = {
-  shake: "Shake out your hands. Flick the water off. Arms too if you want.",
-  stomp: "Stomp your feet three times. Then press them flat and hold.",
-  squeeze: "Squeeze your hands into fists. Hold it... and let go.",
-  notice: "Touch something near you. Cool or warm? Just notice.",
-  breath: "Breathe in slow through your nose... and out through your mouth.",
-  oneBreath: "One slow breath together. In through the nose... out through the mouth.",
-  land: "Notice the room. Quieter than a minute ago. You did that.",
-};
+// The movement vocabulary. Each room state pulls from its own set, so picking
+// Buzzing vs Tense vs Flat changes what the class actually does, not just the
+// timing. Visual ties each move to its artwork (see the map above).
+const moves = {
+  // gross-motor discharge, for a buzzing room
+  march: { visual: 1, text: "March in place, knees up high. Big and strong." },
+  swing: { visual: 0, text: "Swing your arms loose, side to side. Let them flop." },
+  // tension-and-release, for a tense room
+  squeeze: { visual: 2, text: "Squeeze your hands into fists. Hold it... and let go." },
+  rollShoulders: { visual: 7, text: "Roll your shoulders back, slow and big. Three times." },
+  ground: { visual: 3, text: "Press your hands flat on the desk or your legs. Feel something solid." },
+  // a gentle wake-up, for a flat room
+  reach: { visual: 6, text: "Reach both arms up tall. Stretch like you just woke up." },
+  twist: { visual: 7, text: "Sit tall and gently twist side to side, like a slow wave." },
+  warm: { visual: 0, text: "Rub your hands together until they feel warm." },
+  // shared close
+  breath: { visual: 4, text: "Breathe in slow through your nose... and out through your mouth." },
+  oneBreath: { visual: 4, text: "One slow breath together. In through the nose... out through the mouth." },
+  land: { visual: 5, text: "Notice the room. Quieter than a minute ago. You did that." },
+} as const;
+
+type MoveKey = keyof typeof moves;
+
+function seq(items: [MoveKey, number][]): BoardStep[] {
+  return items.map(([key, seconds]) => ({
+    visual: moves[key].visual,
+    text: moves[key].text,
+    seconds,
+  }));
+}
 
 function buildSequence(energy: Energy, dose: Dose): BoardStep[] {
   if (dose === "breath") {
-    return [
-      { visual: 4, text: text.oneBreath, seconds: 12 },
-      { visual: 5, text: text.land, seconds: 4 },
-    ];
+    return seq([
+      ["oneBreath", 12],
+      ["land", 4],
+    ]);
   }
 
   if (dose === "short") {
     const short: Record<Energy, BoardStep[]> = {
-      buzzing: [
-        { visual: 0, text: text.shake, seconds: 9 },
-        { visual: 2, text: text.squeeze, seconds: 7 },
-        { visual: 4, text: text.breath, seconds: 10 },
-        { visual: 5, text: text.land, seconds: 4 },
-      ],
-      tense: [
-        { visual: 2, text: text.squeeze, seconds: 8 },
-        { visual: 4, text: text.breath, seconds: 18 },
-        { visual: 5, text: text.land, seconds: 4 },
-      ],
-      flat: [
-        { visual: 0, text: text.shake, seconds: 9 },
-        { visual: 4, text: text.breath, seconds: 17 },
-        { visual: 5, text: text.land, seconds: 4 },
-      ],
+      buzzing: seq([["swing", 9], ["squeeze", 7], ["breath", 10], ["land", 4]]),
+      tense: seq([["squeeze", 7], ["rollShoulders", 6], ["breath", 13], ["land", 4]]),
+      flat: seq([["reach", 9], ["twist", 5], ["breath", 12], ["land", 4]]),
     };
     return short[energy];
   }
 
-  // full, 90 seconds. Energy decides what to front-load before the breath.
+  // full, 90 seconds. Each room state gets its own moves, not just its own order.
   const full: Record<Energy, BoardStep[]> = {
-    // burn the movement off first, then settle
-    buzzing: [
-      { visual: 0, text: text.shake, seconds: 16 },
-      { visual: 1, text: text.stomp, seconds: 14 },
-      { visual: 2, text: text.squeeze, seconds: 12 },
-      { visual: 3, text: text.notice, seconds: 10 },
-      { visual: 4, text: text.breath, seconds: 30 },
-      { visual: 5, text: text.land, seconds: 8 },
-    ],
-    // lead with a squeeze-and-release, weight the breath
-    tense: [
-      { visual: 2, text: text.squeeze, seconds: 12 },
-      { visual: 0, text: text.shake, seconds: 10 },
-      { visual: 3, text: text.notice, seconds: 8 },
-      { visual: 4, text: text.breath, seconds: 46 },
-      { visual: 5, text: text.land, seconds: 14 },
-    ],
-    // a soft rouse, then settle
-    flat: [
-      { visual: 0, text: text.shake, seconds: 14 },
-      { visual: 1, text: text.stomp, seconds: 12 },
-      { visual: 3, text: text.notice, seconds: 10 },
-      { visual: 4, text: text.breath, seconds: 38 },
-      { visual: 5, text: text.land, seconds: 16 },
-    ],
+    // burn the energy off with big movement, then settle
+    buzzing: seq([
+      ["march", 16],
+      ["swing", 14],
+      ["reach", 12],
+      ["squeeze", 10],
+      ["breath", 30],
+      ["land", 8],
+    ]),
+    // squeeze-and-release and grounding, then a long weighted breath
+    tense: seq([
+      ["squeeze", 12],
+      ["rollShoulders", 10],
+      ["ground", 8],
+      ["breath", 46],
+      ["land", 14],
+    ]),
+    // a soft rouse to wake the body up gently, then settle
+    flat: seq([
+      ["reach", 14],
+      ["twist", 12],
+      ["warm", 12],
+      ["breath", 36],
+      ["land", 16],
+    ]),
   };
   return full[energy];
 }
@@ -154,6 +162,20 @@ function BoardVisual({ visual }: { visual: number }) {
   }
   if (visual === 4) {
     return <div aria-hidden="true" className="bb-breath-orb h-48 w-48 rounded-full sm:h-60 sm:w-60" />;
+  }
+  if (visual === 6) {
+    return (
+      <div className="bb-reach">
+        <Image src="/brain-break/reach.svg" alt="" width={200} height={200} className="h-36 w-36 sm:h-48 sm:w-48" />
+      </div>
+    );
+  }
+  if (visual === 7) {
+    return (
+      <div className="bb-roll">
+        <Image src="/brain-break/roll.svg" alt="" width={200} height={200} className="h-32 w-32 sm:h-44 sm:w-44" />
+      </div>
+    );
   }
   return <p className="text-7xl sm:text-8xl" aria-hidden="true">🌱</p>;
 }

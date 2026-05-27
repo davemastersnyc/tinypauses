@@ -158,6 +158,25 @@ h3 {
   }
 }
 
+@keyframes brainBreakReach {
+  0%,
+  100% {
+    transform: translateY(3px);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes brainBreakRoll {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .brain-break-fade {
   animation: brainBreakFadeIn 240ms ease-out both;
 }
@@ -229,6 +248,14 @@ h3 {
   );
   box-shadow: 0 0 0 18px rgba(102, 204, 204, 0.08);
   animation: brainBreakBreath 4s ease-in-out infinite;
+}
+
+.bb-reach {
+  animation: brainBreakReach 1.9s ease-in-out infinite;
+}
+
+.bb-roll {
+  animation: brainBreakRoll 3.4s linear infinite;
 }
 
 @keyframes promptReveal {
@@ -312,6 +339,8 @@ h3 {
   .bb-squeeze-right,
   .bb-warm-lines,
   .bb-breath-orb,
+  .bb-reach,
+  .bb-roll,
   .board-step-enter,
   .board-rest-dot,
   .ambient-dusk,

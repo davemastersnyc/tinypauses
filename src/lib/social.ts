@@ -59,7 +59,7 @@ export const calendarSpecials: CalendarSpecial[] = [
     label: "Summer start",
     title: "Slow summer start",
     body: "Longer days, slower pace. Let today have a little more room than usual.",
-    step: "Step outside for one minute and just notice the light.",
+    step: "Take one slow minute to notice the light around you, wherever you are. A little longer and softer now.",
     matches: (date) => date.getMonth() === 5 && date.getDate() === 21,
   },
 ];
